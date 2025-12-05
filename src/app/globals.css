@@ -13,6 +13,51 @@
 @import "tailwindcss";
 
 /* ======================
+   Tailwind CSS v4 Theme 설정 (커스텀 색상)
+   ====================== */
+
+@theme {
+  /* Black 색상 */
+  --color-black-100: #6b6b6b;
+  --color-black-200: #525252;
+  --color-black-300: #373737;
+  --color-black-400: #1f1f1f;
+  --color-black-500: #040404;
+
+  /* Gray 색상 */
+  --color-gray-50: #ffffff;
+  --color-gray-100: #dedede;
+  --color-gray-200: #c4c4c4;
+  --color-gray-300: #ababab;
+  --color-gray-400: #999999;
+  --color-gray-500: #808080;
+
+  /* Primary Blue 색상 */
+  --color-primary-blue-50: #f5faff;
+  --color-primary-blue-100: #e9f4ff;
+  --color-primary-blue-200: #4da9ff;
+  --color-primary-blue-300: #1b92ff;
+  --color-primary-blue-400: #242945;
+
+  /* Secondary Yellow 색상 */
+  --color-secondary-yellow-100: #ffc149;
+
+  /* Secondary Red 색상 */
+  --color-secondary-red-100: #ffeef0;
+  --color-secondary-red-200: #ff4f64;
+
+  /* Background 색상 */
+  --color-background-100: #fafafa;
+  --color-background-200: #f7f7f7;
+  --color-background-300: #efefef;
+  --color-background-400: #f4f7fb;
+
+  /* Line 색상 */
+  --color-line-100: #f2f2f2;
+  --color-line-200: #e6e6e6;
+}
+
+/* ======================
 
    DESIGN TOKENS (폰트 관련)
 
