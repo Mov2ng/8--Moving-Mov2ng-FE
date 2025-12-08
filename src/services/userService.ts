@@ -16,29 +16,30 @@ export const userService = {
     phoneNum: number;
     password: string;
   }) => {
-    apiClient("/auth/signup", {
+    return apiClient("/auth/signup", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: data,
     });
   },
   login: (data: { email: string; password: string }) => {
-    apiClient("/auth/login", {
+    return apiClient("/auth/login", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: data,
     });
   },
   refresh: () => {
-    apiClient("/auth/refresh", {
+    // apiClient 사용시 무한루프 발생 가능해 별도 fetch 할 것
+    return apiClient("/auth/refresh", {
       method: "POST",
     });
   },
   me: () => {
-    apiClient("/auth/me", {
+    return apiClient("/auth/me", {
       method: "GET",
     });
   },
   logout: () => {
-    apiClient("/auth/logout", {
+    return apiClient("/auth/logout", {
       method: "POST",
     });
   },
