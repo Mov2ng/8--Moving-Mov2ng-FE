@@ -10,20 +10,22 @@ export default function Toast({
 }) {
   return (
     <div
-      className="flex items-center gap-2 max-w-[955px] w-full border border-primary-blue-200 rounded-xl bg-primary-blue-100 
-      px-[24px] py-[10px]
-      md:py-[18px] md:px-[24px] md:gap-4"
+      className="flex items-center max-w-[955px] w-full border border-primary-blue-200 rounded-xl bg-primary-blue-100 
+      py-[18px] px-[24px] gap-4
+      max-sm:gap-2 max-sm:px-[24px] max-sm:py-[10px]"
     >
-      {info && (  
+      {info && (
         <Image
-          src="assets/icon/ic-icon-blue.svg"
+          src="assets/icon/ic-info-blue.svg"
           alt="info"
-          width={16}
-          height={16}
-          className="w-4 h-4 md:w-6 md:h-6"
+          width={24}
+          height={24}
+          className="w-6 h-6 max-sm:w-4 max-sm:h-4"
         />
       )}
-      <p className="text-sm md:text-lg font-semibold text-primary-blue-300">{content}</p>
+      <p className="text-lg max-sm:text-sm font-semibold text-primary-blue-300">
+        {content}
+      </p>
     </div>
   );
 }
