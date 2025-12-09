@@ -14,9 +14,9 @@ export default function Toast({
       px-[24px] py-[10px]
       md:py-[18px] md:px-[24px] md:gap-4"
     >
-      {info && (
+      {info && (  
         <Image
-          src="/icons/info.svg"
+          src="assets/icon/ic-icon-blue.svg"
           alt="info"
           width={16}
           height={16}
