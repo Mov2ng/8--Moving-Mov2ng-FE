@@ -21,7 +21,7 @@
   --color-black-100: #6b6b6b;
   --color-black-200: #525252;
   --color-black-300: #373737;
-  --color-black-400: #1f1f1f;
+  --color-black-400: #1f1f1f; 
   --color-black-500: #040404;
 
   /* Gray 색상 */
@@ -55,6 +55,11 @@
   /* Line 색상 */
   --color-line-100: #f2f2f2;
   --color-line-200: #e6e6e6;
+
+  /* PC → 아래로 내려가는 max-width 구조 */
+  --breakpoint-md: 1023px; /* 태블릿 이하 */
+  --breakpoint-sm: 767px; /* 모바일 이하 */
+  --breakpoint-xs: 639px; /* 작은 모바일 이하 */
 }
 
 /* ======================

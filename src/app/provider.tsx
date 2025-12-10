@@ -1,4 +1,5 @@
-'use client';
+"use client";
+
 
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -22,7 +23,8 @@ export function Provider({ children }: { children: React.ReactNode }) { // 모�
         <I18nProvider> {/* I18nContext를 사용하여 언어 설정 관리 */}
         {children}
         <ReactQueryDevtools initialIsOpen={false} />
+
         </I18nProvider>
     </QueryClientProvider>
-  )
+  );
 }
