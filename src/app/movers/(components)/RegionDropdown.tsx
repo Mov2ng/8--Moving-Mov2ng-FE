@@ -1,4 +1,5 @@
-import React from 'react'
+import FilterDropdown from '@/components/common/FilterDropdown';
+import React, { useState } from 'react'
 
 export const area = [
   {
@@ -297,7 +298,15 @@ export const area = [
 ];
 
 export default function RegionDropdown() {
-  return (
-    <div>RegionDropdown</div>
+  const [selectedRegion, setSelectedRegion] = useState<string>("지역");
+  const regionList = area.map((item) => item.name);
+  const regionSubList = area.map((item) => item.subArea);
+  
+  const onClickRegion = (menu: string) => {
+    setSelectedRegion(menu);
+  };
+
+  return (  
+    <><FilterDropdown menuName={selectedRegion ? selectedRegion : "지역"} menuList={regionList} menuSubList={regionList} onClick={onClickRegion} /></>
   )
 }
