@@ -18,7 +18,10 @@ export default function MoversPage() {
       <SortDropdown sortList={sortList} sort="리뷰 많은순" />
       <ServiceDropdown />
       <RegionDropdown />
-      <DriverList />
+      <div className="mt-5"></div>
+      <DriverList size="md" />
+      <div className="mt-5"></div>
+      <DriverList size="sm" />
     </div>
   );
 }
