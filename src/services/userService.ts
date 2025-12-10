@@ -13,7 +13,7 @@ export const userService = {
   signup: (data: {
     name: string;
     email: string;
-    phoneNum: number;
+    phoneNum: string;
     password: string;
   }) => {
     return apiClient("/auth/signup", {
