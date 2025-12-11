@@ -57,9 +57,9 @@
   --color-line-200: #e6e6e6;
 
   /* PC → 아래로 내려가는 max-width 구조 */
-  --breakpoint-md: 1023px; /* 태블릿 이하 */
-  --breakpoint-sm: 767px; /* 모바일 이하 */
-  --breakpoint-xs: 639px; /* 작은 모바일 이하 */
+  --breakpoint-md: 1025px; /* 태블릿 이하 */
+  --breakpoint-sm: 769px; /* 모바일 이하 */
+  --breakpoint-xs: 641px; /* 작은 모바일 이하 */
 }
 
 /* ======================
@@ -122,6 +122,12 @@ section {
    ====================== */
 
 @layer utilities {
+  /* scollbar 커스텀 */
+  .scrollbar-custom {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-gray-100) transparent;
+  }
+
   /* 3xl (32px) */
   .pret-3xl-bold {
     font-family: var(--font-family-pret);
