@@ -1,9 +1,11 @@
 import Image from "next/image";
-import ProfileAvatar from "../atoms/ProfileAvatar";
+import ProfileAvatar from "@/components/common/ProfileAvatar";
 
 interface DriverProfileProps {
   name: string;
   profileImage: string;
+  avatarSize?: "sm" | "md" | "lg";
+  avatarResponsive?: boolean;
   rating?: number;
   reviewCount?: number;
   experience?: number;
@@ -18,6 +20,8 @@ interface DriverProfileProps {
 export default function DriverProfile({
   name,
   profileImage,
+  avatarSize = "md",
+  avatarResponsive = true,
   rating,
   reviewCount,
   experience,
@@ -71,41 +75,47 @@ export default function DriverProfile({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          {/* 프로필 아바타 */}
-          <ProfileAvatar src={profileImage} alt={`${name} 프로필`} size="md" />
+      <div className="flex items-start gap-3">
+        {/* 프로필 아바타 */}
+        <ProfileAvatar
+          src={profileImage}
+          alt={`${name} 프로필`}
+          size={avatarSize}
+          responsive={avatarResponsive}
+        />
 
-          {/* 기사님 정보 */}
-          <div className="flex flex-col">
-            <span className="text-black-400 pret-lg-semibold">{name}</span>
-            {metaItems.length > 0 && (
-              <div className="flex items-center gap-2 text-black-100 pret-xs-medium">
-                {metaItems.map((item, idx) => (
-                  <span className="flex items-center gap-2" key={idx}>
-                    {idx > 0 && <span className="text-gray-300">|</span>}
-                    {item}
-                  </span>
-                ))}
+        {/* 기사님 정보 + 좋아요 */}
+        <div className="flex flex-col flex-1 min-w-0 gap-4 lg:gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-black-300 font-semibold pret-14-semibold lg:pret-2lg-semibold">
+              {name}
+            </span>
+            {likeCount !== undefined && (
+              <div className="flex items-center gap-1 shrink-0">
+                <Image
+                  src="/assets/icon/ic-like-active.svg"
+                  alt="좋아요"
+                  width={24}
+                  height={24}
+                />
+                <span className="text-primary-blue-400 pret-xs-semibold">
+                  {likeCount}
+                </span>
               </div>
             )}
           </div>
-        </div>
 
-        {/* 좋아요 */}
-        {likeCount !== undefined && (
-          <div className="flex items-center gap-1">
-            <Image
-              src="/assets/icon/ic-like-active.svg"
-              alt="좋아요"
-              width={24}
-              height={24}
-            />
-            <span className="text-primary-blue-400 pret-xs-semibold">
-              {likeCount}
-            </span>
-          </div>
-        )}
+          {metaItems.length > 0 && (
+            <div className="flex flex-wrap items-start gap-x-2 gap-y-1 text-black-100 pret-xs-medium lg:pret-14-medium">
+              {metaItems.map((item, idx) => (
+                <span className="flex items-center gap-2" key={idx}>
+                  {idx > 0 && <span className="text-gray-300">|</span>}
+                  {item}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {(services?.length || regions?.length) && (
