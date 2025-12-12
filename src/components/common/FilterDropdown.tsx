@@ -14,7 +14,7 @@ export default function FilterDropdown({ menuName, menuList, menuSubList, onClic
     setIsOpen(false);
   };
   return (
-    <div className="flex flex-col w-[280px] max-md:w-[89px] relative">
+    <div className="flex flex-col w-full max-md:w-[89px] relative">
         <button
           className={`w-full h-16 pret-2lg-medium text-black-400 flex items-center justify-between px-6 border rounded-2xl transition-all duration-300
             max-md:h-10 max-md:pret-14-medium max-md:px-0 max-md:justify-center max-md:gap-[6px] max-md:rounded-lg 
@@ -42,8 +42,8 @@ export default function FilterDropdown({ menuName, menuList, menuSubList, onClic
           )}
         </button>
         {isOpen && 
-        <div className="absolute w-[280px] max-h-[320px] overflow-y-scroll top-16 z-10 flex bg-gray-50 border border-gray-100 rounded-2xl shadow-[4px_4px_10px_0_rgba(224,224,224,0.25)] mt-2">
-        <ul className="w-full pret-2lg-medium text-black-400 flex flex-col items-center
+        <div className="absolute w-full max-h-[320px] overflow-y-scroll scrollbar-custom top-16 z-10 flex bg-gray-50 border border-gray-100 rounded-2xl shadow-[4px_4px_10px_0_rgba(224,224,224,0.25)] mt-2">
+        <ul className="w-full h-full pret-2lg-medium text-black-400 flex flex-col items-center
         max-md:w-[89px] max-md:pret-14-medium max-md:px-[14px] max-md:rounded-lg 
         ">
             {menuList.map((menu) => (
@@ -51,7 +51,7 @@ export default function FilterDropdown({ menuName, menuList, menuSubList, onClic
             ))}
         </ul>
         {menuSubList && (
-          <ul className="w-full pret-2lg-medium text-black-400 flex flex-col items-center border-l border-gray-100
+          <ul className="w-full h-full pret-2lg-medium text-black-400 flex flex-col items-center border-l border-gray-100
           max-md:w-[89px] max-md:pret-14-medium max-md:px-[14px] max-md:rounded-lg 
           ">
             {menuSubList.map((menu) => (
