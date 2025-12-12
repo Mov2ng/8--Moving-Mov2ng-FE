@@ -2,7 +2,7 @@ import Image from "next/image";
 import ProfileAvatar from "@/components/common/ProfileAvatar";
 
 interface DriverProfileProps {
-  name: string;
+  name?: string;
   profileImage: string;
   avatarSize?: "sm" | "md" | "lg";
   avatarResponsive?: boolean;
@@ -79,7 +79,7 @@ export default function DriverProfile({
         {/* 프로필 아바타 */}
         <ProfileAvatar
           src={profileImage}
-          alt={`${name} 프로필`}
+          alt={`${name ?? "프로필"} 프로필`}
           size={avatarSize}
           responsive={avatarResponsive}
         />
@@ -87,9 +87,11 @@ export default function DriverProfile({
         {/* 기사님 정보 + 좋아요 */}
         <div className="flex flex-col flex-1 min-w-0 gap-4 lg:gap-2">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-black-300 lg:text-black-300 pret-13-medium lg:pret-xl-medium">
-              {name}
-            </span>
+            {name && (
+              <span className="text-black-300 lg:text-black-300 pret-13-medium lg:pret-xl-medium">
+                {name}
+              </span>
+            )}
             {likeCount !== undefined && (
               <div className="flex items-center gap-1 shrink-0">
                 <Image
@@ -139,30 +141,30 @@ export default function DriverProfile({
               )}
             </div>
           )}
+
+          {(services?.length || regions?.length) && (
+            <div className="flex flex-wrap items-center gap-3 pret-14-medium text-black-100">
+              {services?.length ? (
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 bg-background-400 text-gray-300 rounded">
+                    제공 서비스
+                  </span>
+                  <span className="text-black-400">{services.join(", ")}</span>
+                </div>
+              ) : null}
+
+              {regions?.length ? (
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 bg-background-400 text-gray-300 rounded">
+                    지역
+                  </span>
+                  <span className="text-black-400">{regions.join(", ")}</span>
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
-
-      {(services?.length || regions?.length) && (
-        <div className="flex flex-wrap items-center gap-3 pret-14-medium text-black-100">
-          {services?.length ? (
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-1 bg-background-400 text-gray-300 rounded">
-                제공 서비스
-              </span>
-              <span className="text-black-400">{services.join(", ")}</span>
-            </div>
-          ) : null}
-
-          {regions?.length ? (
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-1 bg-background-400 text-gray-300 rounded">
-                지역
-              </span>
-              <span className="text-black-400">{regions.join(", ")}</span>
-            </div>
-          ) : null}
-        </div>
-      )}
     </div>
   );
 }
