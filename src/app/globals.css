@@ -21,7 +21,7 @@
   --color-black-100: #6b6b6b;
   --color-black-200: #525252;
   --color-black-300: #373737;
-  --color-black-400: #1f1f1f; 
+  --color-black-400: #1f1f1f;
   --color-black-500: #040404;
 
   /* Gray 색상 */
@@ -57,9 +57,9 @@
   --color-line-200: #e6e6e6;
 
   /* PC → 아래로 내려가는 max-width 구조 */
-  --breakpoint-md: 1023px; /* 태블릿 이하 */
-  --breakpoint-sm: 767px; /* 모바일 이하 */
-  --breakpoint-xs: 639px; /* 작은 모바일 이하 */
+  --breakpoint-md: 1025px; /* 태블릿 이하 */
+  --breakpoint-sm: 769px; /* 모바일 이하 */
+  --breakpoint-xs: 641px; /* 작은 모바일 이하 */
 }
 
 /* ======================
@@ -76,39 +76,24 @@
   /* font sizes */
 
   --fs-3xl: 32px;
-
   --fs-2xl: 24px;
-
   --fs-xl: 20px;
-
   --fs-2lg: 18px;
-
   --fs-lg: 16px;
-
   --fs-14: 14px;
-
   --fs-13: 13px;
-
   --fs-12: 12px;
 
   /* line heights */
 
   --lh-3xl: 46px; /* 143.75% */
-
   --lh-2xl: 32px; /* 133.33% */
-
   --lh-xl: 32px; /* 160% */
-
   --lh-2lg: 26px; /* 144.44% */
-
   --lh-lg: 26px; /* 162.5% */
-
   --lh-14: 24px; /* 171.429% for 14px */
-
   --lh-13: 22px; /* 169.231% for 13px */
-
   --lh-xs-20: 20px; /* for some 12px styles */
-
   --lh-xs-18: 18px; /* for other 12px styles */
 }
 
@@ -117,10 +102,13 @@
 html,
 body {
   font-family: var(--font-family-pret);
-
   -webkit-font-smoothing: antialiased;
-
   -moz-osx-font-smoothing: grayscale;
+}
+
+section {
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 /* ======================
@@ -134,289 +122,428 @@ body {
    ====================== */
 
 @layer utilities {
-  /* 3xl (32px) */
+  /* scollbar 커스텀 */
+  .scrollbar-custom {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-gray-100) transparent;
+  }
 
+  /* 3xl (32px) */
   .pret-3xl-bold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-3xl);
-
-    line-height: var(--lh-3xl);
-
+    font-size: 32px;
+    line-height: 46px;
     font-weight: 700;
   }
 
   .pret-3xl-semibold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-3xl);
-
-    line-height: var(--lh-3xl);
-
+    font-size: 32px;
+    line-height: 46px;
     font-weight: 600;
   }
 
   /* 2xl (24px) */
-
   .pret-2xl-bold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-2xl);
-
-    line-height: var(--lh-2xl);
-
+    font-size: 24px;
+    line-height: 32px;
     font-weight: 700;
   }
 
   .pret-2xl-semibold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-2xl);
-
-    line-height: var(--lh-2xl);
-
+    font-size: 24px;
+    line-height: 32px;
     font-weight: 600;
   }
 
   .pret-2xl-medium {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-2xl);
-
-    line-height: var(--lh-2xl);
-
+    font-size: 24px;
+    line-height: 32px;
     font-weight: 500;
   }
 
   .pret-2xl-regular {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-2xl);
-
-    line-height: var(--lh-2xl);
-
+    font-size: 24px;
+    line-height: 32px;
     font-weight: 400;
   }
 
   /* xl (20px) */
-
   .pret-xl-bold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-xl);
-
-    line-height: var(--lh-xl);
-
+    font-size: 20px;
+    line-height: 32px;
     font-weight: 700;
   }
 
   .pret-xl-semibold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-xl);
-
-    line-height: var(--lh-xl);
-
+    font-size: 20px;
+    line-height: 32px;
     font-weight: 600;
   }
 
   .pret-xl-medium {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-xl);
-
-    line-height: var(--lh-xl);
-
+    font-size: 20px;
+    line-height: 32px;
     font-weight: 500;
   }
 
   .pret-xl-regular {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-xl);
-
-    line-height: var(--lh-xl);
-
+    font-size: 20px;
+    line-height: 32px;
     font-weight: 400;
   }
 
   /* 2lg (18px) */
-
   .pret-2lg-bold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-2lg);
-
-    line-height: var(--lh-2lg);
-
+    font-size: 18px;
+    line-height: 26px;
     font-weight: 700;
   }
 
   .pret-2lg-semibold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-2lg);
-
-    line-height: var(--lh-2lg);
-
+    font-size: 18px;
+    line-height: 26px;
     font-weight: 600;
   }
 
   .pret-2lg-medium {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-2lg);
-
-    line-height: var(--lh-2lg);
-
+    font-size: 18px;
+    line-height: 26px;
     font-weight: 500;
   }
 
   .pret-2lg-regular {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-2lg);
-
-    line-height: var(--lh-2lg);
-
+    font-size: 18px;
+    line-height: 26px;
     font-weight: 400;
   }
 
   /* lg (16px) */
-
   .pret-lg-bold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-lg);
-
-    line-height: var(--lh-lg);
-
+    font-size: 16px;
+    line-height: 26px;
     font-weight: 700;
   }
 
   .pret-lg-semibold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-lg);
-
-    line-height: var(--lh-lg);
-
+    font-size: 16px;
+    line-height: 26px;
     font-weight: 600;
   }
 
   .pret-lg-medium {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-lg);
-
-    line-height: var(--lh-lg);
-
+    font-size: 16px;
+    line-height: 26px;
     font-weight: 500;
   }
 
   .pret-lg-regular {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-lg);
-
-    line-height: var(--lh-lg);
-
+    font-size: 16px;
+    line-height: 26px;
     font-weight: 400;
   }
 
   /* 14px variants (lg-14px-bold / md-14px-*) */
-
   .pret-14-bold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-14);
-
-    line-height: var(--lh-14);
-
+    font-size: 14px;
+    line-height: 24px;
     font-weight: 700;
   }
 
   .pret-14-semibold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-14);
-
-    line-height: var(--lh-14);
-
+    font-size: 14px;
+    line-height: 24px;
     font-weight: 600;
   }
 
   .pret-14-medium {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-14);
-
-    line-height: var(--lh-14);
-
+    font-size: 14px;
+    line-height: 24px;
     font-weight: 500;
   }
 
   .pret-14-regular {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-14);
-
-    line-height: var(--lh-14);
-
+    font-size: 14px;
+    line-height: 24px;
     font-weight: 400;
   }
 
   /* 13px */
-
   .pret-13-semibold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-13);
-
-    line-height: var(--lh-13);
-
+    font-size: 13px;
+    line-height: 22px;
     font-weight: 600;
   }
 
   .pret-13-medium {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-13);
-
-    line-height: var(--lh-13);
-
+    font-size: 13px;
+    line-height: 22px;
     font-weight: 500;
   }
 
   /* 12px (xs) */
-
   .pret-xs-semibold {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-12);
-
-    line-height: var(--lh-xs-20); /* 20px */
-
+    font-size: 12px;
+    line-height: 20px; /* 20px */
     font-weight: 600;
   }
 
   .pret-xs-medium {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-12);
-
-    line-height: var(--lh-xs-18); /* 18px */
-
+    font-size: 12px;
+    line-height: 18px; /* 18px */
     font-weight: 500;
   }
 
   .pret-xs-regular {
     font-family: var(--font-family-pret);
-
-    font-size: var(--fs-12);
-
-    line-height: var(--lh-xs-18); /* 18px */
-
+    font-size: 12px;
+    line-height: 18px; /* 18px */
     font-weight: 400;
   }
+}
+
+/* =======================================================
+   responsive font overrides (media-query) for pret-* utils
+   Targets Tailwind-style variant classes like "max-md:pret-xxx"
+   Matches:
+     --breakpoint-md: 1023px  (태블릿 이하)
+     --breakpoint-sm: 767px   (모바일 이하)
+   ======================================================= */
+
+/* ------------------------ Tablet 이하 (<=1023px) ------------------------ */
+@media (max-width: 1023px) {
+
+  /* 3xl (32px) */
+  .max-md\:pret-3xl-bold,
+  .max-md\:pret-3xl-semibold {
+    font-family: var(--font-family-pret);
+    font-size: 30px;
+    line-height: 44px;
+  }
+  .max-md\:pret-3xl-bold { font-weight: 700; }
+  .max-md\:pret-3xl-semibold { font-weight: 600; }
+
+  /* 2xl (24px) */
+  .max-md\:pret-2xl-bold,
+  .max-md\:pret-2xl-semibold,
+  .max-md\:pret-2xl-medium,
+  .max-md\:pret-2xl-regular {
+    font-family: var(--font-family-pret);
+    font-size: 22px;
+    line-height: 30px;
+  }
+  .max-md\:pret-2xl-bold { font-weight: 700; }
+  .max-md\:pret-2xl-semibold { font-weight: 600; }
+  .max-md\:pret-2xl-medium { font-weight: 500; }
+  .max-md\:pret-2xl-regular { font-weight: 400; }
+
+  /* xl (20px) */
+  .max-md\:pret-xl-bold,
+  .max-md\:pret-xl-semibold,
+  .max-md\:pret-xl-medium,
+  .max-md\:pret-xl-regular {
+    font-family: var(--font-family-pret);
+    font-size: 18px;
+    line-height: 28px;
+  }
+  .max-md\:pret-xl-bold { font-weight: 700; }
+  .max-md\:pret-xl-semibold { font-weight: 600; }
+  .max-md\:pret-xl-medium { font-weight: 500; }
+  .max-md\:pret-xl-regular { font-weight: 400; }
+
+  /* 2lg (18px) */
+  .max-md\:pret-2lg-bold,
+  .max-md\:pret-2lg-semibold,
+  .max-md\:pret-2lg-medium,
+  .max-md\:pret-2lg-regular {
+    font-family: var(--font-family-pret);
+    font-size: 17px;
+    line-height: 24px;
+  }
+  .max-md\:pret-2lg-bold { font-weight: 700; }
+  .max-md\:pret-2lg-semibold { font-weight: 600; }
+  .max-md\:pret-2lg-medium { font-weight: 500; }
+  .max-md\:pret-2lg-regular { font-weight: 400; }
+
+  /* lg (16px) */
+  .max-md\:pret-lg-bold,
+  .max-md\:pret-lg-semibold,
+  .max-md\:pret-lg-medium,
+  .max-md\:pret-lg-regular {
+    font-family: var(--font-family-pret);
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .max-md\:pret-lg-bold { font-weight: 700; }
+  .max-md\:pret-lg-semibold { font-weight: 600; }
+  .max-md\:pret-lg-medium { font-weight: 500; }
+  .max-md\:pret-lg-regular { font-weight: 400; }
+
+  /* 14px variants */
+  .max-md\:pret-14-bold,
+  .max-md\:pret-14-semibold,
+  .max-md\:pret-14-medium,
+  .max-md\:pret-14-regular {
+    font-family: var(--font-family-pret);
+    font-size: 13px;
+    line-height: 22px;
+  }
+  .max-md\:pret-14-bold { font-weight: 700; }
+  .max-md\:pret-14-semibold { font-weight: 600; }
+  .max-md\:pret-14-medium { font-weight: 500; }
+  .max-md\:pret-14-regular { font-weight: 400; }
+
+  /* 13px */
+  .max-md\:pret-13-semibold,
+  .max-md\:pret-13-medium {
+    font-family: var(--font-family-pret);
+    font-size: 12px;
+    line-height: 20px;
+  }
+  .max-md\:pret-13-semibold { font-weight: 600; }
+  .max-md\:pret-13-medium { font-weight: 500; }
+
+  /* xs (12px) */
+  .max-md\:pret-xs-semibold,
+  .max-md\:pret-xs-medium,
+  .max-md\:pret-xs-regular {
+    font-family: var(--font-family-pret);
+    font-size: 11px;
+    line-height: 18px;
+  }
+  .max-md\:pret-xs-semibold { font-weight: 600; }
+  .max-md\:pret-xs-medium { font-weight: 500; }
+  .max-md\:pret-xs-regular { font-weight: 400; }
+
+}
+
+/* ------------------------ Mobile 이하 (<=767px) ------------------------ */
+@media (max-width: 767px) {
+
+  /* 3xl (32px) */
+  .max-sm\:pret-3xl-bold,
+  .max-sm\:pret-3xl-semibold {
+    font-family: var(--font-family-pret);
+    font-size: 28px;
+    line-height: 40px;
+  }
+  .max-sm\:pret-3xl-bold { font-weight: 700; }
+  .max-sm\:pret-3xl-semibold { font-weight: 600; }
+
+  /* 2xl (24px) */
+  .max-sm\:pret-2xl-bold,
+  .max-sm\:pret-2xl-semibold,
+  .max-sm\:pret-2xl-medium,
+  .max-sm\:pret-2xl-regular {
+    font-family: var(--font-family-pret);
+    font-size: 20px;
+    line-height: 28px;
+  }
+  .max-sm\:pret-2xl-bold { font-weight: 700; }
+  .max-sm\:pret-2xl-semibold { font-weight: 600; }
+  .max-sm\:pret-2xl-medium { font-weight: 500; }
+  .max-sm\:pret-2xl-regular { font-weight: 400; }
+
+  /* xl (20px) */
+  .max-sm\:pret-xl-bold,
+  .max-sm\:pret-xl-semibold,
+  .max-sm\:pret-xl-medium,
+  .max-sm\:pret-xl-regular {
+    font-family: var(--font-family-pret);
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .max-sm\:pret-xl-bold { font-weight: 700; }
+  .max-sm\:pret-xl-semibold { font-weight: 600; }
+  .max-sm\:pret-xl-medium { font-weight: 500; }
+  .max-sm\:pret-xl-regular { font-weight: 400; }
+
+  /* 2lg (18px) */
+  .max-sm\:pret-2lg-bold,
+  .max-sm\:pret-2lg-semibold,
+  .max-sm\:pret-2lg-medium,
+  .max-sm\:pret-2lg-regular {
+    font-family: var(--font-family-pret);
+    font-size: 16px;
+    line-height: 22px;
+  }
+  .max-sm\:pret-2lg-bold { font-weight: 700; }
+  .max-sm\:pret-2lg-semibold { font-weight: 600; }
+  .max-sm\:pret-2lg-medium { font-weight: 500; }
+  .max-sm\:pret-2lg-regular { font-weight: 400; }
+
+  /* lg (16px) */
+  .max-sm\:pret-lg-bold,
+  .max-sm\:pret-lg-semibold,
+  .max-sm\:pret-lg-medium,
+  .max-sm\:pret-lg-regular {
+    font-family: var(--font-family-pret);
+    font-size: 14px;
+    line-height: 22px;
+  }
+  .max-sm\:pret-lg-bold { font-weight: 700; }
+  .max-sm\:pret-lg-semibold { font-weight: 600; }
+  .max-sm\:pret-lg-medium { font-weight: 500; }
+  .max-sm\:pret-lg-regular { font-weight: 400; }
+
+  /* 14px variants */
+  .max-sm\:pret-14-bold,
+  .max-sm\:pret-14-semibold,
+  .max-sm\:pret-14-medium,
+  .max-sm\:pret-14-regular {
+    font-family: var(--font-family-pret);
+    font-size: 13px;
+    line-height: 20px;
+  }
+  .max-sm\:pret-14-bold { font-weight: 700; }
+  .max-sm\:pret-14-semibold { font-weight: 600; }
+  .max-sm\:pret-14-medium { font-weight: 500; }
+  .max-sm\:pret-14-regular { font-weight: 400; }
+
+  /* 13px */
+  .max-sm\:pret-13-semibold,
+  .max-sm\:pret-13-medium {
+    font-family: var(--font-family-pret);
+    font-size: 12px;
+    line-height: 18px;
+  }
+  .max-sm\:pret-13-semibold { font-weight: 600; }
+  .max-sm\:pret-13-medium { font-weight: 500; }
+
+  /* xs (12px) */
+  .max-sm\:pret-xs-semibold,
+  .max-sm\:pret-xs-medium,
+  .max-sm\:pret-xs-regular {
+    font-family: var(--font-family-pret);
+    font-size: 11px;
+    line-height: 16px;
+  }
+  .max-sm\:pret-xs-semibold { font-weight: 600; }
+  .max-sm\:pret-xs-medium { font-weight: 500; }
+  .max-sm\:pret-xs-regular { font-weight: 400; }
+
 }

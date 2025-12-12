@@ -7,21 +7,17 @@ interface ProfileAvatarProps {
   alt?: string;
   size?: AvatarSize;
   className?: string;
-  /** 반응형 크기 적용 여부 (기본: 비활성) */
   responsive?: boolean;
 }
 
 const sizeMap: Record<AvatarSize, { container: string; image: number }> = {
-  sm: { container: "w-10 h-10", image: 40 },
-  md: { container: "w-14 h-14", image: 56 },
-  lg: { container: "w-20 h-20", image: 80 },
+  sm: { container: "w-[64px] h-[64px]", image: 64 },
+  md: { container: "w-[70px] h-[70px]", image: 70 },
+  lg: { container: "w-[100px] h-[100px]", image: 100 },
 };
 
-const responsiveMap: Record<AvatarSize, string> = {
-  sm: "sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16",
-  md: "sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-20 lg:h-20",
-  lg: "sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-24 lg:h-24",
-};
+const responsiveClasses =
+  "sm:w-[64px] sm:h-[64px] md:w-[70px] md:h-[70px] lg:w-[100px] lg:h-[100px]";
 
 export default function ProfileAvatar({
   src = "/assets/image/img-profile.png",
@@ -37,7 +33,8 @@ export default function ProfileAvatar({
       className={`
         relative
         ${container}
-        ${responsive ? responsiveMap[size] : ""}
+        ${responsive ? responsiveClasses : ""}
+        border-2 border-black-300
         rounded-full
         overflow-hidden
         bg-background-100 
