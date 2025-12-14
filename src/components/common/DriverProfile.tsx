@@ -6,6 +6,7 @@ interface DriverProfileProps {
   profileImage: string;
   avatarSize?: "sm" | "md" | "lg";
   avatarResponsive?: boolean;
+  ratingDisplay?: "numeric" | "stars";
   rating?: number;
   reviewCount?: number;
   experience?: number;
@@ -22,6 +23,7 @@ export default function DriverProfile({
   profileImage,
   avatarSize = "md",
   avatarResponsive = true,
+  ratingDisplay = "numeric",
   rating,
   reviewCount,
   experience,
@@ -34,24 +36,49 @@ export default function DriverProfile({
 }: DriverProfileProps) {
   const metaItems: React.ReactNode[] = [];
 
-  if (rating !== undefined || reviewCount !== undefined) {
-    metaItems.push(
-      <span className="flex items-center gap-1" key="rating">
-        <Image
-          src="/assets/icon/ic-star-active.svg"
-          alt="별점"
-          width={16}
-          height={16}
-        />
-        <span className="text-black-300 pret-14-semibold">
-          {rating !== undefined ? rating.toFixed(1) : "-"}
-        </span>
-        <span className="text-gray-300">
-          ({reviewCount !== undefined ? reviewCount : "-"})
-        </span>
-      </span>
-    );
-  }
+  const hasRating = rating !== undefined || reviewCount !== undefined;
+  const score = rating ?? 0;
+  const stars = Array.from({ length: 5 }, (_, idx) => idx < Math.round(score));
+
+  const ratingNode = hasRating ? (
+    <span className="flex items-center gap-1" key="rating">
+      {ratingDisplay === "stars" ? (
+        <>
+          {stars.map((filled, idx) => (
+            <Image
+              key={idx}
+              src={
+                filled
+                  ? "/assets/icon/ic-star-active.svg"
+                  : "/assets/icon/ic-star-inactive.svg"
+              }
+              alt="별점"
+              width={16}
+              height={16}
+            />
+          ))}
+          {reviewCount !== undefined && (
+            <span className="text-gray-300">({reviewCount})</span>
+          )}
+        </>
+      ) : (
+        <>
+          <Image
+            src="/assets/icon/ic-star-active.svg"
+            alt="별점"
+            width={16}
+            height={16}
+          />
+          <span className="text-black-300 pret-14-semibold">
+            {rating !== undefined ? rating.toFixed(1) : "-"}
+          </span>
+          <span className="text-gray-300">
+            ({reviewCount !== undefined ? reviewCount : "-"})
+          </span>
+        </>
+      )}
+    </span>
+  ) : null;
 
   if (experience !== undefined) {
     metaItems.push(
@@ -139,6 +166,12 @@ export default function DriverProfile({
                   </span>
                 </div>
               )}
+            </div>
+          )}
+
+          {ratingNode && (
+            <div className="hidden lg:flex items-center gap-1">
+              {ratingNode}
             </div>
           )}
 
