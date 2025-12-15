@@ -1,0 +1,90 @@
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  width: 100%;
+  padding: 24px 32px; // md 기본값
+
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+
+  cursor: pointer;
+  text-align: left;
+  box-shadow: none;
+}
+
+/* hover */
+.checkbox:hover {
+  border-color: #1b92ff;
+}
+
+/* ===== size ===== */
+
+.sm {
+  max-width: 280px; // Figma
+  padding: 14px 16px; // Figma
+}
+
+.md {
+  max-width: 560px;
+  padding: 24px 32px;
+}
+
+/* checked */
+.checked {
+  border-color: #1b92ff;
+  background: #f5faff;
+  box-shadow: 4px 4px 10px rgba(195, 217, 242, 0.2);
+}
+
+/* icon */
+.icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  flex-shrink: 0;
+
+  position: relative;
+}
+
+.checked .icon {
+  background: #1b92ff;
+  border-color: #1b92ff;
+}
+
+.checked .icon::after {
+  content: "";
+  position: absolute;
+
+  /* 체크표시 크기/위치 (필요하면 미세조정) */
+  width: 6px;
+  height: 10px;
+  left: 5.5px;
+  top: 2px;
+
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  transform: rotate(45deg);
+  box-sizing: border-box;
+}
+/* label */
+.label {
+  font-family: Pretendard;
+  font-weight: 600;
+  color: #000;
+  line-height: 24px;
+  word-break: keep-all;
+}
+
+/* size별 텍스트 */
+.sm .label {
+  font-size: 14px;
+}
+
+.md .label {
+  font-size: 16px;
+}
