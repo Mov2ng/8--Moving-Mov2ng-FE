@@ -2,6 +2,7 @@
 
 import DriverProfile from "@/components/common/DriverProfile";
 import EditButton from "@/components/common/EditButton";
+import Image from "next/image";
 
 interface ProfileEditCardProps {
   name: string;
