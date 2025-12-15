@@ -20,7 +20,7 @@ export default function ReviewList({
     <article
       className={`
         w-full max-w-[955px] bg-white
-        flex flex-col gap-6 
+        flex flex-col gap-6 max-md:gap-4
         py-8
         ${!isLast ? "border-b border-[#F2F2F2]" : ""}
       `}
@@ -28,13 +28,13 @@ export default function ReviewList({
       {/* Header Section */}
       <div className="flex flex-col gap-2">
         {/* User Info Row */}
-        <div className="flex items-center gap-[14px]">
-          <span className="pret-2lg-regular text-black-400">{username}</span>
+        <div className="flex items-center gap-[14px] max-md:gap-3">
+          <span className="pret-2lg-regular text-black-400 max-md:pret-14-regular">{username}</span>
 
           {/* Divider */}
-          <div className="w-px h-[14px] bg-line-200" />
+          <div className="w-px h-[14px] bg-line-200 max-md:h-3" />
 
-          <time className="pret-2lg-regular text-gray-300" dateTime={date}>
+          <time className="pret-2lg-regular text-gray-300 max-md:pret-14-regular" dateTime={date}>
             {date}
           </time>
         </div>
@@ -44,7 +44,7 @@ export default function ReviewList({
       </div>
 
       {/* Review Content */}
-      <p className="pret-2lg-regular text-[#2B2B2B] whitespace-pre-line">
+      <p className="pret-2lg-regular text-[#2B2B2B] whitespace-pre-line max-md:pret-14-regular">
         {content}
       </p>
     </article>
