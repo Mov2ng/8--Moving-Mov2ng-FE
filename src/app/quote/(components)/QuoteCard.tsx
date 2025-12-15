@@ -1,6 +1,6 @@
 import DriverProfile from "@/components/common/DriverProfile";
 import MovingTypeChip from "@/components/chips/MovingTypeChip";
-import Button from "@/components/atom/button";
+import Button from "@/components/comon/button";
 
 interface QuoteCardProps {
   // 기사님 정보
@@ -137,7 +137,7 @@ export default function QuoteCard({
       </div>
 
       {/* 프로필 영역 */}
-      <div className="mb-4 pb-4 border-b border-line-100">
+      <div className="mb-4 pb-4">
         <DriverProfile
           name={name}
           profileImage={profileImage}
@@ -158,14 +158,14 @@ export default function QuoteCard({
           </span>
           <span className="text-black-400">{movingDate}</span>
         </div>
-        <span className="hidden lg:inline text-gray-300 self-center">|</span>
+        <span className="hidden lg:inline text-line-200 self-center">|</span>
         <div className="flex items-center gap-2">
           <span className="px-2 py-1 bg-background-400 text-gray-500 rounded">
             출발
           </span>
           <span className="text-black-400">{departure}</span>
         </div>
-        <span className="text-gray-300 self-center">|</span>
+        <span className="text-line-200 self-center">|</span>
         <div className="flex items-center gap-2">
           <span className="px-2 py-1 bg-background-400 text-gray-500 rounded">
             도착
