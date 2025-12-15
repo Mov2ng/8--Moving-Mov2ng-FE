@@ -1,6 +1,6 @@
 import DriverProfile from "@/components/common/DriverProfile";
 import MovingTypeChip from "@/components/chips/MovingTypeChip";
-import Button from "@/components/atom/button";
+import Button from "@/components/comon/button";
 
 interface QuoteCardProps {
   // 기사님 정보
