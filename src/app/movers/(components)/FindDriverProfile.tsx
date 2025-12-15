@@ -1,7 +1,8 @@
 import React from "react";
 import Image from "next/image";
 import RatingPoints from "./RatingPoints";
-export default function DriverProfile({ name, likeCount, career, confirmedCount, imageSrc, size = 'md' }: { name: string, likeCount: number, career: number, confirmedCount: number, imageSrc?: string, size?: 'sm' | 'md' }) {
+
+export default function FindDriverProfile({ name, likeCount, career, confirmedCount, imageSrc, size = 'md' }: { name: string, likeCount: number, career: number, confirmedCount: number, imageSrc?: string, size?: 'sm' | 'md' }) {
   return (
     <div className={`flex items-center max-w-[907px] w-full h-[92px] max-md:h-[78px] bg-gray-50 border border-line-100 rounded-md
         ${size === 'sm' ? 'gap-3 p-[10px]' : 'gap-6 px-4.5 py-4 max-md:p-[10px] max-md:gap-3'}`}>

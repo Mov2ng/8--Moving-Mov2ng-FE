@@ -11,6 +11,7 @@ interface ButtonProps {
   color?: string;          
   borderColor?: string;    
   backgroundColor?: string; 
+  className?: string;
 }
 
 export default function Button({
@@ -19,6 +20,7 @@ export default function Button({
   onClick,
   disabled = false,
   width = "auto",
+  className,
 }: ButtonProps) {
 
   // 색상 변수 선언
@@ -30,6 +32,7 @@ export default function Button({
     padding: "16px",
     borderRadius: "16px",
     fontSize: "20px",
+    fontWeight: "600",
     width,
     cursor: disabled ? "not-allowed" : "pointer",
     transition: "0.2s ease",
@@ -49,7 +52,7 @@ export default function Button({
   const style = variant === "solid" ? solidStyle : outlineStyle;
 
   return (
-    <button style={{ ...baseStyle, ...style }} onClick={onClick} disabled={disabled}>
+    <button style={{ ...baseStyle, ...style }} onClick={onClick} disabled={disabled} className={`${className}`}>
       {text}
     </button>
   );
