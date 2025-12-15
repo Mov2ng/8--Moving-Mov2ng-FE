@@ -1,3 +1,4 @@
+"use client";
 import React from 'react';
 
 interface PaginationProps {
@@ -7,7 +8,7 @@ interface PaginationProps {
   onChange?: (nextPage: number) => void;
 }
 
-const Pagination: React.FC<PaginationProps> = ({
+export const Pagination: React.FC<PaginationProps> = ({
   page = 1,
   pageSize = 15,
   totalCount = 0,

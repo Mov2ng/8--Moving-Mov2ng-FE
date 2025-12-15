@@ -1,6 +1,6 @@
 import MovingTypeChip from '@/components/chips/MovingTypeChip'
 import React from 'react'
-import DriverProfile from './FindDriverProfile'
+import FindDriverProfile from './FindDriverProfile'
 
 export default function DriverList({ size = 'md', name, likeCount, career, confirmedCount, imageSrc }: { size?: 'sm' | 'md', name: string, likeCount: number, career: number, confirmedCount: number, imageSrc?: string }) {
   return (
@@ -20,7 +20,7 @@ export default function DriverList({ size = 'md', name, likeCount, career, confi
         />
       </div>
       <div className={`w-full text-black-300 ${size === 'sm' ? 'pret-14-semibold' : 'pret-2xl-semibold max-md:pret-14-semibold'}`} >고객님의 물품을 안전하게 운송해 드립니다. (한줄소개란)</div>
-      <DriverProfile name={name} likeCount={likeCount} career={career} confirmedCount={confirmedCount} imageSrc={imageSrc} size={size} />
+      <FindDriverProfile name={name} likeCount={likeCount} career={career} confirmedCount={confirmedCount} imageSrc={imageSrc} size={size} />
     </div>
   )
 }
