@@ -6,7 +6,6 @@
  * - 쿼리 파라미터 자동 처리
  * - 에러 처리 통일
  */
-
 import { BASE_URL } from "@/constants/api.constants";
 
 // 기본 url
@@ -74,7 +73,7 @@ export async function apiClient(endpoint: string, options: ApiRequestOptions) {
     const response = await fetch(url, {
       method,
       headers: combinedHeaders,
-      credentials: "include", // refresh token
+      credentials: "include", // refreshToken 쿠키 자동 전송
       ...(jsonBody ? { body: jsonBody } : {}),
     });
 
