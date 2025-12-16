@@ -15,7 +15,7 @@ export default function PasswordInput({
 }) {
   const [visible, setVisible] = useState(false);
   return (
-    <div className="flex item-center">
+    <div className="flex items-center">
       <input
         {...register} // 속성 spread해 RHF 연결
         placeholder={placeholder}
@@ -23,12 +23,13 @@ export default function PasswordInput({
       />
       <button
         type="button"
+        aria-label={visible ? "비밀번호 숨기기" : "비밀번호 보기"}
         onClick={() => setVisible((prev) => !prev)}
-        className={
-          "size-6 bg-center bg-no-repeat " + visible
-            ? "bg-[url(/assets/icon/ic-visibiity-off.svg)]"
-            : "bg-[url(/assets/icon/ic-visibiity-on.svg)]"
-        }
+        className={`size-6 bg-center bg-no-repeat ${
+          visible
+            ? 'bg-[url(public/assets/icon/ic-visibility-off.svg)]'
+            : 'bg-[url(public/assets/icon/ic-visibility-on.svg)]'
+        }`}
       ></button>
     </div>
   );
