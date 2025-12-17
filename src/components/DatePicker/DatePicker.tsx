@@ -6,19 +6,17 @@ import ReactDatePicker, {
 } from "react-datepicker";
 import { ko } from "date-fns/locale";
 import { registerLocale } from "react-datepicker";
-//import "react-datepicker/dist/react-datepicker.css";
-import styles from "./DatePicker.module.scss";
+
+registerLocale("ko", ko);
 
 type Size = "sm" | "md";
 
 export type DatePickerProps = {
-  size?: Size; // sm / md
-  value: Date | null; // 선택된 날짜
-  onChange: (date: Date) => void; // 날짜 클릭 시
-  onConfirm?: () => void; // 선택완료 버튼 클릭 시
+  size?: Size;
+  value: Date | null;
+  onChange: (date: Date) => void;
+  onConfirm?: () => void;
 };
-
-registerLocale("ko", ko);
 
 function formatMonthLabel(date: Date) {
   const year = date.getFullYear();
@@ -34,46 +32,55 @@ export default function DatePicker({
 }: DatePickerProps) {
   const handleChange = useCallback(
     (date: Date | null) => {
-      if (!date) return;
-      onChange(date);
+      if (date) onChange(date);
     },
     [onChange]
   );
 
   const hasValue = !!value;
-  const confirmClass = hasValue
-    ? styles.confirmButton
-    : styles.confirmButtonDisabled;
+
+  const sizeCls =
+    size === "sm"
+      ? "w-[320px] text-base"
+      : "w-[640px] text-xl";
 
   return (
-    <div className={`${styles.calendar} ${styles[size]}`}>
+    <div
+      className={[
+        "flex flex-col items-center justify-center gap-6",
+        "rounded-2xl bg-white py-6",
+        "shadow-[2px_2px_10px_rgba(224,224,224,0.2)]",
+        sizeCls,
+      ].join(" ")}
+    >
       <ReactDatePicker
         inline
         locale="ko"
         selected={value}
         onChange={handleChange}
-        // 이 클래스 기준으로 내부 react-datepicker DOM에 :global 스타일 입힘
-        calendarClassName={styles.inner}
+        calendarClassName="react-datepicker"
         renderCustomHeader={({
           date,
           decreaseMonth,
           increaseMonth,
         }: ReactDatePickerCustomHeaderProps) => (
-          <header className={styles.header}>
+          <header className="flex w-full items-center justify-between px-6">
             <button
               type="button"
-              className={styles.navButton}
               onClick={decreaseMonth}
-              aria-label="이전 달"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400"
             >
               <img src="/icons/left.svg" alt="이전 달" />
             </button>
-            <div className={styles.monthLabel}>{formatMonthLabel(date)}</div>
+
+            <div className="flex-1 text-center font-semibold">
+              {formatMonthLabel(date)}
+            </div>
+
             <button
               type="button"
-              className={styles.navButton}
               onClick={increaseMonth}
-              aria-label="다음 달"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400"
             >
               <img src="/icons/right.svg" alt="다음 달" />
             </button>
@@ -83,9 +90,14 @@ export default function DatePicker({
 
       <button
         type="button"
-        className={confirmClass}
         disabled={!hasValue || !onConfirm}
         onClick={onConfirm}
+        className={[
+          "h-16 w-[calc(100%-48px)] rounded-2xl font-semibold",
+          hasValue
+            ? "bg-[#1b92ff] text-white"
+            : "cursor-not-allowed bg-gray-300 text-white",
+        ].join(" ")}
       >
         선택완료
       </button>
