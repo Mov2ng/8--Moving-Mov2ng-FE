@@ -27,5 +27,6 @@ const StarIcon = ({
     alt="star"
     width={size}
     height={size}
+    className={`size-[${size}px] max-md:size-[${size / 2}px]`}
   />
 );
