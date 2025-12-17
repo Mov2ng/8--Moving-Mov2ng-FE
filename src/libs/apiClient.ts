@@ -92,7 +92,6 @@ export async function apiClient(endpoint: string, options: ApiRequestOptions) {
     return response.json().catch(() => ({})); // 런타임 오류 안전장치
   } catch (error) {
     // 12. catch에서 에러 처리
-    console.error(error);
     throw error;
   }
 }
