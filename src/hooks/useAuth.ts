@@ -8,16 +8,15 @@ import { userService } from "@/services/userService";
 import { useApiMutation } from "./useApiMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "./useApiQuery";
-import { setCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 
 export function useSignup() {
   const router = useRouter();
 
   return useApiMutation({
+    mutationKey: ["signup"],
     mutationFn: userService.signup,
     onSuccess: () => {
-
       alert("회원가입이 완료되었습니다. 로그인 해주세요.");
       router.push("/login");
     },
@@ -32,16 +31,16 @@ export function useLogin() {
   const router = useRouter();
 
   return useApiMutation({
+    mutationKey: ["login"],
     mutationFn: userService.login,
     onSuccess: (data) => {
       // 1. api 응답에서 accessToken get
       const { accessToken } = data;
 
-      // 2. 쿠키에 토큰 저장
-      setCookie("accessToken", accessToken, {
-        path: "/", // 쿠키가 사용될 경로
-        maxAge: 60 * 60, // 1시간 (초 단위)
-      });
+      // 2. localStorage에 accessToken 저장 (apiClient에서 읽기 위해)
+      if (typeof window !== "undefined" && accessToken) {
+        localStorage.setItem("accessToken", accessToken);
+      }
 
       // 3. 사용자 정보(me) 쿼리 무효화해 최신 정보로 업데이트
       queryClient.invalidateQueries({ queryKey: ["me"] });
@@ -67,6 +66,7 @@ export function useLogout() {
   const queryClient = useQueryClient();
 
   return useApiMutation({
+    mutationKey: ["logout"],
     mutationFn: userService.logout,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["me"] });
@@ -78,8 +78,14 @@ export function useRefresh() {
   const queryClient = useQueryClient();
 
   return useApiMutation({
+    mutationKey: ["refresh"],
     mutationFn: userService.refresh,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // refresh 성공 시 새 accessToken을 localStorage에 저장
+      const { accessToken } = data;
+      if (typeof window !== "undefined" && accessToken) {
+        localStorage.setItem("accessToken", accessToken);
+      }
       queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });

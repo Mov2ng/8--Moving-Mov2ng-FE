@@ -11,17 +11,19 @@ import { apiClient } from "@/libs/apiClient";
 
 export const userService = {
   signup: (data: {
+    role: string;
     name: string;
     email: string;
     phoneNum: string;
     password: string;
+    passwordConfirm: string;
   }) => {
     return apiClient("/auth/signup", {
       method: "POST",
       body: data,
     });
   },
-  login: (data: { email: string; password: string }) => {
+  login: (data: { email: string; password: string; role: string }) => {
     return apiClient("/auth/login", {
       method: "POST",
       body: data,

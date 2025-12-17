@@ -9,8 +9,11 @@ import z from "zod";
  */
 export const signupSchema = z
   .object({
+    role: z.enum(["USER", "DRIVER"], {
+      message: "role은 'USER' 또는 'DRIVER'만 가능합니다",
+    }),
     name: z.string().min(1, "이름을 입력해 주세요").max(50),
-    email: z.string().email("유효한 이메일을 입력해 주세요"),
+    email: z.email("유효한 이메일을 입력해 주세요"),
     phoneNum: z
       .string()
       .regex(/^[0-9]+$/, "숫자만 입력해 주세요")
@@ -39,8 +42,11 @@ export type SignupFormValues = z.infer<typeof signupSchema>;
  * - email, password
  */
 export const loginSchema = z.object({
-  email: z.string().email("유효한 이메일을 입력해 주세요"),
-  password: z.string(),
+  role: z.enum(["USER", "DRIVER"], {
+    message: "role은 'USER' 또는 'DRIVER'만 가능합니다",
+  }),
+  email: z.email("유효한 이메일을 입력해 주세요"),
+  password: z.string().min(1, "비밀번호를 입력해 주세요"),
 });
 
 // zod 스키마에서 ts 타입으로 변환

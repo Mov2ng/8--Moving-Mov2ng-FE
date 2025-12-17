@@ -3,10 +3,10 @@
 import { useLogin } from "@/hooks/useAuth";
 import { LoginFormValues, loginSchema } from "@/libs/validation/authSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import FormField from "../form/FormField";
+import FormField from "../../../components/form/FormField";
 import { parseServerError } from "@/utils/parseServerError";
+import RoleToggle from "../../../components/toggle/RoleToggle";
 
 /**
  * 로그인 폼
@@ -14,8 +14,6 @@ import { parseServerError } from "@/utils/parseServerError";
  * - 로딩/에러 처리 포함
  */
 export default function LoginForm() {
-  const router = useRouter();
-
   const {
     register,
     handleSubmit,
@@ -23,7 +21,6 @@ export default function LoginForm() {
     setError,
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
   });
 
   // useLogin hook: onSuccess에서 accessToken 저장 + me invalidate 처리
@@ -63,12 +60,13 @@ export default function LoginForm() {
       }
 
       // 알 수 없는 오류 처리
-      alert("회원가입 중 알 수 없는 오류가 발생했습니다.");
+      alert("로그인 중 알 수 없는 오류가 발생했습니다.");
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
+      <RoleToggle register={register("role")} error={errors.role} />
       <FormField
         label="이메일"
         register={register("email")}
