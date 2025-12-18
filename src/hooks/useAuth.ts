@@ -35,7 +35,7 @@ export function useLogin() {
     mutationFn: userService.login,
     onSuccess: (data) => {
       // 1. api 응답에서 accessToken get
-      const { accessToken } = data;
+      const { accessToken } = data.data;
 
       // 2. localStorage에 accessToken 저장 (apiClient에서 읽기 위해)
       if (typeof window !== "undefined" && accessToken) {
@@ -46,6 +46,7 @@ export function useLogin() {
       queryClient.invalidateQueries({ queryKey: ["me"] });
 
       // 4. 메인 페이지로 리디렉션합니다.
+      alert("로그인이 완료되었습니다");
       router.push("/");
     },
     onError: (error) => {
@@ -82,7 +83,7 @@ export function useRefresh() {
     mutationFn: userService.refresh,
     onSuccess: (data) => {
       // refresh 성공 시 새 accessToken을 localStorage에 저장
-      const { accessToken } = data;
+      const { accessToken } = data.data;
       if (typeof window !== "undefined" && accessToken) {
         localStorage.setItem("accessToken", accessToken);
       }
