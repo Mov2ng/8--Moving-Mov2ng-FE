@@ -11,6 +11,7 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css");
 
 @import "tailwindcss";
+@import "../styles/react-datepicker.css";
 
 /* ======================
    Tailwind CSS v4 Theme 설정 (커스텀 색상)
@@ -336,7 +337,6 @@ section {
 
 /* ------------------------ Tablet 이하 (<=1023px) ------------------------ */
 @media (max-width: 1023px) {
-
   /* 3xl (32px) */
   .max-md\:pret-3xl-bold,
   .max-md\:pret-3xl-semibold {
@@ -344,8 +344,12 @@ section {
     font-size: 30px;
     line-height: 44px;
   }
-  .max-md\:pret-3xl-bold { font-weight: 700; }
-  .max-md\:pret-3xl-semibold { font-weight: 600; }
+  .max-md\:pret-3xl-bold {
+    font-weight: 700;
+  }
+  .max-md\:pret-3xl-semibold {
+    font-weight: 600;
+  }
 
   /* 2xl (24px) */
   .max-md\:pret-2xl-bold,
@@ -356,10 +360,18 @@ section {
     font-size: 22px;
     line-height: 30px;
   }
-  .max-md\:pret-2xl-bold { font-weight: 700; }
-  .max-md\:pret-2xl-semibold { font-weight: 600; }
-  .max-md\:pret-2xl-medium { font-weight: 500; }
-  .max-md\:pret-2xl-regular { font-weight: 400; }
+  .max-md\:pret-2xl-bold {
+    font-weight: 700;
+  }
+  .max-md\:pret-2xl-semibold {
+    font-weight: 600;
+  }
+  .max-md\:pret-2xl-medium {
+    font-weight: 500;
+  }
+  .max-md\:pret-2xl-regular {
+    font-weight: 400;
+  }
 
   /* xl (20px) */
   .max-md\:pret-xl-bold,
@@ -370,10 +382,18 @@ section {
     font-size: 18px;
     line-height: 28px;
   }
-  .max-md\:pret-xl-bold { font-weight: 700; }
-  .max-md\:pret-xl-semibold { font-weight: 600; }
-  .max-md\:pret-xl-medium { font-weight: 500; }
-  .max-md\:pret-xl-regular { font-weight: 400; }
+  .max-md\:pret-xl-bold {
+    font-weight: 700;
+  }
+  .max-md\:pret-xl-semibold {
+    font-weight: 600;
+  }
+  .max-md\:pret-xl-medium {
+    font-weight: 500;
+  }
+  .max-md\:pret-xl-regular {
+    font-weight: 400;
+  }
 
   /* 2lg (18px) */
   .max-md\:pret-2lg-bold,
@@ -384,10 +404,18 @@ section {
     font-size: 17px;
     line-height: 24px;
   }
-  .max-md\:pret-2lg-bold { font-weight: 700; }
-  .max-md\:pret-2lg-semibold { font-weight: 600; }
-  .max-md\:pret-2lg-medium { font-weight: 500; }
-  .max-md\:pret-2lg-regular { font-weight: 400; }
+  .max-md\:pret-2lg-bold {
+    font-weight: 700;
+  }
+  .max-md\:pret-2lg-semibold {
+    font-weight: 600;
+  }
+  .max-md\:pret-2lg-medium {
+    font-weight: 500;
+  }
+  .max-md\:pret-2lg-regular {
+    font-weight: 400;
+  }
 
   /* lg (16px) */
   .max-md\:pret-lg-bold,
@@ -398,10 +426,18 @@ section {
     font-size: 15px;
     line-height: 24px;
   }
-  .max-md\:pret-lg-bold { font-weight: 700; }
-  .max-md\:pret-lg-semibold { font-weight: 600; }
-  .max-md\:pret-lg-medium { font-weight: 500; }
-  .max-md\:pret-lg-regular { font-weight: 400; }
+  .max-md\:pret-lg-bold {
+    font-weight: 700;
+  }
+  .max-md\:pret-lg-semibold {
+    font-weight: 600;
+  }
+  .max-md\:pret-lg-medium {
+    font-weight: 500;
+  }
+  .max-md\:pret-lg-regular {
+    font-weight: 400;
+  }
 
   /* 14px variants */
   .max-md\:pret-14-bold,
@@ -412,10 +448,18 @@ section {
     font-size: 13px;
     line-height: 22px;
   }
-  .max-md\:pret-14-bold { font-weight: 700; }
-  .max-md\:pret-14-semibold { font-weight: 600; }
-  .max-md\:pret-14-medium { font-weight: 500; }
-  .max-md\:pret-14-regular { font-weight: 400; }
+  .max-md\:pret-14-bold {
+    font-weight: 700;
+  }
+  .max-md\:pret-14-semibold {
+    font-weight: 600;
+  }
+  .max-md\:pret-14-medium {
+    font-weight: 500;
+  }
+  .max-md\:pret-14-regular {
+    font-weight: 400;
+  }
 
   /* 13px */
   .max-md\:pret-13-semibold,
@@ -424,8 +468,12 @@ section {
     font-size: 12px;
     line-height: 20px;
   }
-  .max-md\:pret-13-semibold { font-weight: 600; }
-  .max-md\:pret-13-medium { font-weight: 500; }
+  .max-md\:pret-13-semibold {
+    font-weight: 600;
+  }
+  .max-md\:pret-13-medium {
+    font-weight: 500;
+  }
 
   /* xs (12px) */
   .max-md\:pret-xs-semibold,
@@ -435,15 +483,19 @@ section {
     font-size: 11px;
     line-height: 18px;
   }
-  .max-md\:pret-xs-semibold { font-weight: 600; }
-  .max-md\:pret-xs-medium { font-weight: 500; }
-  .max-md\:pret-xs-regular { font-weight: 400; }
-
+  .max-md\:pret-xs-semibold {
+    font-weight: 600;
+  }
+  .max-md\:pret-xs-medium {
+    font-weight: 500;
+  }
+  .max-md\:pret-xs-regular {
+    font-weight: 400;
+  }
 }
 
 /* ------------------------ Mobile 이하 (<=767px) ------------------------ */
 @media (max-width: 767px) {
-
   /* 3xl (32px) */
   .max-sm\:pret-3xl-bold,
   .max-sm\:pret-3xl-semibold {
@@ -451,8 +503,12 @@ section {
     font-size: 28px;
     line-height: 40px;
   }
-  .max-sm\:pret-3xl-bold { font-weight: 700; }
-  .max-sm\:pret-3xl-semibold { font-weight: 600; }
+  .max-sm\:pret-3xl-bold {
+    font-weight: 700;
+  }
+  .max-sm\:pret-3xl-semibold {
+    font-weight: 600;
+  }
 
   /* 2xl (24px) */
   .max-sm\:pret-2xl-bold,
@@ -463,10 +519,18 @@ section {
     font-size: 20px;
     line-height: 28px;
   }
-  .max-sm\:pret-2xl-bold { font-weight: 700; }
-  .max-sm\:pret-2xl-semibold { font-weight: 600; }
-  .max-sm\:pret-2xl-medium { font-weight: 500; }
-  .max-sm\:pret-2xl-regular { font-weight: 400; }
+  .max-sm\:pret-2xl-bold {
+    font-weight: 700;
+  }
+  .max-sm\:pret-2xl-semibold {
+    font-weight: 600;
+  }
+  .max-sm\:pret-2xl-medium {
+    font-weight: 500;
+  }
+  .max-sm\:pret-2xl-regular {
+    font-weight: 400;
+  }
 
   /* xl (20px) */
   .max-sm\:pret-xl-bold,
@@ -477,10 +541,18 @@ section {
     font-size: 16px;
     line-height: 24px;
   }
-  .max-sm\:pret-xl-bold { font-weight: 700; }
-  .max-sm\:pret-xl-semibold { font-weight: 600; }
-  .max-sm\:pret-xl-medium { font-weight: 500; }
-  .max-sm\:pret-xl-regular { font-weight: 400; }
+  .max-sm\:pret-xl-bold {
+    font-weight: 700;
+  }
+  .max-sm\:pret-xl-semibold {
+    font-weight: 600;
+  }
+  .max-sm\:pret-xl-medium {
+    font-weight: 500;
+  }
+  .max-sm\:pret-xl-regular {
+    font-weight: 400;
+  }
 
   /* 2lg (18px) */
   .max-sm\:pret-2lg-bold,
@@ -491,10 +563,18 @@ section {
     font-size: 16px;
     line-height: 22px;
   }
-  .max-sm\:pret-2lg-bold { font-weight: 700; }
-  .max-sm\:pret-2lg-semibold { font-weight: 600; }
-  .max-sm\:pret-2lg-medium { font-weight: 500; }
-  .max-sm\:pret-2lg-regular { font-weight: 400; }
+  .max-sm\:pret-2lg-bold {
+    font-weight: 700;
+  }
+  .max-sm\:pret-2lg-semibold {
+    font-weight: 600;
+  }
+  .max-sm\:pret-2lg-medium {
+    font-weight: 500;
+  }
+  .max-sm\:pret-2lg-regular {
+    font-weight: 400;
+  }
 
   /* lg (16px) */
   .max-sm\:pret-lg-bold,
@@ -505,10 +585,18 @@ section {
     font-size: 14px;
     line-height: 22px;
   }
-  .max-sm\:pret-lg-bold { font-weight: 700; }
-  .max-sm\:pret-lg-semibold { font-weight: 600; }
-  .max-sm\:pret-lg-medium { font-weight: 500; }
-  .max-sm\:pret-lg-regular { font-weight: 400; }
+  .max-sm\:pret-lg-bold {
+    font-weight: 700;
+  }
+  .max-sm\:pret-lg-semibold {
+    font-weight: 600;
+  }
+  .max-sm\:pret-lg-medium {
+    font-weight: 500;
+  }
+  .max-sm\:pret-lg-regular {
+    font-weight: 400;
+  }
 
   /* 14px variants */
   .max-sm\:pret-14-bold,
@@ -519,10 +607,18 @@ section {
     font-size: 13px;
     line-height: 20px;
   }
-  .max-sm\:pret-14-bold { font-weight: 700; }
-  .max-sm\:pret-14-semibold { font-weight: 600; }
-  .max-sm\:pret-14-medium { font-weight: 500; }
-  .max-sm\:pret-14-regular { font-weight: 400; }
+  .max-sm\:pret-14-bold {
+    font-weight: 700;
+  }
+  .max-sm\:pret-14-semibold {
+    font-weight: 600;
+  }
+  .max-sm\:pret-14-medium {
+    font-weight: 500;
+  }
+  .max-sm\:pret-14-regular {
+    font-weight: 400;
+  }
 
   /* 13px */
   .max-sm\:pret-13-semibold,
@@ -531,8 +627,12 @@ section {
     font-size: 12px;
     line-height: 18px;
   }
-  .max-sm\:pret-13-semibold { font-weight: 600; }
-  .max-sm\:pret-13-medium { font-weight: 500; }
+  .max-sm\:pret-13-semibold {
+    font-weight: 600;
+  }
+  .max-sm\:pret-13-medium {
+    font-weight: 500;
+  }
 
   /* xs (12px) */
   .max-sm\:pret-xs-semibold,
@@ -542,8 +642,13 @@ section {
     font-size: 11px;
     line-height: 16px;
   }
-  .max-sm\:pret-xs-semibold { font-weight: 600; }
-  .max-sm\:pret-xs-medium { font-weight: 500; }
-  .max-sm\:pret-xs-regular { font-weight: 400; }
-
+  .max-sm\:pret-xs-semibold {
+    font-weight: 600;
+  }
+  .max-sm\:pret-xs-medium {
+    font-weight: 500;
+  }
+  .max-sm\:pret-xs-regular {
+    font-weight: 400;
+  }
 }

@@ -20,7 +20,7 @@ export type DatePickerProps = {
 
 function formatMonthLabel(date: Date) {
   const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
   return `${year}. ${month}`;
 }
 
@@ -32,17 +32,13 @@ export default function DatePicker({
 }: DatePickerProps) {
   const handleChange = useCallback(
     (date: Date | null) => {
-      if (date) onChange(date);
+      if (!date) return;
+      onChange(date);
     },
     [onChange]
   );
 
-  const hasValue = !!value;
-
-  const sizeCls =
-    size === "sm"
-      ? "w-[320px] text-base"
-      : "w-[640px] text-xl";
+  const hasValue = Boolean(value);
 
   return (
     <div
@@ -50,7 +46,7 @@ export default function DatePicker({
         "flex flex-col items-center justify-center gap-6",
         "rounded-2xl bg-white py-6",
         "shadow-[2px_2px_10px_rgba(224,224,224,0.2)]",
-        sizeCls,
+        size === "sm" ? "datepicker-sm w-[320px]" : "datepicker-md w-[640px]",
       ].join(" ")}
     >
       <ReactDatePicker
@@ -58,13 +54,13 @@ export default function DatePicker({
         locale="ko"
         selected={value}
         onChange={handleChange}
-        calendarClassName="react-datepicker"
+        formatWeekDay={(name) => name.replace("요일", "").trim()}
         renderCustomHeader={({
           date,
           decreaseMonth,
           increaseMonth,
         }: ReactDatePickerCustomHeaderProps) => (
-          <header className="flex w-full items-center justify-between px-6">
+          <div className="flex w-full items-center justify-between px-6">
             <button
               type="button"
               onClick={decreaseMonth}
@@ -73,9 +69,7 @@ export default function DatePicker({
               <img src="/icons/left.svg" alt="이전 달" />
             </button>
 
-            <div className="flex-1 text-center font-semibold">
-              {formatMonthLabel(date)}
-            </div>
+            <div className="font-semibold">{formatMonthLabel(date)}</div>
 
             <button
               type="button"
@@ -84,7 +78,7 @@ export default function DatePicker({
             >
               <img src="/icons/right.svg" alt="다음 달" />
             </button>
-          </header>
+          </div>
         )}
       />
 
@@ -93,10 +87,8 @@ export default function DatePicker({
         disabled={!hasValue || !onConfirm}
         onClick={onConfirm}
         className={[
-          "h-16 w-[calc(100%-48px)] rounded-2xl font-semibold",
-          hasValue
-            ? "bg-[#1b92ff] text-white"
-            : "cursor-not-allowed bg-gray-300 text-white",
+          "h-16 w-[calc(100%-48px)] rounded-2xl font-semibold text-white",
+          hasValue ? "bg-[#1b92ff]" : "cursor-not-allowed bg-gray-300",
         ].join(" ")}
       >
         선택완료

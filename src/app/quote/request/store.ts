@@ -2,14 +2,15 @@
 
 import { create, type StateCreator } from "zustand";
 
-type MovingType = "소형이사" | "가정이사" | "사무실이사";
+export type MovingType = "소형이사" | "가정이사" | "사무실이사";
 
 export interface QuoteRequestState {
   step: 1 | 2 | 3 | 4;
-  movingType?: MovingType;
-  date?: Date;
-  address?: string;
+  movingType: MovingType | null;
+  date: Date | null;
+  address: string | null;
 
+  setStep: (step: 1 | 2 | 3 | 4) => void;
   setMovingType: (type: MovingType) => void;
   setDate: (date: Date) => void;
   setAddress: (address: string) => void;
@@ -17,10 +18,14 @@ export interface QuoteRequestState {
 
 const creator: StateCreator<QuoteRequestState> = (set) => ({
   step: 1,
+  movingType: null,
+  date: null,
+  address: null,
 
-  setMovingType: (movingType) => set({ movingType, step: 2 }),
-  setDate: (date) => set({ date, step: 3 }),
-  setAddress: (address) => set({ address, step: 4 }),
+  setStep: (step) => set({ step }),
+  setMovingType: (movingType) => set({ movingType }),
+  setDate: (date) => set({ date }),
+  setAddress: (address) => set({ address }),
 });
 
 export const useQuoteRequestStore = create(creator);
