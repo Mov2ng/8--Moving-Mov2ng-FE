@@ -1,27 +1,6 @@
 import DriverProfile from "@/components/common/DriverProfile";
 import MovingTypeChip from "@/components/chips/MovingTypeChip";
-
-interface QuoteDetailCardProps {
-  // 태그
-  status?: "waiting" | "confirmed" | "rejected";
-  serviceType?: string;
-  isDesignatedRequest?: boolean;
-  designatedLabel?: string;
-  // 소개 문구
-  description: string;
-  // 기사 정보
-  name: string;
-  profileImage: string;
-  avatarSize?: "sm" | "md" | "lg";
-  avatarResponsive?: boolean;
-  rating?: number;
-  reviewCount?: number;
-  experience?: number;
-  confirmedCount?: number;
-  likeCount?: number;
-  // 견적 금액
-  price: number;
-}
+import { QuoteDetailCardProps } from "@/types/view/quote";
 
 const statusMap = {
   waiting: {
@@ -148,13 +127,14 @@ export default function QuoteDetailCard({
         />
       </div>
 
-      {/* 견적 금액 */}
-      <div className="flex justify-end items-center gap-2">
-        <span className="text-black-100 pret-14-medium">견적 금액</span>
-        <span className="text-black-400 pret-xl-bold">
-          {price.toLocaleString()}원
-        </span>
-      </div>
+      {price !== undefined && (
+        <div className="flex justify-end items-center gap-2">
+          <span className="text-black-100 pret-14-medium">견적 금액</span>
+          <span className="text-black-400 pret-xl-bold">
+            {price.toLocaleString()}원
+          </span>
+        </div>
+      )}
     </div>
   );
 }
