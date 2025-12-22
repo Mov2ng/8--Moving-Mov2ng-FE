@@ -79,7 +79,20 @@ export async function apiClient(endpoint: string, options: ApiRequestOptions) {
 
     // 9. 응답 상태 체크
     if (!response.ok) {
-      // 10. 실패는 에러 throw
+      // 10. 인증 실패(401/403) 시 클라이언트 storage 정리
+      if (
+        typeof window !== "undefined" &&
+        (response.status === 401 || response.status === 403)
+      ) {
+        try {
+          // accessToken 제거
+          localStorage.removeItem("accessToken");
+        } catch {
+          // localStorage 접근 실패는 무시
+        }
+      }
+
+      // 11. 실패는 에러 throw
       const errorData = await response.json().catch(() => null);
       throw {
         status: response.status,
@@ -88,10 +101,10 @@ export async function apiClient(endpoint: string, options: ApiRequestOptions) {
       };
     }
 
-    // 11. 성공이면 JSON 파싱 후 반환
+    // 12. 성공이면 JSON 파싱 후 반환
     return response.json().catch(() => ({})); // 런타임 오류 안전장치
   } catch (error) {
-    // 12. catch에서 에러 처리
+    // 13. catch에서 에러 처리
     throw error;
   }
 }
