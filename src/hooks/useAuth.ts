@@ -55,11 +55,12 @@ export function useLogin() {
   });
 }
 
-export function useMe() {
+export function useMe(enabled?: boolean) {
   return useApiQuery({
     queryKey: ["me"],
     queryFn: userService.me,
     retry: false,
+    enabled,
   });
 }
 
