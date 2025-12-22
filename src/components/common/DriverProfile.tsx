@@ -6,7 +6,9 @@ interface DriverProfileProps {
   profileImage: string;
   avatarSize?: "sm" | "md" | "lg";
   avatarResponsive?: boolean;
+  nameSuffix?: string;
   ratingDisplay?: "numeric" | "stars";
+  ratingPlacement?: "meta" | "below";
   rating?: number;
   reviewCount?: number;
   experience?: number;
@@ -23,7 +25,9 @@ export default function DriverProfile({
   profileImage,
   avatarSize = "md",
   avatarResponsive = true,
+  nameSuffix = "기사님",
   ratingDisplay = "numeric",
+  ratingPlacement = "meta",
   rating,
   reviewCount,
   experience,
@@ -100,6 +104,11 @@ export default function DriverProfile({
     );
   }
 
+  const metaWithRating =
+    ratingPlacement === "meta" && ratingNode
+      ? [ratingNode, ...metaItems]
+      : metaItems;
+
   return (
     <div className="flex flex-col gap-2 p-3 border border-line-100 rounded-md">
       <div className="flex items-start gap-3">
@@ -117,6 +126,7 @@ export default function DriverProfile({
             {name && (
               <span className="text-black-300 lg:text-black-300 pret-13-medium lg:pret-xl-medium">
                 {name}
+                {nameSuffix ? ` ${nameSuffix}` : ""}
               </span>
             )}
             {likeCount !== undefined && (
@@ -134,9 +144,9 @@ export default function DriverProfile({
             )}
           </div>
 
-          {metaItems.length > 0 && (
+          {metaWithRating.length > 0 && (
             <div className="flex flex-wrap items-start gap-x-2 gap-y-1 text-black-100 pret-xs-medium lg:pret-14-medium">
-              {metaItems.map((item, idx) => (
+              {metaWithRating.map((item, idx) => (
                 <span className="flex items-center gap-2" key={idx}>
                   {idx > 0 && <span className="text-line-200">|</span>}
                   {item}
@@ -169,10 +179,8 @@ export default function DriverProfile({
             </div>
           )}
 
-          {ratingNode && (
-            <div className="hidden lg:flex items-center gap-1">
-              {ratingNode}
-            </div>
+          {ratingPlacement === "below" && ratingNode && (
+            <div className="flex items-center gap-1">{ratingNode}</div>
           )}
 
           {(services?.length || regions?.length) && (

@@ -1,6 +1,6 @@
 import DriverProfile from "@/components/common/DriverProfile";
 import MovingTypeChip from "@/components/chips/MovingTypeChip";
-import Button from "@/components/comon/button";
+import Button from "@/components/common/button";
 
 interface QuoteCardProps {
   // 기사님 정보
@@ -8,6 +8,7 @@ interface QuoteCardProps {
   profileImage: string;
   avatarSize?: "sm" | "md" | "lg";
   avatarResponsive?: boolean;
+  ratingPlacement?: "meta" | "below";
   rating: number;
   reviewCount: number;
   experience: number;
@@ -49,6 +50,7 @@ export default function QuoteCard({
   name,
   profileImage,
   rating,
+  ratingPlacement = "meta",
   reviewCount,
   experience,
   confirmedCount,
@@ -143,6 +145,7 @@ export default function QuoteCard({
           profileImage={profileImage}
           avatarSize={avatarSize}
           avatarResponsive={avatarResponsive}
+          ratingPlacement={ratingPlacement}
           rating={rating}
           reviewCount={reviewCount}
           experience={experience}
