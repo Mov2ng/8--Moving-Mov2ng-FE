@@ -1,33 +1,13 @@
 import DriverProfile from "@/components/common/DriverProfile";
 import MovingTypeChip from "@/components/chips/MovingTypeChip";
+import { quoteStatusChip } from "@/constants/quoteStatus";
+import {
+  DEFAULT_SERVICE_ICON,
+  isServiceTypeKey,
+  SERVICE_ICON_MAP,
+  SERVICE_LABEL_SHORT_MAP,
+} from "@/constants/serviceType";
 import { QuoteDetailCardProps } from "@/types/view/quote";
-
-const statusMap = {
-  waiting: {
-    label: "견적 대기",
-    className: "bg-background-300 text-black-300",
-  },
-  confirmed: {
-    label: "확정 견적",
-    className: "bg-primary-blue-100 text-primary-blue-300",
-  },
-  rejected: {
-    label: "견적 거절",
-    className: "bg-secondary-red-100 text-secondary-red-200",
-  },
-};
-
-const serviceIconMap: Record<string, string> = {
-  소형이사: "/icons/box.svg",
-  가정이사: "/icons/home.svg",
-  사무실이사: "/icons/office.svg",
-};
-
-const serviceLabelShortMap: Record<string, string> = {
-  소형이사: "소형",
-  가정이사: "가정",
-  사무실이사: "사무실",
-};
 
 export default function QuoteDetailCard({
   status,
@@ -46,14 +26,14 @@ export default function QuoteDetailCard({
   likeCount,
   price,
 }: QuoteDetailCardProps) {
-  const statusInfo = status ? statusMap[status] : null;
+  const statusInfo = status ? quoteStatusChip[status] : null;
   const iconSrc =
-    serviceType && serviceIconMap[serviceType]
-      ? serviceIconMap[serviceType]
-      : "/icons/box.svg";
+    serviceType && isServiceTypeKey(serviceType)
+      ? SERVICE_ICON_MAP[serviceType]
+      : DEFAULT_SERVICE_ICON;
   const shortLabel =
-    serviceType && serviceLabelShortMap[serviceType]
-      ? serviceLabelShortMap[serviceType]
+    serviceType && isServiceTypeKey(serviceType)
+      ? SERVICE_LABEL_SHORT_MAP[serviceType]
       : serviceType ?? "";
 
   return (
