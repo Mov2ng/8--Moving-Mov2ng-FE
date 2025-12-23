@@ -34,6 +34,8 @@ export interface QuoteCardView {
   isDesignatedRequest: boolean;
   designatedLabel: string;
   movingDate: string;
+  movingDateTimeLabel?: string;
+  requestedAt?: string;
   departure: string;
   arrival: string;
   price: number;
