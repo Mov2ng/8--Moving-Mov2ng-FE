@@ -11,10 +11,6 @@ export const metadata: Metadata = {
   description: "스마트 이사 매칭 플랫폼",
 };
 
-/**
- * 서버에서 me 데이터를 미리 호출하는 함수
- * @returns me 데이터
- */
 async function prefetchMe() {
   const cookieStore = await cookies();
 
@@ -25,25 +21,17 @@ async function prefetchMe() {
     )
     .join("; ");
 
-  // 로그인 안된 경우 → 가져올 필요 X
-  if (!cookieHeader) {
-    return null;
-  }
+  if (!cookieHeader) return null;
 
   try {
     const response = await fetch(`${API_URL}/auth/me`, {
       method: "GET",
-      headers: {
-        Cookie: cookieHeader,
-      },
+      headers: { Cookie: cookieHeader },
       credentials: "include",
       cache: "no-store",
     });
 
-    if (!response.ok) {
-      return null;
-    }
-
+    if (!response.ok) return null;
     return response.json().catch(() => null);
   } catch (error) {
     console.error("서버 사이드 me 호출 실패:", error);
@@ -53,9 +41,7 @@ async function prefetchMe() {
 
 export default async function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -66,20 +52,19 @@ export default async function RootLayout({
     },
   });
 
-  // ✅ dev에서는 me 프리패치 스킵 (백엔드 불안정/404/timeout으로 전체 렌더가 멈추는 것 방지)
   const isDev = process.env.NODE_ENV === "development";
   const me = isDev ? null : await prefetchMe();
 
-  if (me) {
-    queryClient.setQueryData(["me"], me);
-  }
+  if (me) queryClient.setQueryData(["me"], me);
 
   const dehydratedState = dehydrate(queryClient);
 
   return (
     <html lang="ko">
-      <body>
+      {/* ✅ 전역 배경색 여기서 설정 */}
+      <body className="min-h-screen bg-[#F7F7F7]">
         <Provider dehydratedState={dehydratedState}>
+          {/* ✅ Header는 RootLayout에만 1번 */}
           <Header />
           {children}
         </Provider>

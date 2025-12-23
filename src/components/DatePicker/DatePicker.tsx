@@ -30,10 +30,12 @@ export default function DatePicker({
   onChange,
   onConfirm,
 }: DatePickerProps) {
+  // ✅ react-datepicker는 설정에 따라 Date | null 또는 (Date | null)[] 로 올 수 있어서 안전 처리
   const handleChange = useCallback(
-    (date: Date | null) => {
-      if (!date) return;
-      onChange(date);
+    (date: Date | null | (Date | null)[]) => {
+      const next = Array.isArray(date) ? date[0] : date;
+      if (!next) return;
+      onChange(next);
     },
     [onChange]
   );
@@ -82,6 +84,7 @@ export default function DatePicker({
         )}
       />
 
+      {/* ✅ 파란 버튼은 DatePicker 내부에 1개만 유지 */}
       <button
         type="button"
         disabled={!hasValue || !onConfirm}
