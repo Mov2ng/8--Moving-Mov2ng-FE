@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useSignup } from "@/hooks/useAuth";
 import { SignupFormValues, signupSchema } from "@/libs/validation/authSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +17,16 @@ import RoleToggle from "../../../components/toggle/RoleToggle";
  * - 모든 입력 필드에 주석으로 설명 포함
  */
 export default function SignupForm() {
+  const router = useRouter();
+
+  // 렌더링 시 accessToken 체크
+  useEffect(() => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (accessToken) {
+      alert("이미 로그인 되어 있습니다.");
+      router.push("/");
+    }
+  }, [router]);
 
   // react-hook-form 세팅 (zod 검증)
   const {
