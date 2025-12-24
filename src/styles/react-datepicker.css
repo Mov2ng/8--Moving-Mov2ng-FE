@@ -1,0 +1,124 @@
+.react-datepicker {
+  width: 100%;
+  border: none;
+  background: transparent;
+}
+
+.react-datepicker__header {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.react-datepicker__week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.react-datepicker__day {
+  aspect-ratio: 1 / 1;
+  border-radius: 999px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #333;
+}
+
+.react-datepicker__day:hover {
+  background: #f4f4f4;
+}
+
+.react-datepicker__day--outside-month {
+  color: #dedede;
+}
+
+.react-datepicker__day--selected {
+  background: #1b92ff;
+  color: #fff;
+}
+
+.react-datepicker__day--keyboard-selected:not(
+    .react-datepicker__day--selected
+  ) {
+  background: transparent;
+}
+
+/* =======================
+   SM (320px)
+======================= */
+
+.datepicker-sm {
+  font-size: 13px;
+}
+
+.datepicker-sm .react-datepicker__day-names {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #999;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  justify-items: center;
+}
+
+.datepicker-sm .react-datepicker__day-name {
+  width: 1ch;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center; /* 월 화 수 목 금 토 일 */
+}
+
+.datepicker-sm .react-datepicker__month {
+  padding: 0 16px;
+  gap: 4px;
+}
+
+.datepicker-sm .react-datepicker__day {
+  font-size: 13px;
+}
+
+/* =======================
+   MD (640px)
+======================= */
+
+.datepicker-md {
+  font-size: 20px;
+}
+
+.datepicker-md .react-datepicker__day-names {
+  padding: 20px 24px;
+  font-size: 20px;
+  color: #999;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  justify-items: center;
+}
+
+.datepicker-md .react-datepicker__day-name {
+  width: 1ch;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.datepicker-md .react-datepicker__month {
+  padding: 0 24px;
+  gap: 8px;
+}
+
+.datepicker-md .react-datepicker__day {
+  font-size: 20px;
+}
+
+.react-datepicker__aria-live {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
