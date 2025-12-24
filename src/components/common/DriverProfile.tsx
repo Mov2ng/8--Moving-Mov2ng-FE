@@ -54,7 +54,7 @@ export default function DriverProfile({
               src={
                 filled
                   ? "/assets/icon/ic-star-active.svg"
-                  : "/assets/icon/ic-star-inactive.svg"
+                  : "/assets/icon/ic-star-default.svg"
               }
               alt="별점"
               width={16}
