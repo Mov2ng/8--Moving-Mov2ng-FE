@@ -1,11 +1,3 @@
-/**
- * apiClient: 전역 API 호출 wrapper
- * - baseURL 적용
- * - Content-Type 자동 설정
- * - accessToken 자동 추가
- * - 쿼리 파라미터 자동 처리
- * - 에러 처리 통일
- */
 import { BASE_URL } from "@/constants/api.constants";
 
 // 기본 url
@@ -22,12 +14,24 @@ export type ApiRequestOptions = {
   headers?: Record<string, string>;
 };
 
+/**
+ * API 호출 래퍼
+ * - baseURL 설정
+ * - Content-Type 자동 설정
+ * - 쿼리 파라미터 자동 처리
+ * - Authorization 헤더에 accessToken 자동 추가
+ * - 요청/응답 처리 통일
+ * - 성공/실패 시 에러 처리 통일
+ */
 export async function apiClient(endpoint: string, options: ApiRequestOptions) {
   const { method = "GET", body, query, headers } = options ?? {}; // 여기 headers가 상수 headers랑 options.headers랑 겹침 ㅠㅠ
 
-  // 1. 기본 헤더로 시작
+  // 1. body가 FormData인지 확인 (FormData일 때는 Content-Type을 제거해야 함)
+  const isFormData = body instanceof FormData;
+
+  // 2. 기본 헤더로 시작 (FormData가 아닐 때만 Content-Type 추가)
   const combinedHeaders: Record<string, string> = {
-    ...defaultHeaders,
+    ...(!isFormData ? defaultHeaders : {}),
     ...headers,
   };
 
@@ -79,11 +83,8 @@ export async function apiClient(endpoint: string, options: ApiRequestOptions) {
 
     // 9. 응답 상태 체크
     if (!response.ok) {
-      // 10. 인증 실패(401/403) 시 클라이언트 storage 정리
-      if (
-        typeof window !== "undefined" &&
-        (response.status === 401 || response.status === 403)
-      ) {
+      // 10. 인증 실패(401) 시 클라이언트 storage 정리
+      if (typeof window !== "undefined" && response.status === 401) {
         try {
           // accessToken 제거
           localStorage.removeItem("accessToken");
