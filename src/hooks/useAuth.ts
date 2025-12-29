@@ -5,7 +5,6 @@ import { useApiMutation } from "./useApiMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "./useApiQuery";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 /**
  * 회원가입 mutation 생성 훅
@@ -106,7 +105,7 @@ export function useMe() {
     queryKey: ["me"],
     queryFn: userService.me,
     retry: false,
-    staleTime: 1000 * 60 * 1, // 1분 동안은 최신으로 간주
+    staleTime: 1000 * 60 * 10, // accessToken 만료 시 me 캐시도 함께 무효화되어 동기화처럼 동작해 길게 설정 가능
   });
 }
 
