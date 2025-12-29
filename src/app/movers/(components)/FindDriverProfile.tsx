@@ -2,7 +2,18 @@ import React from "react";
 import Image from "next/image";
 import RatingPoints from "./RatingPoints";
 
-export default function FindDriverProfile({ name, likeCount, career, confirmedCount, imageSrc, size = 'md' }: { name: string, likeCount: number, career: number, confirmedCount: number, imageSrc?: string, size?: 'sm' | 'md' }) {
+interface FindDriverProfileProps {
+  name: string;
+  likeCount: number;
+  rating: number;
+  reviewCount: number;
+  career: number;
+  confirmedCount: number;
+  imageSrc?: string;
+  size?: 'sm' | 'md';
+}
+
+export default function FindDriverProfile({ name, likeCount, rating, reviewCount, career, confirmedCount, imageSrc, size = 'md' }: FindDriverProfileProps) {
   return (
     <div className={`flex items-center max-w-[907px] w-full h-[92px] max-md:h-[78px] bg-gray-50 border border-line-100 rounded-md
         ${size === 'sm' ? 'gap-3 p-[10px]' : 'gap-6 px-4.5 py-4 max-md:p-[10px] max-md:gap-3'}`}>
@@ -25,7 +36,7 @@ export default function FindDriverProfile({ name, likeCount, career, confirmedCo
         </div>
       </div>
         <div className={`flex items-center ${size === 'sm' ? 'pret-13-medium gap-0.5' : 'pret-16-medium gap-4 max-md:pret-13-medium max-md:gap-0.5'}`}>
-          <RatingPoints rating={4.5} count={10} size={size} />
+          <RatingPoints rating={rating} count={reviewCount} size={size} />
           <span className="text-line-200">|</span>
           <p className={`flex items-center ${size === 'sm' ? 'gap-1' : 'gap-[6px] max-md:gap-1'}`}>
             <span className="text-gray-300">경력</span>

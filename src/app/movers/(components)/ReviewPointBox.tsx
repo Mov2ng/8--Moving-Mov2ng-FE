@@ -2,7 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 import StarRating from './StarRating';
 
-export default function ReviewPointBox() {
+export default function ReviewPointBox({ rating, reviewCount }: { rating: number, reviewCount: number }) {
   // 임시 리뷰 rating값
   const ratingList = {
     5: 170,

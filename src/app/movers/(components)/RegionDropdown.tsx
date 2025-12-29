@@ -1,41 +1,19 @@
 import FilterDropdown from "@/components/common/FilterDropdown";
 import React, { useState } from "react";
+import type { QuerySelectType } from "@/types/queryType";
 
 
-export const areaNames1 = [
-  "전체",
-  "서울",
-  "경기",
-  "인천",
-  "대전",
-  "세종",
-  "대구",
-  "부산",
-  "울산",
-];
-export const areaNames2 = [
-  "광주",
-  "강원",
-  "충북",
-  "충남",
-  "경북",
-  "경남",
-  "전북",
-  "전남",
-  "제주",
-];
-
-
-export default function RegionDropdown({ selectedRegion, setSelectedRegion }: { selectedRegion: string, setSelectedRegion: (region: string) => void }) {
-  const onClickRegion = (menu: string) => {
+export default function RegionDropdown({ regionList, selectedRegion, setSelectedRegion }: 
+  { regionList: QuerySelectType[], selectedRegion: QuerySelectType, setSelectedRegion: (region: QuerySelectType) => void }) {
+ 
+  const onClickRegion = (menu: QuerySelectType) => {
     setSelectedRegion(menu);
   };
 
   return (
     <FilterDropdown
-      menuName={selectedRegion ? selectedRegion : "지역"}
-      menuList={areaNames1}
-      menuSubList={areaNames2}
+      menuName={selectedRegion.label}
+      menuList={regionList}
       onClick={onClickRegion}
     />
   );
