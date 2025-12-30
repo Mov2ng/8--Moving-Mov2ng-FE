@@ -5,6 +5,7 @@ import { useApiMutation } from "./useApiMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "./useApiQuery";
 import { useRouter } from "next/navigation";
+import { setToken, removeToken } from "@/utils/tokenStorage";
 
 /**
  * 회원가입 mutation 생성 훅
@@ -41,9 +42,9 @@ export function useLogin() {
       // 1. api 응답에서 accessToken get
       const { accessToken } = data.data;
 
-      // 2. localStorage에 accessToken 저장 (apiClient에서 읽기 위해)
-      if (typeof window !== "undefined" && accessToken) {
-        localStorage.setItem("accessToken", accessToken);
+      // 2. accessToken을 localStorage에 저장
+      if (accessToken) {
+        setToken(accessToken);
       }
 
       // 3. 사용자 정보(me) 쿼리 무효화해 최신 정보로 업데이트
@@ -136,12 +137,18 @@ export function useAuth() {
  */
 export function useLogout() {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   return useApiMutation({
     mutationKey: ["logout"],
     mutationFn: userService.logout,
     onSuccess: () => {
+      // localStorage에서 accessToken 삭제
+      removeToken();
+      // me 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ["me"] });
+      // refreshToken 쿠키는 서버에서 삭제
+      router.push("/login");
     },
   });
 }
@@ -159,8 +166,8 @@ export function useRefresh() {
     onSuccess: (data) => {
       // refresh 성공 시 새 accessToken을 localStorage에 저장
       const { accessToken } = data.data;
-      if (typeof window !== "undefined" && accessToken) {
-        localStorage.setItem("accessToken", accessToken);
+      if (accessToken) {
+        setToken(accessToken);
       }
       queryClient.invalidateQueries({ queryKey: ["me"] });
     },

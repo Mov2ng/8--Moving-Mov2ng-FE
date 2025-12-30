@@ -1,4 +1,5 @@
 import { BASE_URL } from "@/constants/api.constants";
+import { getToken, removeToken } from "@/utils/tokenStorage";
 
 // 기본 url
 export const API_URL = process.env.NEXT_PUBLIC_API || BASE_URL;
@@ -35,14 +36,12 @@ export async function apiClient(endpoint: string, options: ApiRequestOptions) {
     ...headers,
   };
 
-  // 2. 클라이언트 사이드에서만 localStorage 접근 가능
-  if (typeof window !== "undefined") {
-    const accessToken = localStorage.getItem("accessToken");
+  // 2. 클라이언트 사이드에서 토큰 조회 (localStorage에서)
+  const accessToken = getToken();
 
-    // 3. 액세스 토큰 있을 시 Auth 헤더 추가
-    if (accessToken) {
-      combinedHeaders["Authorization"] = `Bearer ${accessToken}`;
-    }
+  // 3. 액세스 토큰 있을 시 Auth 헤더 추가
+  if (accessToken) {
+    combinedHeaders["Authorization"] = `Bearer ${accessToken}`;
   }
 
   // 4. baseURL(url + query) 설정
@@ -85,12 +84,7 @@ export async function apiClient(endpoint: string, options: ApiRequestOptions) {
     if (!response.ok) {
       // 10. 인증 실패(401) 시 클라이언트 storage 정리
       if (typeof window !== "undefined" && response.status === 401) {
-        try {
-          // accessToken 제거
-          localStorage.removeItem("accessToken");
-        } catch {
-          // localStorage 접근 실패는 무시
-        }
+        removeToken();
       }
 
       // 11. 실패는 에러 throw
