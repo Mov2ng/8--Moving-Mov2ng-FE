@@ -7,7 +7,7 @@ import Header from "@/components/layout/Header";
 export const metadata: Metadata = {
   title: "무빙",
   description: "스마트 이사 매칭 플랫폼",
-}; // SEO + <head> 자동 관리
+};
 
 /**
  * 레이아웃 컴포넌트
@@ -27,7 +27,7 @@ export default async function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body>
+      <body className="min-h-screen bg-[#F7F7F7]">
         <Provider>
           <Header />
           {children}
