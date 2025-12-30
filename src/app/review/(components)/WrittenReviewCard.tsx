@@ -116,6 +116,7 @@ export default function WrittenReviewCard({
         profileImage={profileImage}
         rating={rating}
         ratingDisplay="stars"
+        ratingPlacement="below"
         avatarSize={avatarSize}
         avatarResponsive={avatarResponsive}
         movingDate={movingDate}
