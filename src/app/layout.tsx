@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Provider } from "./provider";
 import Header from "@/components/layout/Header";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
 export const metadata: Metadata = {
   title: "무빙",
@@ -22,8 +23,10 @@ export default async function RootLayout({
     <html lang="ko">
       <body>
         <Provider>
-          <Header />
-          {children}
+          <RouteGuard>
+            <Header />
+            {children}
+          </RouteGuard>
         </Provider>
       </body>
     </html>
