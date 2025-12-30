@@ -94,7 +94,7 @@ export default function MoversPage() {
               likeCount={234}
               rating={4.5}
               reviewCount={10}
-              career={10}
+              driverYears={10}
               confirmedCount={334}
               imageSrc="/assets/image/avatartion-3.png"
             />
@@ -120,7 +120,7 @@ export default function MoversPage() {
                 likeCount={driver.favoriteCount}
                 rating={driver.rating}
                 reviewCount={driver.reviewCount}
-                career={driver.driverYears}
+                driverYears={driver.driverYears}
                 confirmedCount={driver.estimateCount}
                 imageSrc={"/assets/image/avatartion-3.png"}
               />

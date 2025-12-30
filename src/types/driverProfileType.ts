@@ -14,3 +14,15 @@ export type DriverResponseType = {
   confirmCount: number;
   isFavorite: boolean;
 };
+
+export type ReviewType = {
+  id: number;
+  rating: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+  }
+};

@@ -7,13 +7,13 @@ interface FindDriverProfileProps {
   likeCount: number;
   rating: number;
   reviewCount: number;
-  career: number;
+  driverYears: number;
   confirmedCount: number;
   imageSrc?: string;
   size?: 'sm' | 'md';
 }
 
-export default function FindDriverProfile({ name, likeCount, rating, reviewCount, career, confirmedCount, imageSrc, size = 'md' }: FindDriverProfileProps) {
+export default function FindDriverProfile({ name, likeCount, rating, reviewCount, driverYears, confirmedCount, imageSrc, size = 'md' }: FindDriverProfileProps) {
   return (
     <div className={`flex items-center max-w-[907px] w-full h-[92px] max-md:h-[78px] bg-gray-50 border border-line-100 rounded-md
         ${size === 'sm' ? 'gap-3 p-[10px]' : 'gap-6 px-4.5 py-4 max-md:p-[10px] max-md:gap-3'}`}>
@@ -40,7 +40,7 @@ export default function FindDriverProfile({ name, likeCount, rating, reviewCount
           <span className="text-line-200">|</span>
           <p className={`flex items-center ${size === 'sm' ? 'gap-1' : 'gap-[6px] max-md:gap-1'}`}>
             <span className="text-gray-300">경력</span>
-            <span className="text-black-300">{career}년</span>
+            <span className="text-black-300">{driverYears}년</span>
           </p>
           <span className="text-line-200">|</span>
           <p className={`flex items-center ${size === 'sm' ? 'gap-1' : 'gap-[6px] max-md:gap-1'}`}>

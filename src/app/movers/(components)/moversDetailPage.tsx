@@ -8,16 +8,10 @@ import RegionChip from "@/components/chips/RegionChip";
 import Image from "next/image";
 import Button from "@/components/common/button";
 import { Pagination } from "@/components/common/Pagination";
-import { useGetMoverExtra, useGetMoverFull } from "@/hooks/useMover";
+import { useGetMoverExtra, useGetMoverFull, usePostFavoriteMover } from "@/hooks/useMover";
+import { useParams } from "next/navigation";
 
-// ReviewCardList Component for multiple reviews
-interface Review {
-  id: string | number;
-  username: string;
-  date: string;
-  rating: number;
-  content: string;
-}
+import { ReviewType } from "@/types/driverProfileType";
 
 interface Mover {
   id: number;
@@ -25,7 +19,7 @@ interface Mover {
   likeCount: number;
   rating: number;
   reviewCount: number;
-  career: number;
+  driverYears: number;
   confirmedCount: number;
   serviceCategories: string[];
   regions: string[];
@@ -39,7 +33,10 @@ interface MoversCache {
   };
 }
 
-export default function MoversDetailPage({ id }: { id: number }) {
+export default function MoversDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const idNumber = parseInt(id);
+
   const queryClient = useQueryClient();
 
   // 캐시된 movers 목록에서 해당 id의 mover 찾기
@@ -50,19 +47,22 @@ export default function MoversDetailPage({ id }: { id: number }) {
     });
 
     for (const [, data] of queries) {
-      const found = data?.data?.list?.find((mover: Mover) => mover.id === id);
+      const found = data?.data?.list?.find((mover: Mover) => mover.id === idNumber);
       if (found) return found;
     }
     return null;
-  }, [queryClient, id]);
+  }, [queryClient, idNumber]);
+
 
   const hasExistingData = cachedMover !== null;
 
   // 전체 데이터 (캐시에 없을 때만 fetch)
-  const { data: fullData } = useGetMoverFull(id, { enabled: !hasExistingData });
+  const { data: fullData, isLoading: isFullLoading } = useGetMoverFull(idNumber, {
+    enabled: !hasExistingData,
+  });
 
   // 추가 데이터 (캐시에 있을 때만 fetch)
-  const { data: extraData } = useGetMoverExtra(id, {
+  const { data: extraData, isLoading: isExtraLoading } = useGetMoverExtra(idNumber, {
     enabled: hasExistingData,
   });
 
@@ -70,6 +70,36 @@ export default function MoversDetailPage({ id }: { id: number }) {
   const driver = hasExistingData
     ? { ...cachedMover, ...extraData?.data }
     : fullData?.data;
+
+  // 로딩 상태
+  const isLoading = hasExistingData ? isExtraLoading : isFullLoading;
+
+  // 로딩 UI 표시
+  if (isLoading) {
+    return (
+      <section className="flex gap-[117px] w-full pt-[56px] max-md:flex-col max-md:gap-[50px] max-md:px-18 max-sm:px-6">
+        <div className="flex flex-col gap-10 max-w-[955px] w-full items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-blue-300 border-t-transparent" />
+          <p className="pret-lg-medium text-gray-400">로딩 중...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!driver) {
+    return <div>데이터가 없습니다.</div>;
+  }
+
+  const { mutate: postFavoriteMover, isPending: isPostFavoriteMoverPending } = usePostFavoriteMover(idNumber);
+  
+  // 기사님 찜하기 핸들러 -> 오류 처리 필요
+  const handlePostFavoriteMover = () => {
+    postFavoriteMover(idNumber, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["movers"] });
+      },
+    });
+  };
 
   return (
     <section className="flex gap-[117px] w-full pt-[56px] max-md:flex-col max-md:gap-[50px] max-md:px-18 max-sm:px-6">
@@ -79,7 +109,7 @@ export default function MoversDetailPage({ id }: { id: number }) {
           likeCount={driver.likeCount}
           rating={driver.rating}
           reviewCount={driver.reviewCount}
-          career={driver.career}
+          driverYears={driver.driverYears}
           confirmedCount={driver.confirmedCount}
           size="md"
         />
@@ -125,13 +155,14 @@ export default function MoversDetailPage({ id }: { id: number }) {
         <ReviewPointBox
           rating={driver?.rating}
           reviewCount={driver?.reviewCount}
+          reviewList={driver?.reviewList}
         />
         <div>
-          {driver?.reviewList?.map((review: Review) => (
+          {driver?.reviewList?.map((review: ReviewType) => (
             <ReviewList
               key={review.id}
-              username={review.username}
-              date={review.date}
+              username={review.user.name}
+              date={review.createdAt}
               rating={review.rating}
               content={review.content}
             />
@@ -145,7 +176,8 @@ export default function MoversDetailPage({ id }: { id: number }) {
           <h2 className="pret-xl-semibold text-black-400 max-md:hidden">
             김코드 기사님에게 지정 견적을 요청해보세요!
           </h2>
-          <button className="flex items-center justify-center gap-[10px] w-full h-[54px] bg-gray-50 border border-line-200 rounded-2xl pret-xl-medium text-black cursor-pointer max-md:size-[54px]">
+          {/* 기사님 찜하기 버튼 성공 시 버튼 상태 변경 필요 */}
+          <button onClick={handlePostFavoriteMover} className="flex items-center justify-center gap-[10px] w-full h-[54px] bg-gray-50 border border-line-200 rounded-2xl pret-xl-medium text-black cursor-pointer max-md:size-[54px]">
             <Image
               src="/assets/icon/ic-like-active.svg"
               alt="heart"

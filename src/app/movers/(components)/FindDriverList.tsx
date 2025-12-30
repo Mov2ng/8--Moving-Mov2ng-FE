@@ -11,12 +11,12 @@ interface DriverListProps {
   likeCount: number;
   rating: number;
   reviewCount: number;
-  career: number;
+  driverYears: number;
   confirmedCount: number;
   imageSrc?: string;
 }
 
-export default function DriverList({ size = 'md', id, name, driverIntro, likeCount, rating, reviewCount, career, confirmedCount, imageSrc }: DriverListProps) {
+export default function DriverList({ size = 'md', id, name, driverIntro, likeCount, rating, reviewCount, driverYears, confirmedCount, imageSrc }: DriverListProps) {
   
   const router = useRouter();
   const handleClick = () => {
@@ -40,7 +40,7 @@ export default function DriverList({ size = 'md', id, name, driverIntro, likeCou
         />
       </div>
       <div className={`w-full text-black-300 ${size === 'sm' ? 'pret-14-semibold' : 'pret-2xl-semibold max-md:pret-14-semibold'}`} >{driverIntro}</div>
-      <FindDriverProfile name={name} likeCount={likeCount} rating={rating} reviewCount={reviewCount} career={career} confirmedCount={confirmedCount} imageSrc={imageSrc} size={size} />
+      <FindDriverProfile name={name} likeCount={likeCount} rating={rating} reviewCount={reviewCount} driverYears={driverYears} confirmedCount={confirmedCount} imageSrc={imageSrc} size={size} />
     </div>
   )
 }
