@@ -1,5 +1,6 @@
 export type ReviewItem = {
   id: number;
+  driverId?: number;
   serviceType: string;
   isDesignatedRequest?: boolean;
   designatedLabel?: string;
@@ -19,6 +20,7 @@ export type ApiWritableReview = {
     moving_type?: string;
   };
   driver: {
+    id?: number;
     nickname?: string;
     profileImage?: string;
     user?: {

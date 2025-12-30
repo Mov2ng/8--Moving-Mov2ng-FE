@@ -2,12 +2,15 @@
 
 import ReviewCreateCard from "./ReviewCreateCard";
 import { useApiQuery } from "@/hooks/useApiQuery";
+import { useApiMutation } from "@/hooks/useApiMutation";
 import { apiClient } from "@/libs/apiClient";
 import { formatDateLabel } from "@/utils/date";
 import Link from "next/link";
 import { useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
 import type { ApiWritableReview, ReviewItem } from "@/types/view/review";
+import ReviewWriteModal from "./ReviewWriteModal";
+import { useQueryClient } from "@tanstack/react-query";
 
 const movingTypeMap: Record<string, string> = {
   SMALL: "소형이사",
@@ -17,6 +20,7 @@ const movingTypeMap: Record<string, string> = {
 
 const adaptWritable = (item: ApiWritableReview): ReviewItem => ({
   id: item.id,
+  driverId: item.driver.id,
   serviceType:
     movingTypeMap[item.request.moving_type ?? ""] ??
     item.request.moving_type ??
@@ -33,7 +37,10 @@ const adaptWritable = (item: ApiWritableReview): ReviewItem => ({
 
 export default function ReviewWritablePage() {
   const [page, setPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<ReviewItem | null>(null);
   const pageSize = 6;
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useApiQuery<
     { success: boolean; message: string; data: ApiWritableReview[] },
@@ -49,6 +56,32 @@ export default function ReviewWritablePage() {
 
   const writableReviews =
     data?.data && Array.isArray(data.data) ? data.data.map(adaptWritable) : [];
+  const { mutate: createReview, isPending: isCreating } = useApiMutation<
+    { success: boolean; message: string },
+    {
+      driverId: number;
+      rating: number;
+      review_content?: string;
+      review_title?: string;
+    },
+    Error
+  >({
+    mutationFn: async (payload) =>
+      apiClient("/review", {
+        method: "POST",
+        body: payload,
+      }),
+    onSuccess: (res) => {
+      alert(res.message ?? "리뷰가 등록되었습니다.");
+      queryClient.invalidateQueries({ queryKey: ["reviews", "writable"] });
+      queryClient.invalidateQueries({ queryKey: ["reviews", "written"] });
+      setIsModalOpen(false);
+      setSelectedReview(null);
+    },
+    onError: (err) => {
+      alert(err.message);
+    },
+  });
 
   const list = writableReviews;
   const totalCount = list.length;
@@ -105,7 +138,10 @@ export default function ReviewWritablePage() {
                 profileImage={item.profileImage}
                 movingDate={item.movingDate}
                 price={item.price}
-                onWriteReview={() => alert("리뷰 작성하기")}
+                onWriteReview={() => {
+                  setSelectedReview(item);
+                  setIsModalOpen(true);
+                }}
                 reviewEnabled={item.reviewEnabled ?? true}
                 reviewButtonText={item.reviewButtonText ?? "리뷰 작성하기"}
               />
@@ -122,6 +158,25 @@ export default function ReviewWritablePage() {
           />
         )}
       </main>
+
+      <ReviewWriteModal
+        key={isModalOpen ? selectedReview?.id ?? "open" : "closed"}
+        open={isModalOpen}
+        item={selectedReview}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={({ rating, content, item }) => {
+          if (!item?.driverId) {
+            alert("driverId가 없어 리뷰를 등록할 수 없습니다.");
+            return;
+          }
+          createReview({
+            driverId: item.driverId,
+            rating,
+            review_content: content,
+          });
+        }}
+        isSubmitting={isCreating}
+      />
     </div>
   );
 }

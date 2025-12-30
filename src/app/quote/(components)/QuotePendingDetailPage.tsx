@@ -8,6 +8,7 @@ import QuoteTabNav from "./QuoteTabNav";
 import { useQueryClient } from "@tanstack/react-query";
 import Button from "@/components/common/button";
 import { formatDate, formatDateTime } from "@/utils/date";
+import Image from "next/image";
 
 import type { QuoteDetailView } from "@/types/view/quote";
 import type { ApiQuoteDetail, QuoteStatus } from "@/types/api/quotes";
@@ -89,6 +90,106 @@ export default function QuotePendingDetailPage({
   const detail: QuoteDetailView | null = data?.data
     ? adaptQuoteDetail(data.data)
     : null;
+
+  const shareUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/quote/pending/${id}` // 도메인 환경에서 테스트할 때는 도메인 주소를 사용
+      : undefined;
+
+  const getCopyText = () => {
+    if (!shareUrl) return "";
+    return detail
+      ? `이사일: ${formatDateTime(
+          detail.movingDateTime
+        )}\n견적가: ${detail.price.toLocaleString()}원\n${shareUrl}`
+      : shareUrl;
+  };
+
+  const handleCopyLink = () => {
+    const copyText = getCopyText();
+    if (!copyText) return;
+
+    if (navigator.clipboard) {
+      navigator.clipboard
+        .writeText(copyText)
+        .then(() => {
+          alert("견적 요약을 복사했어요. 메신저에 붙여넣기 하세요.");
+        })
+        .catch(() => {
+          alert("클립보드 복사에 실패했어요.");
+        });
+      return;
+    }
+    alert("공유를 지원하지 않는 브라우저입니다.");
+  };
+
+  const handleShareKakao = () => {
+    if (!shareUrl) return;
+    type KakaoSDK = {
+      isInitialized: () => boolean;
+      init: (key: string) => void;
+      Share: {
+        sendDefault: (config: Record<string, unknown>) => void;
+      };
+    };
+    const kakaoAppKey = process.env.NEXT_PUBLIC_KAKAO_APP_KEY;
+    const kakao =
+      typeof window !== "undefined"
+        ? (window as typeof window & { Kakao?: KakaoSDK }).Kakao ?? null
+        : null;
+
+    if (!kakaoAppKey) {
+      alert("NEXT_PUBLIC_KAKAO_APP_KEY가 설정되지 않았습니다.");
+      return;
+    }
+
+    if (!kakao) {
+      alert(
+        "카카오 SDK가 아직 로드되지 않았어요. 새로고침 후 다시 시도해 주세요."
+      );
+      return;
+    }
+
+    if (!kakao.isInitialized()) {
+      kakao.init(kakaoAppKey);
+    }
+
+    kakao.Share.sendDefault({
+      objectType: "feed",
+      content: {
+        title: "견적서 공유",
+        description: "받은 견적서를 확인해 주세요.",
+        imageUrl: `${window.location.origin}/assets/image/share-kakao-thumb.png`,
+        link: {
+          mobileWebUrl: shareUrl,
+          webUrl: shareUrl,
+        },
+      },
+      buttons: [
+        {
+          title: "견적서 보기",
+          link: {
+            mobileWebUrl: shareUrl,
+            webUrl: shareUrl,
+          },
+        },
+      ],
+    });
+  };
+
+  const handleShareFacebook = () => {
+    const copyText = getCopyText();
+    if (copyText && navigator.clipboard) {
+      navigator.clipboard.writeText(copyText).catch(() => {
+        // 복사 실패는 무시하고 공유 계속 진행
+      });
+    }
+    if (!shareUrl) return;
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+      shareUrl
+    )}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -179,6 +280,52 @@ export default function QuotePendingDetailPage({
                 width="100%"
                 className="hover:brightness-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               />
+              <div className="flex flex-col gap-3">
+                <span className="pret-lg-semibold text-black-300">
+                  견적서 공유하기
+                </span>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="size-14 rounded-2xl bg-white border border-line-100 flex items-center justify-center"
+                    aria-label="링크 복사"
+                  >
+                    <Image
+                      src="/assets/icon/ic-clip.svg"
+                      alt="링크 복사"
+                      width={28}
+                      height={28}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShareKakao}
+                    className="size-14 rounded-2xl bg-[#FAE100] flex items-center justify-center"
+                    aria-label="카카오톡 공유"
+                  >
+                    <Image
+                      src="/assets/icon/ic-kakao.svg"
+                      alt="카카오톡 공유"
+                      width={28}
+                      height={28}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShareFacebook}
+                    className="size-14 rounded-2xl bg-[#4285F4] flex items-center justify-center"
+                    aria-label="페이스북 공유"
+                  >
+                    <Image
+                      src="/assets/icon/ic-facebook.svg"
+                      alt="페이스북 공유"
+                      width={28}
+                      height={28}
+                    />
+                  </button>
+                </div>
+              </div>
             </aside>
           </div>
         )}
