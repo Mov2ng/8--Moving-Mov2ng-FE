@@ -3,6 +3,7 @@ import "./globals.css";
 import Script from "next/script";
 import { Provider } from "./provider";
 import Header from "@/components/layout/Header";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
 export const metadata: Metadata = {
   title: "무빙",
@@ -29,8 +30,10 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen bg-[#F7F7F7]">
         <Provider>
-          <Header />
-          {children}
+          <RouteGuard>
+            <Header />
+            {children}
+          </RouteGuard>
         </Provider>
       </body>
     </html>
