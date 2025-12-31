@@ -46,7 +46,7 @@ const adaptQuote = (item: ApiQuote): QuoteCardView => ({
   price: item.price,
 });
 
-const ENDPOINT = "/request/user/quotes";
+const ENDPOINT = "/request/user/estimates";
 
 export default function QuoteReceivedPage() {
   const [filter, setFilter] = useState<"ALL" | "CONFIRMED">("ALL");
@@ -138,7 +138,10 @@ export default function QuoteReceivedPage() {
             {/* 목록 */}
             <div className="flex flex-col gap-4">
               {filteredQuotes.map((quote) => (
-                <Link key={quote.id} href={`/quote/received/${quote.id}`}>
+                <Link
+                  key={quote.id}
+                  href={`/estimate/user/received/${quote.id}`}
+                >
                   <div className="bg-white rounded-2xl border border-line-100 shadow-sm">
                     <QuoteCard
                       name={quote.name}

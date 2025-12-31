@@ -1,14 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { useApiQuery } from "@/hooks/useApiQuery";
-import { useApiMutation } from "@/hooks/useApiMutation";
 import { apiClient } from "@/libs/apiClient";
 import QuoteDetailCard from "./QuoteDetailCard";
 import QuoteTabNav from "./QuoteTabNav";
-import { useQueryClient } from "@tanstack/react-query";
-import Button from "@/components/common/button";
 import { formatDate, formatDateTime } from "@/utils/date";
-import Image from "next/image";
 
 import type { QuoteDetailView } from "@/types/view/quote";
 import type { ApiQuoteDetail, QuoteStatus } from "@/types/api/quotes";
@@ -47,14 +44,15 @@ const adaptQuoteDetail = (item: ApiQuoteDetail): QuoteDetailView => ({
   destination: item.request?.destination ?? "-",
 });
 
-type QuotePendingDetailPageProps = {
+type QuoteReceivedDetailPageProps = {
   estimateId: number;
 };
-const ENDPOINT = "/request/user/quotes/pending";
-export default function QuotePendingDetailPage({
+
+const ENDPOINT = "/request/user/estimates";
+
+export default function QuoteReceivedDetailPage({
   estimateId,
-}: QuotePendingDetailPageProps) {
-  const queryClient = useQueryClient();
+}: QuoteReceivedDetailPageProps) {
   const id = estimateId;
   const invalidId = Number.isNaN(id);
 
@@ -62,29 +60,10 @@ export default function QuotePendingDetailPage({
     { success: boolean; message: string; data: ApiQuoteDetail },
     Error
   >({
-    queryKey: ["quote", "pending", id],
+    queryKey: ["quote", "received", id],
     queryFn: async () => apiClient(`${ENDPOINT}/${id}`, { method: "GET" }),
     staleTime: 1000 * 30,
     enabled: !invalidId,
-  });
-
-  const { mutate: acceptQuote, isPending: isAccepting } = useApiMutation<
-    { success: boolean; message: string },
-    void,
-    Error
-  >({
-    mutationFn: async () =>
-      apiClient(`${ENDPOINT}/${id}/accept`, {
-        method: "POST",
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["quote", "pending", id] });
-      queryClient.invalidateQueries({ queryKey: ["quote", "pending"] });
-      alert("견적을 확정했어요.");
-    },
-    onError: (err) => {
-      alert(err.message ?? "견적 확정에 실패했습니다.");
-    },
   });
 
   const detail: QuoteDetailView | null = data?.data
@@ -93,7 +72,7 @@ export default function QuotePendingDetailPage({
 
   const shareUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/quote/pending/${id}` // 도메인 환경에서 테스트할 때는 도메인 주소를 사용
+      ? `${window.location.origin}/estimate/user/received/${id}`
       : undefined;
 
   const getCopyText = () => {
@@ -158,7 +137,7 @@ export default function QuotePendingDetailPage({
       objectType: "feed",
       content: {
         title: "견적서 공유",
-        description: "받은 견적서를 확인해 주세요.",
+        description: "받았던 견적서를 확인해 주세요.",
         imageUrl: `${window.location.origin}/assets/image/share-kakao-thumb.png`,
         link: {
           mobileWebUrl: shareUrl,
@@ -217,11 +196,8 @@ export default function QuotePendingDetailPage({
         )}
         {!isLoading && !error && detail && (
           <div className="flex flex-col lg:grid lg:grid-cols-[2fr_1fr] lg:gap-10">
-            {/*  카드 + 정보 */}
             <div className="flex flex-col gap-6">
-              <div className="flex items-center justify-between">
-                <h1 className="pret-xl-semibold text-black-300">견적 상세</h1>
-              </div>
+              <h1 className="text-black-400 pret-2xl-semibold">견적 상세</h1>
 
               <QuoteDetailCard
                 status={detail.status}
@@ -242,7 +218,6 @@ export default function QuotePendingDetailPage({
 
               {/* 견적가 */}
               <div className="h-[1px] bg-line-100" />
-
               <div className="text-black-400 pret-2xl-semibold">
                 <div className="text-black-300 pret-xl-semibold mb-3">
                   견적가
@@ -250,36 +225,32 @@ export default function QuotePendingDetailPage({
                 {detail.price.toLocaleString()}원
               </div>
 
+              <div className="h-[1px] bg-line-100" />
+
               {/* 견적 정보 */}
-              <div className="text-black-300 pret-lg-semibold mb-3">
-                <h1 className="pret-xl-semibold text-black-300">견적 정보</h1>
-              </div>
-              <div className="rounded-[16px] border border-line-100 bg-background-100 px-5 py-6 shadow-sm">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
-                  <InfoRow
-                    label="견적 요청일"
-                    value={formatDate(detail.requestedAt)}
-                  />
-                  <InfoRow label="서비스" value={detail.serviceType ?? "-"} />
-                  <InfoRow
-                    label="이용일"
-                    value={formatDateTime(detail.movingDateTime)}
-                  />
-                  <InfoRow label="출발지" value={detail.origin} />
-                  <InfoRow label="도착지" value={detail.destination} />
+              <div>
+                <h2 className="text-black-400 pret-2xl-semibold mb-4">
+                  견적 정보
+                </h2>
+                <div className="rounded-2xl bg-background-100 border border-line-100 px-6 py-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-10">
+                    <InfoRow
+                      label="견적 요청일"
+                      value={formatDate(detail.requestedAt)}
+                    />
+                    <InfoRow label="서비스" value={detail.serviceType ?? "-"} />
+                    <InfoRow
+                      label="이용일"
+                      value={formatDateTime(detail.movingDateTime)}
+                    />
+                    <InfoRow label="출발지" value={detail.origin} />
+                    <InfoRow label="도착지" value={detail.destination} />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* 확정 + 공유 */}
             <aside className="mt-6 lg:mt-0 flex flex-col gap-4">
-              <Button
-                text="견적 확정하기"
-                onClick={() => acceptQuote()}
-                disabled={invalidId || isAccepting}
-                width="100%"
-                className="hover:brightness-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-              />
               <div className="flex flex-col gap-3">
                 <span className="pret-lg-semibold text-black-300">
                   견적서 공유하기
