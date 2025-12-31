@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "./useApiQuery";
 import { useRouter } from "next/navigation";
 import { setToken, removeToken } from "@/utils/tokenStorage";
+import { useEffect } from "react";
 
 /**
  * 회원가입 mutation 생성 훅
@@ -102,12 +103,26 @@ export function useLogin() {
  * @returns useApiQuery 결과
  */
 export function useMe() {
-  return useApiQuery({
+  const queryClient = useQueryClient();
+
+  const result = useApiQuery({
     queryKey: ["me"],
     queryFn: userService.me,
-    retry: false,
-    staleTime: 1000 * 60 * 10, // accessToken 만료 시 me 캐시도 함께 무효화되어 동기화처럼 동작해 길게 설정 가능
+    retry: false, // 인증 실패 재시도 불필요
+    staleTime: 1000 * 60 * 10, // 10분 동안 fresh 상태 유지
   });
+
+  // 토큰 만료(401) 에러 처리
+  // onError 옵션 레거시화 (사이드 이펙트 기능이 아니게 됨) 
+  // 대신 useEffect로 상태 변화 반응(에러가 남X, 현재 에러 '상태'O) 로직 처리
+  useEffect(() => {
+    if (result.error && (result.error as { status?: number })?.status === 401) {
+      removeToken();
+      queryClient.removeQueries({ queryKey: ["me"] });
+    }
+  }, [result.error, queryClient]);
+
+  return result;
 }
 
 /**
@@ -117,14 +132,14 @@ export function useMe() {
  */
 export function useAuth() {
   // 사용자 정보 조회
-  const { data: meData, isLoading, isError } = useMe();
+  const { data: meData, isLoading } = useMe();
   const me = meData?.data;
 
-  // 쿼리 실패 시 (401 등) 자동으로 me = undefined, isLoading = false → isGuest = true
+  // 비회원은 me = null로 정상 처리
   return {
     me,
     isLoading,
-    isGuest: isError || !me, // 비회원
+    isGuest: !me, // 비회원 (me가 null이면 guest)
     isUser: me?.role === "USER", // 일반회원
     isDriver: me?.role === "DRIVER", // 기사님
     role: me?.role as "USER" | "DRIVER" | undefined,
