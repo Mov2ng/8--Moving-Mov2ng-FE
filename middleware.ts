@@ -47,18 +47,17 @@ export function middleware(request: NextRequest) {
 
 /**
  * Middleware 실행 범위 설정
- * - api, _next, static 파일 등은 제외
+ * - matcher로 미리 필터링하면 함수가 실행되지 않아 성능상 유리
+ * - API 라우트, static 파일 등은 제외
  */
 export const config = {
   matcher: [
     /*
-     * - 모든 경로 제외 (api, _next, static, image, favicon)
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - TODO: 근데 왜 이렇게 해야 하는지 모르겠음
+     * 모든 경로에서 다음 항목들 제외:
+     * - /api/* (API routes)
+     * - /_next/* (Next.js 내부 파일)
+     * - /favicon.ico (favicon file)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api|_next|favicon.ico).*)",
   ],
 };
