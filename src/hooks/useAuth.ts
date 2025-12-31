@@ -113,7 +113,7 @@ export function useMe() {
   });
 
   // 토큰 만료(401) 에러 처리
-  // onError 옵션 레거시화 (사이드 이펙트 기능이 아니게 됨) 
+  // onError 옵션 레거시화 (사이드 이펙트 기능이 아니게 됨)
   // 대신 useEffect로 상태 변화 반응(에러가 남X, 현재 에러 '상태'O) 로직 처리
   useEffect(() => {
     if (result.error && (result.error as { status?: number })?.status === 401) {
@@ -148,22 +148,27 @@ export function useAuth() {
 
 /**
  * 로그아웃 mutation 생성 훅
+ * - 토큰 삭제, 쿼리 삭제 처리
  * @returns useApiMutation 결과
  */
 export function useLogout() {
   const queryClient = useQueryClient();
-  const router = useRouter();
 
-  return useApiMutation({
+  return useApiMutation<unknown, void, unknown>({
     mutationKey: ["logout"],
-    mutationFn: userService.logout,
+    mutationFn: () => userService.logout(), // TVariables = void로 명시
     onSuccess: () => {
       // localStorage에서 accessToken 삭제
       removeToken();
-      // me 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["me"] });
+      // me 쿼리 완전 삭제
+      queryClient.removeQueries({ queryKey: ["me"] });
       // refreshToken 쿠키는 서버에서 삭제
-      router.push("/login");
+    },
+    onError: (error) => {
+      console.error("로그아웃 실패: ", error);
+      // 서버 요청 실패해도 클라이언트 상태는 정리
+      removeToken();
+      queryClient.removeQueries({ queryKey: ["me"] });
     },
   });
 }
