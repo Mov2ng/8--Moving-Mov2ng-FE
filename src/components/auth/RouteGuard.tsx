@@ -50,15 +50,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
 
     // TODO: 여기에 Role 기반 접근 제어나 프로필 완성 여부 체크 등 추가 가능
     // 예: if (pathname.startsWith("/movers") && me?.role !== "USER") { ... }
-  }, [
-    isGuest,
-    isLoading,
-    pathname,
-    isProtectedRoute,
-    isGuestOnlyRoute,
-    router,
-    me,
-  ]);
+  }, [isGuest, isLoading, pathname]);
 
   // 로딩 중일 때는 로딩 UI 표시
   if (isLoading) {
