@@ -4,10 +4,9 @@ import { userService } from "@/services/userService";
 import { useApiMutation } from "./useApiMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "./useApiQuery";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { setToken } from "@/utils/tokenStorage";
 import { handleAuthError } from "@/utils/authError";
-import { useEffect } from "react";
 
 /**
  * 회원가입 mutation 생성 훅
@@ -104,9 +103,9 @@ export function useLogin() {
  * @returns useApiQuery 결과
  */
 export function useMe() {
-  const queryClient = useQueryClient();
-  const router = useRouter();
-  const pathname = usePathname();
+  // /auth/me API는 apiClient에서 401을 { data: null }로 반환하므로
+  // React Query 입장에서는 에러가 아닌 성공 응답으로 처리됩니다.
+  // 따라서 여기서 401 에러 처리는 필요하지 않습니다.
 
   const result = useApiQuery({
     queryKey: ["me"],
@@ -114,22 +113,6 @@ export function useMe() {
     retry: false, // 인증 실패 재시도 불필요
     staleTime: 1000 * 60 * 10, // 10분 동안 fresh 상태 유지
   });
-
-  // 토큰 만료(401) 에러 처리 - refreshToken이 유효하지 않거나 만료된 경우 자동 로그아웃
-  // onError 옵션 레거시화 (사이드 이펙트 기능이 아니게 됨)
-  // 대신 useEffect로 상태 변화 반응(에러가 남X, 현재 에러 '상태'O) 로직 처리
-  useEffect(() => {
-    if (result.error && (result.error as { status?: number })?.status === 401) {
-      // 인증 상태 정리 (토큰 삭제 + me 쿼리 삭제)
-      handleAuthError(queryClient);
-
-      // 현재 경로가 로그인/회원가입 페이지가 아닐 때만 리디렉션
-      const isAuthPage = pathname === "/login" || pathname === "/signup";
-      if (!isAuthPage) {
-        router.push("/login");
-      }
-    }
-  }, [result.error, queryClient, router, pathname]);
 
   return result;
 }
