@@ -3,8 +3,8 @@
 import { usePathname, useRouter } from "next/navigation";
 
 const TABS = [
-  { label: "대기 중인 견적", href: "/quote/pending" },
-  { label: "받았던 견적", href: "/quote/received" },
+  { label: "대기 중인 견적", href: "/estimate/user/pending" },
+  { label: "받았던 견적", href: "/estimate/user/received" },
 ];
 
 export default function QuoteTabNav() {

@@ -45,7 +45,7 @@ const adaptQuote = (item: ApiQuote): QuoteCardView => ({
   price: item.price,
 });
 
-const ENDPOINT = "/request/user/quotes";
+const ENDPOINT = "/request/user/estimates";
 
 export default function QuotePendingPage() {
   const router = useRouter();
@@ -77,7 +77,7 @@ export default function QuotePendingPage() {
     Error
   >({
     mutationFn: async () =>
-      apiClient(`/request/user/quotes/pending/${confirmId}/accept`, {
+      apiClient(`${ENDPOINT}/${confirmId}/pending/accept`, {
         method: "POST",
       }),
     onSuccess: () => {
@@ -133,7 +133,9 @@ export default function QuotePendingPage() {
                   arrival={quote.arrival}
                   price={quote.price}
                   onConfirm={() => setConfirmId(quote.id)}
-                  onDetail={() => router.push(`/quote/pending/${quote.id}`)}
+                  onDetail={() =>
+                    router.push(`/estimate/user/pending/${quote.id}`)
+                  }
                 />
               ))}
             </div>

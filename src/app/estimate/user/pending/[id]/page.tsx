@@ -1,4 +1,4 @@
-import QuotePendingDetailPage from "@/app/quote/(components)/QuotePendingDetailPage";
+import QuotePendingDetailPage from "../../(components)/QuotePendingDetailPage";
 
 type PageProps = {
   params: { id: string } | Promise<{ id: string }>;
