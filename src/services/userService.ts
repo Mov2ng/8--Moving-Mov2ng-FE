@@ -1,4 +1,4 @@
-import { apiClient } from "@/libs/apiClient";
+import { apiClient, refreshAccessToken } from "@/libs/apiClient";
 import { ProfileFormValues } from "@/libs/validation/profileSchemas";
 
 /**
@@ -32,11 +32,17 @@ export const userService = {
       body: data,
     });
   },
-  refresh: () => {
-    // TODO: apiClient 사용시 무한루프 발생 가능해 별도 fetch 할 것
-    return apiClient("/auth/refresh", {
-      method: "POST",
-    });
+  refresh: async () => {
+    // refreshAccessToken 재사용 (동시 요청 방지 및 토큰 저장 로직 포함)
+    const accessToken = await refreshAccessToken();
+    if (!accessToken) {
+      throw {
+        status: 401,
+        message: "토큰 재발급 실패",
+      };
+    }
+    // apiClient 반환 형태와 일치시키기 위해 { data: { accessToken } } 형태로 반환
+    return { data: { accessToken } };
   },
   me: () => {
     return apiClient("/auth/me", {

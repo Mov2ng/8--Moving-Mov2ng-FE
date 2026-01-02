@@ -4,8 +4,9 @@ import { userService } from "@/services/userService";
 import { useApiMutation } from "./useApiMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "./useApiQuery";
-import { useRouter } from "next/navigation";
-import { setToken, removeToken } from "@/utils/tokenStorage";
+import { useRouter, usePathname } from "next/navigation";
+import { setToken } from "@/utils/tokenStorage";
+import { handleAuthError } from "@/utils/authError";
 import { useEffect } from "react";
 
 /**
@@ -104,6 +105,8 @@ export function useLogin() {
  */
 export function useMe() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const result = useApiQuery({
     queryKey: ["me"],
@@ -112,15 +115,21 @@ export function useMe() {
     staleTime: 1000 * 60 * 10, // 10분 동안 fresh 상태 유지
   });
 
-  // 토큰 만료(401) 에러 처리
-  // onError 옵션 레거시화 (사이드 이펙트 기능이 아니게 됨) 
+  // 토큰 만료(401) 에러 처리 - refreshToken이 유효하지 않거나 만료된 경우 자동 로그아웃
+  // onError 옵션 레거시화 (사이드 이펙트 기능이 아니게 됨)
   // 대신 useEffect로 상태 변화 반응(에러가 남X, 현재 에러 '상태'O) 로직 처리
   useEffect(() => {
     if (result.error && (result.error as { status?: number })?.status === 401) {
-      removeToken();
-      queryClient.removeQueries({ queryKey: ["me"] });
+      // 인증 상태 정리 (토큰 삭제 + me 쿼리 삭제)
+      handleAuthError(queryClient);
+
+      // 현재 경로가 로그인/회원가입 페이지가 아닐 때만 리디렉션
+      const isAuthPage = pathname === "/login" || pathname === "/signup";
+      if (!isAuthPage) {
+        router.push("/login");
+      }
     }
-  }, [result.error, queryClient]);
+  }, [result.error, queryClient, router, pathname]);
 
   return result;
 }
@@ -148,22 +157,24 @@ export function useAuth() {
 
 /**
  * 로그아웃 mutation 생성 훅
+ * - 토큰 삭제, 쿼리 삭제 처리
  * @returns useApiMutation 결과
  */
 export function useLogout() {
   const queryClient = useQueryClient();
-  const router = useRouter();
 
-  return useApiMutation({
+  return useApiMutation<unknown, void, unknown>({
     mutationKey: ["logout"],
-    mutationFn: userService.logout,
+    mutationFn: () => userService.logout(), // TVariables = void로 명시
     onSuccess: () => {
-      // localStorage에서 accessToken 삭제
-      removeToken();
-      // me 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["me"] });
+      // 인증 상태 정리 (토큰 삭제 + me 쿼리 삭제)
+      handleAuthError(queryClient);
       // refreshToken 쿠키는 서버에서 삭제
-      router.push("/login");
+    },
+    onError: (error) => {
+      console.error("로그아웃 실패: ", error);
+      // 서버 요청 실패해도 클라이언트 상태는 정리
+      handleAuthError(queryClient);
     },
   });
 }
@@ -178,12 +189,8 @@ export function useRefresh() {
   return useApiMutation({
     mutationKey: ["refresh"],
     mutationFn: userService.refresh,
-    onSuccess: (data) => {
-      // refresh 성공 시 새 accessToken을 localStorage에 저장
-      const { accessToken } = data.data;
-      if (accessToken) {
-        setToken(accessToken);
-      }
+    onSuccess: () => {
+      // refreshAccessToken에서 이미 토큰 저장 처리 → me 캐시 갱신
       queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });

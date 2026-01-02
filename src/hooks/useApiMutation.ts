@@ -6,6 +6,7 @@ import {
   UseMutationOptions,
   useQueryClient,
 } from "@tanstack/react-query";
+import { handleAuthError } from "@/utils/authError";
 
 /**
  * React Query mutation 래퍼
@@ -40,14 +41,15 @@ export function useApiMutation<TData, TVariables, TError>({
       // mutationFn은 variables만 받으므로 직접 호출
       return await mutationFn(variables);
     } catch (error) {
-      // 401 에러 발생 시 me 쿼리 무효화 (accessToken 만료 시 me 캐시도 함께 무효화)
+      // 401 에러 발생 시 인증 상태 정리 (토큰 삭제 + me 쿼리 삭제)
+      // 리디렉션은 useMe에서 처리
       if (
         error &&
         typeof error === "object" &&
         "status" in error &&
         error.status === 401
       ) {
-        queryClient.invalidateQueries({ queryKey: ["me"] });
+        handleAuthError(queryClient);
       }
       // 에러를 다시 throw하여 React Query가 에러 상태로 처리하도록 함
       throw error;

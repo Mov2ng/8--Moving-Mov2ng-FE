@@ -1,5 +1,5 @@
 import { BASE_URL } from "@/constants/api.constants";
-import { getToken, removeToken } from "@/utils/tokenStorage";
+import { getToken, removeToken, setToken } from "@/utils/tokenStorage";
 
 // 기본 url
 export const API_URL = process.env.NEXT_PUBLIC_API || BASE_URL;
@@ -15,12 +15,68 @@ export type ApiRequestOptions = {
   headers?: Record<string, string>;
 };
 
+// 동시 요청 시 refresh 중복 호출 방지
+let isRefreshing = false; // refresh 중복 호출 방지 플래그
+let refreshPromise: Promise<string | null> | null = null; // refresh 프로미스
+
+// refreshToken으로 accessToken 재발급 (무한루프 방지를 위해 apiClient 사용X)
+export async function refreshAccessToken(): Promise<string | null> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise; // 이미 리프레시 중이면 기존 프로미스 반환
+  }
+
+  isRefreshing = true; // 리프레시 중 플래그 설정
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        credentials: "include", // refreshToken 쿠키 전송
+      });
+
+      // 리프레시 실패 시 토큰 삭제 후 로그인 페이지로 리디렉션
+      if (!response.ok) {
+        removeToken();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        return null;
+      }
+
+      // HTTP 성공 시 응답 데이터 검증
+      const data = await response.json().catch(() => null);
+      if (!data || !data.accessToken) {
+        // JSON 파싱 실패 또는 accessToken이 없는 경우
+        removeToken();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        return null;
+      }
+      setToken(data.accessToken);
+      return data.accessToken;
+    } catch {
+      // 네트워크 에러 등 예외 발생 시 토큰 삭제 후 로그인 페이지로 리디렉션
+      removeToken();
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
 /**
  * API 호출 래퍼
  * - baseURL 설정
  * - Content-Type 자동 설정
  * - 쿼리 파라미터 자동 처리
  * - Authorization 헤더에 accessToken 자동 추가
+ * - 401 발생 시 자동으로 accessToken 재발급 후 재시도
  * - 요청/응답 처리 통일
  * - 성공/실패 시 에러 처리 통일
  */
@@ -87,23 +143,69 @@ export async function apiClient(endpoint: string, options: ApiRequestOptions) {
 
     clearTimeout(timeoutId); // 성공 시 타임아웃 클리어
 
-    // 9. 응답 상태 체크
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-
-      // 10. `/me` API의 401은 비회원 상태로 처리 (에러가 아님)
-      if (response.status === 401 && endpoint === "/auth/me") {
-        // 비회원은 정상 상태: me = null 반환
+    // 9. 401 응답 처리 (accessToken 만료)
+    if (response.status === 401) {
+      // `/me` API의 401은 비회원 상태로 처리 (에러가 아님)
+      if (endpoint === "/auth/me") {
         return { data: null };
       }
 
-      // 11. 다른 API의 401은 토큰 만료로 처리
-      if (typeof window !== "undefined" && response.status === 401) {
-        // accessToken 제거
+      // refresh API 호출은 재시도하지 않음 (무한루프 방지)
+      if (endpoint === "/auth/refresh") {
         removeToken();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        throw {
+          status: 401,
+          message: "리프레시 토큰 만료",
+        };
       }
 
-      // 12. 실패는 에러 throw
+      // accessToken 재발급
+      const newAccessToken = await refreshAccessToken();
+      if (!newAccessToken) {
+        throw {
+          status: 401,
+          message: "토큰 재발급 실패",
+        };
+      }
+
+      // Authorization 헤더 갱신
+      combinedHeaders["Authorization"] = `Bearer ${newAccessToken}`;
+
+      // 원래 요청 재시도 (타임아웃 재설정)
+      const retryController = new AbortController();
+      const retryTimeoutId = setTimeout(() => retryController.abort(), 10000); // 10초 타임아웃
+
+      const retryResponse = await fetch(url, {
+        method,
+        headers: combinedHeaders, // Authorization 헤더 갱신
+        credentials: "include", // refreshToken 쿠키 자동 전송
+        signal: retryController.signal, // 타임아웃 시 중단
+        ...(jsonBody ? { body: jsonBody } : {}), // body 전송
+      });
+
+      clearTimeout(retryTimeoutId); // 성공 시 타임아웃 클리어
+
+      if (!retryResponse.ok) {
+        const errorData = await retryResponse.json().catch(() => null);
+        throw {
+          status: retryResponse.status,
+          message: errorData?.message ?? "API 요청 중 오류 발생",
+          error: errorData,
+        };
+      }
+
+      // 재시도 성공 시 JSON 파싱 후 반환
+      return retryResponse.json().catch(() => ({}));
+    }
+
+    // 10. 응답 상태 체크
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+
+      // 11. 실패는 에러 throw
       throw {
         status: response.status,
         message: errorData?.message ?? "API 요청 중 오류 발생",
