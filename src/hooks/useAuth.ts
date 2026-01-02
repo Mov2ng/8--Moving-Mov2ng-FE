@@ -189,12 +189,8 @@ export function useRefresh() {
   return useApiMutation({
     mutationKey: ["refresh"],
     mutationFn: userService.refresh,
-    onSuccess: (data) => {
-      // refresh 성공 시 새 accessToken을 localStorage에 저장
-      const { accessToken } = data.data;
-      if (accessToken) {
-        setToken(accessToken);
-      }
+    onSuccess: () => {
+      // refreshAccessToken에서 이미 토큰 저장 처리 → me 캐시 갱신
       queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });
