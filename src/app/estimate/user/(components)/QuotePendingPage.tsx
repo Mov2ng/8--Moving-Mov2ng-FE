@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { formatDateLabel } from "@/utils/date";
+import { STALE_TIME } from "@/constants/query";
 
 import type { ApiQuote, QuoteStatus } from "@/types/api/quotes";
 import type { QuoteCardView } from "@/types/view/quote";
@@ -66,7 +67,7 @@ export default function QuotePendingPage() {
         query: { status: "PENDING" },
       });
     },
-    staleTime: 1000 * 30, // 30초 캐싱
+    staleTime: STALE_TIME.ESTIMATE, // 30초 캐싱
   });
 
   const quotes: QuoteCardView[] = data?.data ? data.data.map(adaptQuote) : [];

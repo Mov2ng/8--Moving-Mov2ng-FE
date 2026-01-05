@@ -11,6 +11,7 @@ import { Pagination } from "@/components/common/Pagination";
 import type { ApiWritableReview, ReviewItem } from "@/types/view/review";
 import ReviewWriteModal from "./ReviewWriteModal";
 import { useQueryClient } from "@tanstack/react-query";
+import { STALE_TIME } from "@/constants/query";
 
 const movingTypeMap: Record<string, string> = {
   SMALL: "소형이사",
@@ -51,7 +52,7 @@ export default function ReviewWritablePage() {
       apiClient("/review/writable", {
         method: "GET",
       }),
-    staleTime: 1000 * 30,
+    staleTime: STALE_TIME.REVIEW,
   });
 
   const writableReviews =

@@ -8,6 +8,7 @@ import { formatDateLabel } from "@/utils/date";
 import Link from "next/link";
 import { useState } from "react";
 import { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
+import { STALE_TIME } from "@/constants/query";
 
 const movingTypeMap: Record<string, string> = {
   SMALL: "소형이사",
@@ -64,7 +65,7 @@ export default function ReviewWrittenPage() {
       apiClient("/review/my", {
         method: "GET",
       }),
-    staleTime: 1000 * 30,
+    staleTime: STALE_TIME.REVIEW,
   });
 
   const list: ReviewWrittenItem[] = data?.data?.map(adaptWritten) ?? [];
