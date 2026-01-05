@@ -14,11 +14,12 @@ import RoleToggle from "../../../components/toggle/RoleToggle";
  * - 로딩/에러 처리 포함
  */
 export default function LoginForm() {
+  // react-hook-form 세팅 (zod 검증)
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    setError,
+    reset,
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
@@ -29,6 +30,9 @@ export default function LoginForm() {
   const onSubmit = async (values: LoginFormValues) => {
     try {
       await loginMutation.mutateAsync(values);
+
+      // 성공 시 form reset + 성공 UI 처리
+      reset();
     } catch (error) {
       // 에러 파싱
       const parsed = parseServerError(error);
@@ -39,28 +43,8 @@ export default function LoginForm() {
         return;
       }
 
-      // 필드 에러 (details.field가 있을 때)
-      if (parsed.details && typeof parsed.details === "object") {
-        const { field } = parsed.details;
-        const { reason } = parsed.details;
-
-        if (field && typeof field === "string") {
-          setError(field as keyof LoginFormValues, {
-            // TODO: 타입 단언 타입 가드로 바꾸기
-            message: typeof reason === "string" ? reason : parsed.message,
-          });
-          return;
-        }
-      }
-
-      // 로그인 실패 기본 에러
-      if (parsed.message) {
-        alert(parsed.message);
-        return;
-      }
-
-      // 알 수 없는 오류 처리
-      alert("로그인 중 알 수 없는 오류가 발생했습니다.");
+      // 에러 메시지 표시
+      alert(parsed.message || "로그인 중 알 수 없는 오류가 발생했습니다.");
     }
   };
 

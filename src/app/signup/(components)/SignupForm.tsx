@@ -15,13 +15,11 @@ import RoleToggle from "../../../components/toggle/RoleToggle";
  * - 모든 입력 필드에 주석으로 설명 포함
  */
 export default function SignupForm() {
-
   // react-hook-form 세팅 (zod 검증)
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    setError,
     reset,
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -32,10 +30,7 @@ export default function SignupForm() {
 
   // form 제출 핸들러
   const onSubmit = async (values: SignupFormValues) => {
-    console.log(values);
     try {
-      // mutation으로 회원가입 요청
-      // userService.signup 내부에서 apiClient가 body를 json.stringify
       await signupMutation.mutateAsync({
         role: values.role,
         name: values.name,
@@ -57,28 +52,8 @@ export default function SignupForm() {
         return;
       }
 
-      // 필드 에러 (details.field가 있을 때)
-      if (parsed.details && typeof parsed.details === "object") {
-        const { field } = parsed.details;
-        const { reason } = parsed.details;
-
-        if (field && typeof field === "string") {
-          setError(field as keyof SignupFormValues, {
-            // TODO: 타입 단언 타입 가드로 바꾸기
-            message: typeof reason === "string" ? reason : parsed.message,
-          });
-          return;
-        }
-      }
-
-      // 회원가입 실패 기본 에러
-      if (parsed.message) {
-        alert(parsed.message);
-        return;
-      }
-
-      // 알 수 없는 오류 처리
-      alert("회원가입 중 알 수 없는 오류가 발생했습니다.");
+      // 에러 메시지 표시
+      alert(parsed.message || "회원가입 중 알 수 없는 오류가 발생했습니다.");
     }
   };
 

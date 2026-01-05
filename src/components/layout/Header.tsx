@@ -1,30 +1,56 @@
 "use client";
 
-import { useMe } from "@/hooks/useAuth";
+import { useAuth, useLogout } from "@/hooks/useAuth";
 import Button from "../common/button";
 import { useRouter } from "next/navigation";
 
 export default function Header() {
   const router = useRouter();
 
-  // 사용자 정보 조회 및 추출
-  // 매번 호출처럼 보이지만 실제 네트워크 요청은 매번X
-  // 쿼리 클라이언트에 캐시된 데이터를 사용하기 때문에 매번 호출X
-  // 캐시된 데이터가 있으면 캐시된 데이터를 사용하고, 없으면 네트워크 요청 (staleTime 설정에 따라 캐시 데이터 사용 여부 결정)
-  const { data } = useMe();
-  const user = data?.data;
+  // TanStack Query로 사용자 상태 조회
+  // useAuth 내부에서 서버 측 쿼리 활성화 여부 결정
+  const { me, isGuest, isLoading } = useAuth();
 
+  const logoutMutation = useLogout();
+
+  const handleLogout = async () => {
+    try {
+      // 서버 요청 완료 대기 (refreshToken 쿠키 삭제 보장)
+      await logoutMutation.mutateAsync();
+    } catch {
+      // 에러 발생해도 클라이언트 상태는 onError에서 정리됨
+    } finally {
+      // 서버 요청 완료 후 리디렉션
+      router.push("/login");
+    }
+  };
+
+  // 사용자 상태 조회 결과에 따라 렌더링
   return (
     <header>
-      {user ? (
-        <>{user?.name}</>
+      {isLoading ? (
+        <span>로딩중...</span>
       ) : (
-        <Button
-          text="로그인"
-          onClick={() => router.push("/login")}
-          variant="outline"
-          width="100px"
-        />
+        <>
+          {isGuest ? (
+            <Button
+              text="로그인"
+              onClick={() => router.push("/login")}
+              variant="outline"
+              width="100px"
+            />
+          ) : (
+            <>
+              <span>{me?.name}</span>
+              <Button
+                text="로그아웃"
+                onClick={handleLogout}
+                variant="outline"
+                width="100px"
+              />
+            </>
+          )}
+        </>
       )}
     </header>
   );
