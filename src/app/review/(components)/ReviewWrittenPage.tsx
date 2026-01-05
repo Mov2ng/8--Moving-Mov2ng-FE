@@ -129,6 +129,12 @@ export default function ReviewWrittenPage() {
               priority
             />
             <div className="text-gray-400 pret-16-medium">{emptyText}</div>
+            <Link
+              href="/review/writable"
+              className="mt-2 inline-flex items-center justify-center px-5 py-3 rounded-xl bg-primary-blue-300 text-white pret-15-semibold hover:bg-primary-blue-400 transition-colors"
+            >
+              리뷰 작성하러 가기
+            </Link>
           </div>
         ) : null}
         {!isLoading && !error && list.length > 0 && (
