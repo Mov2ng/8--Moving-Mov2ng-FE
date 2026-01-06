@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
 import ReviewWriteModal from "./ReviewWriteModal";
 import { useQueryClient } from "@tanstack/react-query";
+import { STALE_TIME } from "@/constants/query";
 
 import type { ApiWritableReview, ReviewItem } from "@/types/view/review";
 
@@ -64,7 +65,7 @@ export default function ReviewWritablePage() {
       apiClient("/review/writable", {
         method: "GET",
       }),
-    staleTime: 1000 * 30,
+    staleTime: STALE_TIME.REVIEW,
   });
 
   const writableReviews =

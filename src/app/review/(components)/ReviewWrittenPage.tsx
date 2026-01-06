@@ -6,10 +6,9 @@ import { useApiQuery } from "@/hooks/useApiQuery";
 import { apiClient } from "@/libs/apiClient";
 import { formatDate, formatDateLabel } from "@/utils/date";
 import Link from "next/link";
-import Image from "next/image";
-import { useEffect, useState } from "react";
-
-import type { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
+import { useState } from "react";
+import { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
+import { STALE_TIME } from "@/constants/query";
 
 const movingTypeMap: Record<string, string> = {
   SMALL: "소형이사",
@@ -77,7 +76,7 @@ export default function ReviewWrittenPage() {
       apiClient("/review/my", {
         method: "GET",
       }),
-    staleTime: 1000 * 30,
+    staleTime: STALE_TIME.REVIEW,
   });
 
   const list: ReviewWrittenItem[] = data?.data?.map(adaptWritten) ?? [];

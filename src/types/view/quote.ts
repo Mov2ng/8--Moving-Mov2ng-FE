@@ -43,6 +43,7 @@ export interface QuoteCardView {
 
 export interface QuoteDetailView {
   id: number;
+  driverId?: number;
   status: "waiting" | "confirmed" | "rejected";
   serviceType: string;
   isDesignatedRequest: boolean;
@@ -55,6 +56,7 @@ export interface QuoteDetailView {
   experience: number;
   confirmedCount: number;
   likeCount: number;
+  isFavorite?: boolean;
   price: number;
   requestedAt: string;
   movingDateTime: string;

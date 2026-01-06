@@ -9,6 +9,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import Button from "@/components/common/button";
 import { formatDate, formatDateTime } from "@/utils/date";
 import Image from "next/image";
+import { useState } from "react";
+import { STALE_TIME } from "@/constants/query";
 
 import type { QuoteDetailView } from "@/types/view/quote";
 import type { ApiQuoteDetail, QuoteStatus } from "@/types/api/quotes";
@@ -25,27 +27,32 @@ const movingTypeMap: Record<string, string> = {
   OFFICE: "사무실이사",
 };
 
-const adaptQuoteDetail = (item: ApiQuoteDetail): QuoteDetailView => ({
-  id: item.id,
-  status: statusMap[item.status],
-  serviceType:
-    movingTypeMap[item.request.moving_type] ?? item.request.moving_type,
-  isDesignatedRequest: item.isRequest ?? false,
-  designatedLabel: "지정 견적 요청",
-  description: item.driver?.driver_intro ?? "",
-  name: item.driver.nickname ?? "-",
-  profileImage: "/assets/image/avatartion-1.png", // 임시 프로필 이미지
-  rating: item.driver.rating ?? 0,
-  reviewCount: item.driver.reviewCount ?? 0,
-  experience: item.driver.driver_years ?? 0,
-  confirmedCount: item.driver.confirmedCount ?? 0,
-  likeCount: item.driver.likeCount ?? 0,
-  price: item.price,
-  requestedAt: item.request?.createdAt ?? item.createdAt ?? "",
-  movingDateTime: item.request?.moving_data ?? "",
-  origin: item.request?.origin ?? "-",
-  destination: item.request?.destination ?? "-",
-});
+const adaptQuoteDetail = (item: ApiQuoteDetail): QuoteDetailView => {
+  const driverId = item.driver?.id ?? item.driver_id ?? undefined;
+  return {
+    id: item.id,
+    driverId,
+    status: statusMap[item.status],
+    serviceType:
+      movingTypeMap[item.request.moving_type] ?? item.request.moving_type,
+    isDesignatedRequest: item.isRequest ?? false,
+    designatedLabel: "지정 견적 요청",
+    description: item.driver?.driver_intro ?? "",
+    name: item.driver.nickname ?? "-",
+    profileImage: "/assets/image/avatartion-1.png", // 임시 프로필 이미지
+    rating: item.driver.rating ?? 0,
+    reviewCount: item.driver.reviewCount ?? 0,
+    experience: item.driver.driver_years ?? 0,
+    confirmedCount: item.driver.confirmedCount ?? 0,
+    likeCount: item.driver.likeCount ?? 0,
+    isFavorite: item.driver.likes ? item.driver.likes.length > 0 : undefined,
+    price: item.price,
+    requestedAt: item.request?.createdAt ?? item.createdAt ?? "",
+    movingDateTime: item.request?.moving_data ?? "",
+    origin: item.request?.origin ?? "-",
+    destination: item.request?.destination ?? "-",
+  };
+};
 
 type QuotePendingDetailPageProps = {
   estimateId: number;
@@ -55,6 +62,9 @@ export default function QuotePendingDetailPage({
   estimateId,
 }: QuotePendingDetailPageProps) {
   const queryClient = useQueryClient();
+  const [favoriteOverride, setFavoriteOverride] = useState<boolean | undefined>(
+    undefined
+  );
   const id = estimateId;
   const invalidId = Number.isNaN(id);
 
@@ -65,7 +75,7 @@ export default function QuotePendingDetailPage({
     queryKey: ["quote", "pending", id],
     queryFn: async () =>
       apiClient(`${ENDPOINT}/${id}/pending`, { method: "GET" }),
-    staleTime: 1000 * 30,
+    staleTime: STALE_TIME.ESTIMATE,
     enabled: !invalidId,
   });
 
@@ -91,6 +101,8 @@ export default function QuotePendingDetailPage({
   const detail: QuoteDetailView | null = data?.data
     ? adaptQuoteDetail(data.data)
     : null;
+
+  const isFavorite = favoriteOverride ?? detail?.isFavorite ?? false;
 
   const shareUrl =
     typeof window !== "undefined"
@@ -192,6 +204,30 @@ export default function QuotePendingDetailPage({
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
+  const { mutate: toggleFavorite, isPending: isTogglingFavorite } =
+    useApiMutation<
+      { success: boolean; message?: string; data?: { isFavorite?: boolean } },
+      void,
+      Error
+    >({
+      mutationFn: async () => {
+        if (!detail?.driverId) throw new Error("driverId를 찾을 수 없습니다.");
+        const method = isFavorite ? "DELETE" : "POST";
+        return apiClient(`/movers/${detail.driverId}/favorite`, {
+          method,
+        });
+      },
+      onSuccess: (res) => {
+        setFavoriteOverride((prev) =>
+          res.data?.isFavorite !== undefined ? res.data.isFavorite : !prev
+        );
+        if (res.message) alert(res.message);
+      },
+      onError: (err) => {
+        alert(err.message ?? "찜하기 처리중 오류 발생.");
+      },
+    });
+
   return (
     <div className="min-h-screen bg-white">
       <header className="bg-white border-b border-line-100">
@@ -200,7 +236,7 @@ export default function QuotePendingDetailPage({
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-5 py-8">
+      <main className="max-w-6xl mx-auto px-5 py-8 pb-32 lg:pb-8">
         {invalidId && (
           <div className="text-center text-secondary-red-200 pret-14-medium">
             잘못된 견적 ID입니다.
@@ -273,7 +309,27 @@ export default function QuotePendingDetailPage({
             </div>
 
             {/* 확정 + 공유 */}
-            <aside className="mt-6 lg:mt-0 flex flex-col gap-4">
+            <aside className="hidden lg:flex flex-col gap-4 mt-6 lg:mt-0">
+              <button
+                type="button"
+                onClick={() => toggleFavorite()}
+                disabled={isTogglingFavorite || !detail?.driverId}
+                className="inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-2xl border border-line-200 bg-white text-black-400 hover:bg-background-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Image
+                  src={
+                    isFavorite
+                      ? "/assets/icon/ic-like-active.svg"
+                      : "/assets/icon/ic-like-default.svg"
+                  }
+                  alt="찜하기"
+                  width={20}
+                  height={20}
+                />
+                <span className="pret-xl-semibold leading-8">
+                  기사님 찜하기
+                </span>
+              </button>
               <Button
                 text="견적 확정하기"
                 onClick={() => acceptQuote()}
@@ -331,6 +387,37 @@ export default function QuotePendingDetailPage({
           </div>
         )}
       </main>
+
+      {/* 태블릿 모바일 버전 */}
+      <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-line-100 px-5 py-3">
+        <div className="mx-auto max-w-6xl flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => toggleFavorite()}
+            disabled={isTogglingFavorite || !detail?.driverId}
+            className="size-12 rounded-2xl border border-line-200 bg-white flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+            aria-label="찜하기"
+          >
+            <Image
+              src={
+                isFavorite
+                  ? "/assets/icon/ic-like-active.svg"
+                  : "/assets/icon/ic-like-default.svg"
+              }
+              alt="찜하기"
+              width={24}
+              height={24}
+            />
+          </button>
+          <Button
+            text="견적 확정하기"
+            onClick={() => acceptQuote()}
+            disabled={invalidId || isAccepting}
+            width="100%"
+            className="h-[54px] flex-1 flex items-center justify-center pret-xl-semibold leading-6 text-black-400 hover:brightness-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+        </div>
+      </div>
     </div>
   );
 }
