@@ -4,10 +4,12 @@ import WrittenReviewCard from "./WrittenReviewCard";
 import { Pagination } from "@/components/common/Pagination";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import { apiClient } from "@/libs/apiClient";
-import { formatDateLabel } from "@/utils/date";
+import { formatDate, formatDateLabel } from "@/utils/date";
 import Link from "next/link";
-import { useState } from "react";
-import { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+
+import type { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
 
 const movingTypeMap: Record<string, string> = {
   SMALL: "소형이사",
@@ -24,13 +26,13 @@ const adaptWritten = (item: ApiWrittenReview): ReviewWrittenItem => {
   const serviceType =
     movingTypeSource && movingTypeMap[movingTypeSource]
       ? movingTypeMap[movingTypeSource]
-      : "이사 서비스";
+      : "";
 
   const isDesignated = item.request?.isDesignatedRequest ?? false;
 
   const movingDateRaw =
     item.request?.moving_data ?? primaryEstimate?.request?.moving_data;
-  const movingDate = movingDateRaw ? formatDateLabel(movingDateRaw) : "-";
+  const movingDate = movingDateRaw ? formatDate(movingDateRaw) : "-";
 
   const price =
     item.request?.price ?? primaryEstimate?.price ?? item.price ?? 0;
@@ -53,7 +55,18 @@ const adaptWritten = (item: ApiWrittenReview): ReviewWrittenItem => {
 
 export default function ReviewWrittenPage() {
   const [page, setPage] = useState(1);
-  const pageSize = 6;
+  const [pageSize, setPageSize] = useState(6);
+
+  useEffect(() => {
+    const calc = () => {
+      if (typeof window === "undefined") return;
+      const width = window.innerWidth;
+      setPageSize(width < 1024 ? 4 : 6);
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
 
   const { data, isLoading, error } = useApiQuery<
     { success: boolean; message: string; data: ApiWrittenReview[] },
@@ -107,8 +120,21 @@ export default function ReviewWrittenPage() {
           </div>
         )}
         {!isLoading && !error && list.length === 0 ? (
-          <div className="text-center text-gray-400 pret-15-medium py-10">
-            {emptyText}
+          <div className="flex flex-col items-center justify-center py-14 gap-4">
+            <Image
+              src="/assets/image/img-empty-blue.png"
+              alt="빈 상태"
+              width={120}
+              height={120}
+              priority
+            />
+            <div className="text-gray-400 pret-16-medium">{emptyText}</div>
+            <Link
+              href="/review/writable"
+              className="mt-2 inline-flex items-center justify-center px-5 py-3 rounded-xl bg-primary-blue-300 text-white pret-15-semibold hover:bg-primary-blue-400 transition-colors"
+            >
+              리뷰 작성하러 가기
+            </Link>
           </div>
         ) : null}
         {!isLoading && !error && list.length > 0 && (
