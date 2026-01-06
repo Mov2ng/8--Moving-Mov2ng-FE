@@ -4,14 +4,16 @@ import ReviewCreateCard from "./ReviewCreateCard";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import { useApiMutation } from "@/hooks/useApiMutation";
 import { apiClient } from "@/libs/apiClient";
-import { formatDateLabel } from "@/utils/date";
+import { formatDate } from "@/utils/date";
 import Link from "next/link";
-import { useState } from "react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
-import type { ApiWritableReview, ReviewItem } from "@/types/view/review";
 import ReviewWriteModal from "./ReviewWriteModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { STALE_TIME } from "@/constants/query";
+
+import type { ApiWritableReview, ReviewItem } from "@/types/view/review";
 
 const movingTypeMap: Record<string, string> = {
   SMALL: "소형이사",
@@ -25,12 +27,12 @@ const adaptWritable = (item: ApiWritableReview): ReviewItem => ({
   serviceType:
     movingTypeMap[item.request.moving_type ?? ""] ??
     item.request.moving_type ??
-    "이사 서비스",
+    "",
   isDesignatedRequest: false,
   designatedLabel: "지정 견적 요청",
   name: item.driver.user?.name ?? item.driver.nickname ?? "기사님",
   profileImage: item.driver.profileImage ?? "/assets/image/avatartion-1.png",
-  movingDate: formatDateLabel(item.request.moving_data),
+  movingDate: formatDate(item.request.moving_data),
   price: item.price ?? 0,
   reviewEnabled: true,
   reviewButtonText: "리뷰 작성하기",
@@ -40,8 +42,19 @@ export default function ReviewWritablePage() {
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState<ReviewItem | null>(null);
-  const pageSize = 6;
+  const [pageSize, setPageSize] = useState(6);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const calc = () => {
+      if (typeof window === "undefined") return;
+      const width = window.innerWidth;
+      setPageSize(width < 1024 ? 4 : 6);
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
 
   const { data, isLoading, error } = useApiQuery<
     { success: boolean; message: string; data: ApiWritableReview[] },
@@ -110,7 +123,7 @@ export default function ReviewWritablePage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-5 py-8 flex flex-col gap-6">
+      <main className="max-w-6xl mx-auto px-5 py-8 flex flex-col gap-4">
         {/* 카드 리스트 */}
         {isLoading && (
           <div className="text-center text-gray-400 pret-15-medium py-10">
@@ -123,8 +136,15 @@ export default function ReviewWritablePage() {
           </div>
         )}
         {!isLoading && !error && list.length === 0 ? (
-          <div className="text-center text-gray-400 pret-15-medium py-10">
-            {emptyText}
+          <div className="flex flex-col items-center justify-center py-14 gap-4">
+            <Image
+              src="/assets/image/img-empty-blue.png"
+              alt="빈 상태"
+              width={120}
+              height={120}
+              priority
+            />
+            <div className="text-gray-400 pret-16-medium">{emptyText}</div>
           </div>
         ) : null}
         {!isLoading && !error && list.length > 0 && (
