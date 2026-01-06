@@ -120,7 +120,7 @@ export function useMe() {
 /**
  * 사용자 권한(role) 조회 훅
  * 데이터 접근은 useMe에 맡기고, 판단 로직만 공통화
- * @returns 사용자 권한 판단 결과
+ * @returns 사용자 권한 판단 결과 
  */
 export function useAuth() {
   // 사용자 정보 조회

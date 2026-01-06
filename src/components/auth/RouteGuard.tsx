@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth"; 
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 
@@ -11,7 +11,7 @@ import { useEffect } from "react";
  */
 
 // 보호가 필요한 경로 목록
-const PROTECTED_ROUTES = ["/profile", "/quote", "/movers", "/estimate"];
+const PROTECTED_ROUTES = ["/profile", "/quote", "/estimate"];
 
 // 로그인한 사용자가 접근하면 안 되는 경로
 const GUEST_ONLY_ROUTES = ["/login", "/signup"];

@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import ReviewPointBox from "./ReviewPointBox";
 import ReviewList from "./ReviewList";
@@ -8,11 +8,16 @@ import RegionChip from "@/components/chips/RegionChip";
 import Image from "next/image";
 import Button from "@/components/common/button";
 import { Pagination } from "@/components/common/Pagination";
-import { useGetMoverExtra, useGetMoverFull, usePostFavoriteMover } from "@/hooks/useMover";
-import { useParams } from "next/navigation";
+import {
+  useGetMoverExtra,
+  useGetMoverFull,
+  usePostFavoriteMover,
+} from "@/hooks/useMover";
+import { useParams, useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 import { ReviewType } from "@/types/driverProfileType";
-
+import Modal from "@/components/common/Modal";
 interface Mover {
   id: number;
   name: string;
@@ -36,35 +41,46 @@ interface MoversCache {
 export default function MoversDetailPage() {
   const { id } = useParams<{ id: string }>();
   const idNumber = parseInt(id);
+  const { isGuest } = useAuth(); // 비회원 여부 확인
+  const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false); // 찜 상태 관리
 
   const queryClient = useQueryClient();
 
   // 캐시된 movers 목록에서 해당 id의 mover 찾기
   const cachedMover = useMemo(() => {
-    // 모든 movers 쿼리 캐시 검색
+    // 모든 movers 쿼리 캐시 검색 query Client가 달라서 못 가져옴.+key값도 다름
     const queries = queryClient.getQueriesData<MoversCache>({
       queryKey: ["movers"],
     });
 
     for (const [, data] of queries) {
-      const found = data?.data?.list?.find((mover: Mover) => mover.id === idNumber);
+      const found = data?.data?.list?.find(
+        (mover: Mover) => mover.id === idNumber
+      );
       if (found) return found;
     }
     return null;
   }, [queryClient, idNumber]);
 
-
   const hasExistingData = cachedMover !== null;
 
   // 전체 데이터 (캐시에 없을 때만 fetch)
-  const { data: fullData, isLoading: isFullLoading } = useGetMoverFull(idNumber, {
-    enabled: !hasExistingData,
-  });
+  const { data: fullData, isLoading: isFullLoading } = useGetMoverFull(
+    idNumber,
+    {
+      enabled: !hasExistingData,
+    }
+  );
 
   // 추가 데이터 (캐시에 있을 때만 fetch)
-  const { data: extraData, isLoading: isExtraLoading } = useGetMoverExtra(idNumber, {
-    enabled: hasExistingData,
-  });
+  const { data: extraData, isLoading: isExtraLoading } = useGetMoverExtra(
+    idNumber,
+    {
+      enabled: hasExistingData,
+    }
+  );
 
   // 최종 사용할 데이터 결정
   const driver = hasExistingData
@@ -73,6 +89,38 @@ export default function MoversDetailPage() {
 
   // 로딩 상태
   const isLoading = hasExistingData ? isExtraLoading : isFullLoading;
+
+  // ⚠️ 모든 hooks는 조건부 return 이전에 호출해야 함
+  const { mutate: postFavoriteMover, isPending: isPostFavoriteMoverPending } =
+    usePostFavoriteMover(idNumber);
+
+  // 기사님 찜하기 핸들러
+  const handlePostFavoriteMover = () => {
+    if (isGuest) {
+      setIsModalOpen(true);
+      return;
+    }
+
+    postFavoriteMover(idNumber, {
+      onSuccess: () => {
+        setIsFavorite(true); // 찜 상태 변경 -> 해당 기사님의 경우에만 변경되어야함
+        queryClient.invalidateQueries({ queryKey: ["movers"] });
+      },
+    });
+  };
+
+  const handleRequestDriver = () => {
+    if (isGuest) {
+      setIsModalOpen(true);
+      return;
+    }
+
+    // 지정 견적 요청 로직 추가
+  };
+
+  const modalButtonClick = () => {
+    router.push("/login");
+  };
 
   // 로딩 UI 표시
   if (isLoading) {
@@ -90,19 +138,16 @@ export default function MoversDetailPage() {
     return <div>데이터가 없습니다.</div>;
   }
 
-  const { mutate: postFavoriteMover, isPending: isPostFavoriteMoverPending } = usePostFavoriteMover(idNumber);
-  
-  // 기사님 찜하기 핸들러 -> 오류 처리 필요
-  const handlePostFavoriteMover = () => {
-    postFavoriteMover(idNumber, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["movers"] });
-      },
-    });
-  };
-
   return (
     <section className="flex gap-[117px] w-full pt-[56px] max-md:flex-col max-md:gap-[50px] max-md:px-18 max-sm:px-6">
+      <Modal
+        title="로그인 필요"
+        content="로그인 후 이용해주세요."
+        buttonText="확인"
+        isOpen={isModalOpen}
+        setIsOpen={setIsModalOpen}
+        buttonClick={modalButtonClick}
+      />
       <div className="flex flex-col gap-10 max-w-[955px] w-full">
         <FindDriverProfile
           name={driver.name}
@@ -176,19 +221,33 @@ export default function MoversDetailPage() {
           <h2 className="pret-xl-semibold text-black-400 max-md:hidden">
             김코드 기사님에게 지정 견적을 요청해보세요!
           </h2>
-          {/* 기사님 찜하기 버튼 성공 시 버튼 상태 변경 필요 */}
-          <button onClick={handlePostFavoriteMover} className="flex items-center justify-center gap-[10px] w-full h-[54px] bg-gray-50 border border-line-200 rounded-2xl pret-xl-medium text-black cursor-pointer max-md:size-[54px]">
+          {/* 기사님 찜하기 버튼 */}
+          <button
+            onClick={handlePostFavoriteMover}
+            className="flex items-center justify-center gap-[10px] w-full h-[54px] bg-gray-50 border border-line-200 rounded-2xl pret-xl-medium text-black cursor-pointer max-md:size-[54px]"
+          >
             <Image
-              src="/assets/icon/ic-like-active.svg"
+              src={
+                isFavorite
+                  ? "/assets/icon/ic-like-fill.svg"
+                  : "/assets/icon/ic-like-default.svg"
+              }
               alt="heart"
               width={24}
               height={24}
             />
-            <span className="max-md:hidden">기사님 찜하기</span>
+            <span className="max-md:hidden">
+              {isPostFavoriteMoverPending
+                ? "처리 중..."
+                : isFavorite
+                ? "찜 완료"
+                : "기사님 찜하기"}
+            </span>
           </button>
           <Button
             text="지정 견적 요청"
-            disabled={false}
+            onClick={handleRequestDriver}
+            disabled={isGuest ? false : true}
             width="full"
             className="flex items-center justify-center max-md:w-full max-md:h-full"
           />

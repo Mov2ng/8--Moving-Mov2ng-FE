@@ -16,6 +16,7 @@ import {
   type QuerySelectType,
 } from "@/types/queryType";
 import { DriverResponseType } from "@/types/driverProfileType";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function MoversPage() {
   // 지역, 서비스 label / value로 분리해서 선택
@@ -28,6 +29,7 @@ export default function MoversPage() {
   const [keyword, setKeyword] = useState<string>("");
   const [cursor, setCursor] = useState<number>(0);
   const [sort, setSort] = useState<QuerySelectType>(moverSortOption[0]);
+  const { isGuest } = useAuth(); // 비회원 여부 확인
 
   const { data: movers } = useGetMovers({
     keyword: keyword,
@@ -86,7 +88,10 @@ export default function MoversPage() {
           </div>
           <div className="flex flex-col gap-4 mt-3.5 max-md:hidden">
             <p className="pret-xl-semibold text-black-400">찜한 기사님</p>
-            <DriverList
+            {isGuest ? (
+              <></>
+            ) : (
+              <DriverList
               size="sm"
               id={1}
               name="이영훈"
@@ -98,6 +103,7 @@ export default function MoversPage() {
               confirmedCount={334}
               imageSrc="/assets/image/avatartion-3.png"
             />
+            )}
           </div>
         </div>
         <div className="max-w-[955px] w-full flex flex-col gap-8 max-md:gap-6">
