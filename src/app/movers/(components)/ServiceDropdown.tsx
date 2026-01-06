@@ -3,16 +3,25 @@
 import React, { useState } from "react";
 import FilterDropdown from "@/components/common/FilterDropdown";
 
-export default function ServiceDropdown({ selectedService, setSelectedService }: { selectedService: string, setSelectedService: (service: string) => void }) {
-  const serviceList = ["전체", "소형이사", "가정이사", "사무실이사"];
+import type { QuerySelectType } from "@/types/queryType";
 
-  const onClickService = (menu: string) => {
+export default function ServiceDropdown({
+  serviceList,
+  selectedService,
+  setSelectedService,
+}: {
+  serviceList: QuerySelectType[];
+  selectedService: QuerySelectType;
+  setSelectedService: (service: QuerySelectType) => void;
+}) {
+  
+  const onClickService = (menu: QuerySelectType) => {
     setSelectedService(menu);
   };
 
   return (
     <FilterDropdown
-      menuName={selectedService ? selectedService : "서비스"}
+      menuName={selectedService.label}
       menuList={serviceList}
       onClick={onClickService}
     />

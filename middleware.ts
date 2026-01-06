@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
   const isAuthenticated = !!refreshToken;
 
   // 보호된 경로 목록 (인증 필요)
-  const protectedRoutes = ["/profile", "/quote", "/movers", "/estimate"];
+  const protectedRoutes = ["/profile", "/quote", "/estimate"];
 
   // 게스트 전용 경로 (로그인한 사용자 접근 불가)
   const guestOnlyRoutes = ["/login", "/signup"];

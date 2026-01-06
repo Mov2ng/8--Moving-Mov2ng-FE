@@ -1,21 +1,53 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import Search from "@/components/common/Search";
 import SortDropdown from "@/components/common/SortDropdown";
 import ServiceDropdown from "./ServiceDropdown";
 import RegionDropdown from "./RegionDropdown";
 import DriverList from "./FindDriverList";
+import { useGetMovers } from "@/hooks/useMover";
+
+import {
+  moverSortOption,
+  regionTypeOption,
+  serviceTypeOption,
+  type QuerySelectType,
+} from "@/types/queryType";
+import { DriverResponseType } from "@/types/driverProfileType";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function MoversPage() {
-  const sortList = ["리뷰 많은순", "평점 높은순", "경력 높은순", "확정 높은순"];
-  const [selectedRegion, setSelectedRegion] = useState<string>("지역");
-  const [selectedService, setSelectedService] = useState<string>("서비스");
+  // 지역, 서비스 label / value로 분리해서 선택
+  const [selectedRegion, setSelectedRegion] = useState<QuerySelectType>(
+    regionTypeOption[0]
+  );
+  const [selectedService, setSelectedService] = useState<QuerySelectType>(
+    serviceTypeOption[0]
+  );
+  const [keyword, setKeyword] = useState<string>("");
+  const [cursor, setCursor] = useState<number>(0);
+  const [sort, setSort] = useState<QuerySelectType>(moverSortOption[0]);
+  const { isGuest } = useAuth(); // 비회원 여부 확인
+
+  const { data: movers } = useGetMovers({
+    keyword: keyword,
+    region: selectedRegion.value,
+    service: selectedService.value,
+    sort: sort.value,
+    cursor: cursor,
+    limit: 20,
+  });
+
+  useEffect(() => {
+    console.log(movers?.data);
+    setCursor(movers?.data.id ?? 0);
+  }, [keyword, selectedRegion, selectedService, sort, movers]);
 
   const onClickReset = () => {
-    setSelectedRegion("지역");
-    setSelectedService("서비스");
+    setSelectedRegion(regionTypeOption[0]);
+    setSelectedService(serviceTypeOption[0]);
   };
 
   return (
@@ -27,7 +59,10 @@ export default function MoversPage() {
         <div className="max-w-[328px] w-full flex flex-col gap-8 max-md:flex-row max-md:gap-3 max-md:absolute max-sm:gap-0.5">
           <div className="flex items-center justify-between border-b border-line-200 px-[10px] py-4 max-md:hidden">
             <p className="pret-xl-medium text-black">필터</p>
-            <button className="pret-lg-medium text-gray-300 cursor-pointer" onClick={onClickReset}>
+            <button
+              className="pret-lg-medium text-gray-300 cursor-pointer"
+              onClick={onClickReset}
+            >
               초기화
             </button>
           </div>
@@ -35,56 +70,67 @@ export default function MoversPage() {
             <p className="pret-2lg-medium text-black-400 mb-4 max-md:hidden">
               지역을 선택해주세요
             </p>
-            <RegionDropdown selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} />
+            <RegionDropdown
+              regionList={regionTypeOption}
+              selectedRegion={selectedRegion}
+              setSelectedRegion={setSelectedRegion}
+            />
           </div>
           <div>
             <p className="pret-2lg-medium text-black-400 mb-4 max-md:hidden">
               어떤 서비스가 필요하세요?
             </p>
-            <ServiceDropdown selectedService={selectedService} setSelectedService={setSelectedService} />
+            <ServiceDropdown
+              serviceList={serviceTypeOption}
+              selectedService={selectedService}
+              setSelectedService={setSelectedService}
+            />
           </div>
           <div className="flex flex-col gap-4 mt-3.5 max-md:hidden">
             <p className="pret-xl-semibold text-black-400">찜한 기사님</p>
-            <DriverList
+            {isGuest ? (
+              <></>
+            ) : (
+              <DriverList
               size="sm"
+              id={1}
               name="이영훈"
+              driverIntro="고객님의 물품을 안전하게 운송해 드립니다. (한줄소개란)"
               likeCount={234}
-              career={10}
+              rating={4.5}
+              reviewCount={10}
+              driverYears={10}
               confirmedCount={334}
               imageSrc="/assets/image/avatartion-3.png"
             />
+            )}
           </div>
         </div>
         <div className="max-w-[955px] w-full flex flex-col gap-8 max-md:gap-6">
           <div className="flex flex-col gap-6 items-end">
-            <SortDropdown sortList={sortList} sort="리뷰 많은순" />
-            <Search />
+            <SortDropdown
+              sortList={moverSortOption}
+              sort={sort}
+              setSort={setSort}
+            />
+            <Search keyword={keyword} setKeyword={setKeyword} />
           </div>
           <div className="flex flex-col gap-12 max-md:gap-8 max-sm:gap-6">
-            <DriverList
-              size="md"
-              name="이영훈"
-              likeCount={234}
-              career={10}
-              confirmedCount={334}
-              imageSrc="/assets/image/avatartion-3.png"
-            />
-            <DriverList
-              size="md"
-              name="이영훈"
-              likeCount={234}
-              career={10}
-              confirmedCount={334}
-              imageSrc="/assets/image/avatartion-3.png"
-            />
-            <DriverList
-              size="md"
-              name="이영훈"
-              likeCount={234}
-              career={10}
-              confirmedCount={334}
-              imageSrc="/assets/image/avatartion-3.png"
-            />
+            {movers?.data.map((driver: DriverResponseType) => (
+              <DriverList
+                size="md"
+                key={driver.id}
+                id={driver.id}
+                name={driver.nickname}
+                driverIntro={driver.driverIntro}
+                likeCount={driver.favoriteCount}
+                rating={driver.rating}
+                reviewCount={driver.reviewCount}
+                driverYears={driver.driverYears}
+                confirmedCount={driver.estimateCount}
+                imageSrc={"/assets/image/avatartion-3.png"}
+              />
+            ))}
           </div>
         </div>
       </div>
