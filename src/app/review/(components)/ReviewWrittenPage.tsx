@@ -6,9 +6,10 @@ import { useApiQuery } from "@/hooks/useApiQuery";
 import { apiClient } from "@/libs/apiClient";
 import { formatDate, formatDateLabel } from "@/utils/date";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
 import { STALE_TIME } from "@/constants/query";
+import Image from "next/image";
 
 const movingTypeMap: Record<string, string> = {
   SMALL: "소형이사",
