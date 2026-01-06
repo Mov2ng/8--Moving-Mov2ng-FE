@@ -41,6 +41,7 @@ const adaptQuote = (item: ApiQuote): QuoteCardView => ({
   isDesignatedRequest: item.isRequest ?? false,
   designatedLabel: "지정 견적 요청",
   movingDate: formatDateLabel(item.request.moving_data),
+  requestedAt: item.request.createdAt,
   departure: item.request.origin,
   arrival: item.request.destination,
   price: item.price,
@@ -71,6 +72,7 @@ export default function QuotePendingPage() {
   });
 
   const quotes: QuoteCardView[] = data?.data ? data.data.map(adaptQuote) : [];
+  const summary = quotes[0];
 
   const { mutate: acceptQuote, isPending: isAccepting } = useApiMutation<
     { success: boolean; message: string },
@@ -94,10 +96,48 @@ export default function QuotePendingPage() {
   return (
     <>
       <div className="min-h-screen bg-background-200">
-        <header className="bg-white">
+        <header className="bg-white border-b border-line-100">
           <div className="mx-auto max-w-6xl px-5">
             <QuoteTabNav />
           </div>
+          {summary && (
+            <div className="mx-auto max-w-6xl px-5 py-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-t border-line-100">
+              <div className="flex flex-col gap-1">
+                <span className="text-primary-black-400 pret-xl-semibold">
+                  {summary.serviceType || "서비스 종류 미정"}
+                </span>
+                <span className="text-gray-400 pret-14-medium">
+                  견적 신청일:{" "}
+                  {summary.requestedAt
+                    ? formatDateLabel(summary.requestedAt)
+                    : "-"}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 text-black-300 pret-15-medium">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className="text-gray-300 pret-13-medium">출발지</span>
+                  <span className="text-primary-black-400">
+                    {summary.departure}
+                  </span>
+                </div>
+                <div className="flex items-center text-primary-black-300">
+                  →
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className="text-gray-300 pret-13-medium">도착지</span>
+                  <span className="text-primary-black-400">
+                    {summary.arrival}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className="text-gray-300 pret-13-medium">이사일</span>
+                  <span className="text-primary-black-400">
+                    {summary.movingDate}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </header>
 
         <main className="max-w-6xl mx-auto px-5 py-6">
