@@ -26,7 +26,7 @@ export default function QuoteRequestTypePage() {
 
   return (
     // ✅ 페이지 자체는 배경을 깔지 않는다 (body가 회색이므로)
-    <main className="mx-auto w-full max-w-[1200px] px-10 py-12">
+    <main className="mx-auto w-full max-w-[1200px] px-4 md:px-10 py-8 md:py-12">
       {/* 상단 타이틀 + 진행바 */}
       <section className="mb-10">
         <h1 className="mb-4 text-[18px] font-semibold text-[#111]">견적요청</h1>
@@ -34,7 +34,7 @@ export default function QuoteRequestTypePage() {
           <div className="h-[6px] w-[28%] rounded-full bg-[#2E7BFF]" />
         </div>
       </section>
-
+np
       {/* 채팅 플로우 */}
       <section className="flex flex-col gap-6">
         {/* 왼쪽 말풍선 */}

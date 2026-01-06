@@ -31,7 +31,7 @@ export default function QuoteRequestDatePage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-[1200px] px-10 py-12">
+    <main className="mx-auto w-full max-w-[1200px] px-4 md:px-10 py-8 md:py-12">
       {/* 상단 타이틀 + 진행바 */}
       <section className="mb-10">
         <h1 className="mb-4 text-[18px] font-semibold text-[#111]">견적요청</h1>
@@ -50,7 +50,7 @@ export default function QuoteRequestDatePage() {
 
         <BubbleLeft>이사 종류를 선택해 주세요.</BubbleLeft>
 
-        <div className="self-end mr-8 flex flex-col items-end gap-2">
+        <div className="self-center md:self-end md:mr-8 flex flex-col items-center md:items-end gap-2">
           <BubbleRight>{movingType ?? "이사 종류 미선택"}</BubbleRight>
           <button
             type="button"
