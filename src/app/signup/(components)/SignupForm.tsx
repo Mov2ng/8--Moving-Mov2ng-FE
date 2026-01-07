@@ -19,10 +19,11 @@ export default function SignupForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, touchedFields, isValid },
     reset,
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
+    mode: "onChange", // 입력 중 실시간 검증
   });
 
   // useSignup hook: 서버에 회원가입 요청 mutation
@@ -58,25 +59,31 @@ export default function SignupForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="w-full max-w-[640px] max-md:max-w-[327px] flex flex-col gap-6"
+    >
       <RoleToggle register={register("role")} error={errors.role} />
       <FormField
         label="이름"
         register={register("name")}
         placeholder="이름을 입력해주세요"
         error={errors.name}
+        touched={!!touchedFields.name}
       />
       <FormField
         label="이메일"
         register={register("email")}
         placeholder="이메일을 입력해주세요"
         error={errors.email}
+        touched={!!touchedFields.email}
       />
       <FormField
         label="전화번호"
         register={register("phoneNum")}
         placeholder="전화번호를 입력해주세요"
         error={errors.phoneNum}
+        touched={!!touchedFields.phoneNum}
       />
       <FormField
         label="비밀번호"
@@ -84,6 +91,7 @@ export default function SignupForm() {
         register={register("password")}
         placeholder="비밀번호를 입력해주세요"
         error={errors.password}
+        touched={!!touchedFields.password}
       />
       <FormField
         label="비밀번호 확인"
@@ -91,9 +99,15 @@ export default function SignupForm() {
         register={register("passwordConfirm")}
         placeholder="비밀번호를 다시 한 번 입력해주세요"
         error={errors.passwordConfirm}
+        touched={!!touchedFields.passwordConfirm}
       />
-      <button type="submit">
-        {isSubmitting ? "가입 처리 중..." : "회원가입"}
+      {/* TODO: 추후 Button 컴포넌트로 리팩토링 */}
+      <button
+        type="submit"
+        className="mt-4 w-full h-12 rounded-xl bg-primary-blue-300 text-white pret-lg-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
+        disabled={isSubmitting || !isValid}
+      >
+        {isSubmitting ? "가입 처리 중..." : "시작하기"}
       </button>
     </form>
   );

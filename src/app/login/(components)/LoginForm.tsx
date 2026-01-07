@@ -18,10 +18,11 @@ export default function LoginForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, touchedFields, isValid },
     reset,
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
+    mode: "onChange", // 입력 중 실시간 검증
   });
 
   // useLogin hook: onSuccess에서 accessToken 저장 + me invalidate 처리
@@ -49,13 +50,17 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="w-full max-w-[640px] max-md:max-w-[327px] flex flex-col gap-6"
+    >
       <RoleToggle register={register("role")} error={errors.role} />
       <FormField
         label="이메일"
         register={register("email")}
         placeholder="이메일을 입력해주세요"
         error={errors.email}
+        touched={!!touchedFields.email}
       />
       <FormField
         label="비밀번호"
@@ -63,8 +68,15 @@ export default function LoginForm() {
         register={register("password")}
         placeholder="비밀번호를 입력해주세요"
         error={errors.password}
+        touched={!!touchedFields.password}
       />
-      <button type="submit">{isSubmitting ? "로그인 중..." : "로그인"}</button>
+      <button
+        type="submit"
+        className="mt-4 w-full h-12 rounded-xl bg-primary-blue-300 text-white pret-lg-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
+        disabled={isSubmitting || !isValid}
+      >
+        {isSubmitting ? "로그인 중..." : "로그인"}
+      </button>
     </form>
   );
 }
