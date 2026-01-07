@@ -110,8 +110,10 @@ export function useMe() {
   const result = useApiQuery({
     queryKey: ["me"],
     queryFn: userService.me,
-    retry: false, // 인증 실패 재시도 불필요
-    staleTime: 1000 * 60 * 10, // 10분 동안 fresh 상태 유지
+    retry: false, // 401 재시도 방지
+    staleTime: 1000 * 60 * 10, // 세션 신뢰 시간
+    gcTime: 1000 * 60 * 5, // 미사용 시 캐시 메모리 정리 시간
+    refetchOnMount: false, // 마운트 시 리패치 방지
   });
 
   return result;
