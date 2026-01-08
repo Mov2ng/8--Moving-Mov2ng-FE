@@ -1,36 +1,52 @@
 // /movers api 관련 훅 모음
 
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { moverService } from "@/services/moverService";
 import { useApiQuery } from "./useApiQuery";
 import { useApiMutation } from "./useApiMutation";
+
+import type { DriverResponseType } from "@/types/driverProfileType";
+
+// 무한 스크롤용 기사님 목록 조회 훅
+interface MoversResponse {
+  list: DriverResponseType[];
+  nextCursor: number | null;
+  hasNext: boolean;
+}
 
 export function useGetMovers(query?: {
   keyword?: string;
   region?: string;
   service?: string;
   sort?: string;
-  cursor?: number;
   limit?: number;
 }) {
-  if (query?.keyword === "") {
-    query.keyword = undefined;
-  }
-  if (query?.region === "") {
-    query.region = undefined;
-  }
-  if (query?.service === "") {
-    query.service = undefined;
-  }
-  if (query?.sort === "") {
-    query.sort = undefined;
-  }
-  if (query?.limit === 0) {
-    query.limit = undefined;
-  }
+  const sanitizedQuery = {
+    keyword: query?.keyword === "" ? undefined : query?.keyword,
+    region: query?.region === "" ? undefined : query?.region,
+    service: query?.service === "" ? undefined : query?.service,
+    sort: query?.sort === "" ? undefined : query?.sort,
+    limit: query?.limit === 0 ? undefined : query?.limit,
+  };
 
-  return useApiQuery({
-    queryKey: ["movers", query],
-    queryFn: () => moverService.getMovers(query),
+  return useInfiniteQuery({
+    queryKey: ["movers", sanitizedQuery],
+    queryFn: async ({ pageParam }) => {
+      const response = await moverService.getMovers({
+        ...sanitizedQuery,
+        cursor: pageParam,
+      });
+      
+      return response.data as MoversResponse;
+    },
+    // 다음 페이지 파라미터 반환
+    getNextPageParam: (lastPage) => {
+      if (lastPage.hasNext && lastPage.nextCursor !== null) {
+        return lastPage.nextCursor;
+      }
+      return undefined;
+    },
+    initialPageParam: 0,
   });
 }
 
