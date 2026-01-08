@@ -7,6 +7,7 @@ import FindDriverProfile from "./FindDriverProfile";
 import RegionChip from "@/components/chips/RegionChip";
 import Image from "next/image";
 import Button from "@/components/common/button";
+import Modal from "@/components/common/Modal";
 import { Pagination } from "@/components/common/Pagination";
 import {
   useGetMoverExtra,
@@ -15,9 +16,10 @@ import {
 } from "@/hooks/useMover";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { SERVICE_CATEGORIES, REGIONS } from "@/constants/profile.constants";
 
-import { ReviewType } from "@/types/driverProfileType";
-import Modal from "@/components/common/Modal";
+import type { ReviewType } from "@/types/driverProfileType";
+
 interface Mover {
   id: number;
   name: string;
@@ -45,6 +47,17 @@ export default function MoversDetailPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false); // 찜 상태 관리
+
+  // 서비스 카테고리 라벨 매핑
+  const SERVICE_CATEGORY_LABEL_MAP: Record<string, string> = Object.fromEntries(
+    SERVICE_CATEGORIES.map((category) => [category.value, category.label])
+  );
+
+  // 지역 라벨 매핑
+  const REGION_LABEL_MAP: Record<string, string> = Object.fromEntries(
+    REGIONS.map((region) => [region.value, region.label])
+  );
+  
 
   const queryClient = useQueryClient();
 
@@ -87,6 +100,16 @@ export default function MoversDetailPage() {
     ? { ...cachedMover, ...extraData?.data }
     : fullData?.data;
 
+  console.log("driver:", driver);
+
+  const regionLabels = driver?.regions?.map(
+    (region: string) => REGION_LABEL_MAP[region]
+  );
+
+  const serviceCategoryLabels = driver?.serviceCategories?.map(
+    (category: string) => SERVICE_CATEGORY_LABEL_MAP[category]
+  );
+  
   // 로딩 상태
   const isLoading = hasExistingData ? isExtraLoading : isFullLoading;
 
@@ -139,7 +162,7 @@ export default function MoversDetailPage() {
   }
 
   return (
-    <section className="flex gap-[117px] w-full pt-[56px] max-md:flex-col max-md:gap-[50px] max-md:px-18 max-sm:px-6">
+    <section className="flex gap-[117px] w-full pt-[56px] max-md:flex-col max-md:gap-[50px] max-md:px-18 max-sm:px-6 bg-gray-50">
       <Modal
         title="로그인 필요"
         content="로그인 후 이용해주세요."
@@ -151,11 +174,11 @@ export default function MoversDetailPage() {
       <div className="flex flex-col gap-10 max-w-[955px] w-full">
         <FindDriverProfile
           name={driver.name}
-          likeCount={driver.likeCount}
+          likeCount={driver.favoriteCount}
           rating={driver.rating}
           reviewCount={driver.reviewCount}
           driverYears={driver.driverYears}
-          confirmedCount={driver.confirmedCount}
+          confirmedCount={driver.confirmCount}
           size="md"
         />
 
@@ -172,12 +195,11 @@ export default function MoversDetailPage() {
         <div className="flex flex-col gap-8">
           <h2 className="pret-2xl-bold text-black-400">제공 서비스</h2>
           <div className="flex gap-3">
-            {driver?.serviceCategories?.map((category: string) => (
+            {serviceCategoryLabels?.map((category: string) => (
               <RegionChip
                 key={category}
                 label={category}
                 size="md"
-                selected={true}
               />
             ))}
           </div>
@@ -188,8 +210,12 @@ export default function MoversDetailPage() {
         <div className="flex flex-col gap-8">
           <h2 className="pret-2xl-bold text-black-400">서비스 가능 지역</h2>
           <div className="flex gap-3">
-            {driver?.regions?.map((region: string) => (
-              <RegionChip key={region} label={region} size="md" />
+            {regionLabels?.map((region: string) => (
+              <RegionChip
+                key={region}
+                label={region}
+                size="md"
+              />
             ))}
           </div>
         </div>
@@ -203,7 +229,7 @@ export default function MoversDetailPage() {
           reviewList={driver?.reviewList}
         />
         <div>
-          {driver?.reviewList?.map((review: ReviewType) => (
+          {driver?.reviews?.map((review: ReviewType) => (
             <ReviewList
               key={review.id}
               username={review.user.name}

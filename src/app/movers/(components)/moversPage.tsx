@@ -51,9 +51,6 @@ export default function MoversPage() {
   // 모든 페이지의 데이터를 하나의 배열로 합치기
   const allMovers = movers?.pages.flatMap((page) => page.list) ?? [];
 
-  // 디버깅: ID 확인
-  console.log("allMovers:", allMovers);
-
   // Intersection Observer 설정
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -90,7 +87,7 @@ export default function MoversPage() {
   };
 
   return (
-    <section className="max-md:px-18 max-sm:px-6">
+    <section className="max-md:px-18 max-sm:px-6 bg-gray-50">
       <div className="max-md:hidden">
         <p className="pret-2xl-semibold py-8">기사님 찾기</p>
       </div>
@@ -141,6 +138,7 @@ export default function MoversPage() {
                 reviewCount={10}
                 driverYears={10}
                 confirmedCount={334}
+                movingType={['SMALL', 'HOME']}
                 imageSrc="/assets/image/avatartion-3.png"
               />
             )}
@@ -172,8 +170,9 @@ export default function MoversPage() {
                   rating={driver.rating}
                   reviewCount={driver.reviewCount}
                   driverYears={driver.driverYears}
-                  confirmedCount={driver.estimateCount}
+                  confirmedCount={driver.confirmCount}
                   imageSrc={"/assets/image/avatartion-3.png"}
+                  movingType={driver.serviceCategories}
                 />
               ))
             )}
