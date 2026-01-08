@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import { removeToken } from "./tokenStorage";
+import { removeToken } from "@/libs/auth/tokenStorage";
 
 /**
  * 인증 에러(401) 처리 공통 함수

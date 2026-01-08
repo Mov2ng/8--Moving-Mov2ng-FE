@@ -1,4 +1,5 @@
-import { apiClient, refreshAccessToken } from "@/libs/apiClient";
+import { apiClient } from "@/libs/apiClient";
+import { refreshAccessToken } from "@/libs/auth/tokenManager";
 import { ProfileFormValues } from "@/libs/validation/profileSchemas";
 
 /**
