@@ -173,7 +173,7 @@ export default function Header() {
   if (isLoading) {
     return (
       <header className="border-b border-line-100 max-md:border-b-0">
-        <div className="max-w-[1400px] mx-auto px-[24px] py-[15px] md:px-[120px] md:py-[26px] flex justify-between items-center">
+        <div className="max-w-[1400px] mx-auto px-[24px] py-[15px] md:py-[26px] flex justify-between items-center">
           <Link href="/" aria-label="홈으로 이동">
             <Image
               src="/assets/image/logo.png"
