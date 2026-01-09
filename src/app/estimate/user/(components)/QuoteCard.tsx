@@ -71,7 +71,7 @@ export default function QuoteCard({
       : serviceType ?? "";
 
   return (
-    <div className="bg-gray-50 rounded-2xl p-4 shadow-sm border border-line-100">
+    <div className="bg-gray-50 rounded-2xl p-[14px] shadow-sm border border-line-100">
       {/* 태그 영역 */}
       <div className="flex gap-2 mb-4">
         <span

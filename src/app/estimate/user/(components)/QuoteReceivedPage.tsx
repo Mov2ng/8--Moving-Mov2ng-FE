@@ -8,6 +8,7 @@ import QuoteTabNav from "./QuoteTabNav";
 import FilterDropdown from "@/components/common/FilterDropdown";
 import { formatDateLabel, formatDateTime } from "@/utils/date";
 import { useState } from "react";
+import { STALE_TIME } from "@/constants/query";
 
 import type { ApiQuote, QuoteStatus } from "@/types/api/quotes";
 import type { QuoteCardView } from "@/types/view/quote";
@@ -65,7 +66,7 @@ export default function QuoteReceivedPage() {
         query: { completedOnly: true },
       });
     },
-    staleTime: 1000 * 30,
+    staleTime: STALE_TIME.ESTIMATE,
   });
 
   const quotes: QuoteCardView[] = data?.data ? data.data.map(adaptQuote) : [];
@@ -84,7 +85,7 @@ export default function QuoteReceivedPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-5 py-8">
+      <main className="max-w-5xl mx-auto px-0 sm:px-4 md:px-5 py-8">
         {isLoading && (
           <div className="text-center text-gray-400 pret-14-medium">
             불러오는 중...
