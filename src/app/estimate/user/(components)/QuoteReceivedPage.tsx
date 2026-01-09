@@ -128,9 +128,12 @@ export default function QuoteReceivedPage() {
               <div className="w-[160px]">
                 <FilterDropdown
                   menuName={filterLabel}
-                  menuList={["전체", "확정된 견적서"]}
+                  menuList={[
+                    { label: "전체", value: "ALL" },
+                    { label: "확정된 견적서", value: "CONFIRMED" },
+                  ]}
                   onClick={(menu) =>
-                    setFilter(menu === "확정된 견적서" ? "CONFIRMED" : "ALL")
+                    setFilter(menu.value === "CONFIRMED" ? "CONFIRMED" : "ALL")
                   }
                 />
               </div>
