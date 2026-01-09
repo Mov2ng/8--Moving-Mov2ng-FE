@@ -1,6 +1,6 @@
 import DriverProfile from "@/components/common/DriverProfile";
 import MovingTypeChip from "@/components/chips/MovingTypeChip";
-import Button from "@/components/comon/button";
+import Button from "@/components/common/button";
 
 interface ReviewCreateCardProps {
   // 태그
