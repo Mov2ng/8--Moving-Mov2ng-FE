@@ -27,7 +27,7 @@ export const signupSchema = z
       .regex(/[!@#$%^&*()_\-+=]/, {
         message: "비밀번호에 특수문자가 포함되어야 합니다.",
       }), // 특수문자 1자 이상
-    passwordConfirm: z.string(),
+    passwordConfirm: z.string().min(1, "비밀번호를 다시 한 번 입력해 주세요"),
   })
   .refine((data) => data.password === data.passwordConfirm, {
     path: ["passwordConfirm"],

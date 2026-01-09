@@ -5,8 +5,9 @@ import { useApiMutation } from "./useApiMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "./useApiQuery";
 import { useRouter } from "next/navigation";
-import { setToken } from "@/utils/tokenStorage";
+import { setToken } from "@/libs/auth/tokenStorage";
 import { handleAuthError } from "@/utils/authError";
+import { parseServerError } from "@/utils/parseServerError";
 
 /**
  * 회원가입 mutation 생성 훅
@@ -23,7 +24,13 @@ export function useSignup() {
       router.push("/login");
     },
     onError: (error) => {
-      console.error("회원가입 실패: ", error);
+      const parsedError = parseServerError(error);
+      console.error("회원가입 실패:", {
+        status: parsedError?.status,
+        message: parsedError?.message,
+        details: parsedError?.details,
+        fullError: error,
+      });
     },
   });
 }
@@ -93,7 +100,13 @@ export function useLogin() {
       router.push("/");
     },
     onError: (error) => {
-      console.error("로그인 실패: ", error);
+      const parsedError = parseServerError(error);
+      console.error("로그인 실패:", {
+        status: parsedError?.status,
+        message: parsedError?.message,
+        details: parsedError?.details,
+        fullError: error,
+      });
     },
   });
 }
@@ -103,15 +116,16 @@ export function useLogin() {
  * @returns useApiQuery 결과
  */
 export function useMe() {
-  // /auth/me API는 apiClient에서 401을 { data: null }로 반환하므로
-  // React Query 입장에서는 에러가 아닌 성공 응답으로 처리됩니다.
-  // 따라서 여기서 401 에러 처리는 필요하지 않습니다.
+  // /auth/me API는 apiClient에서 refresh token도 만료된 경우에만 { data: null }로 반환하므로
+  // React Query 입장에서는 에러가 아닌 성공 응답으로 처리 → 여기서 401 에러 처리는 필요X
 
   const result = useApiQuery({
     queryKey: ["me"],
     queryFn: userService.me,
-    retry: false, // 인증 실패 재시도 불필요
-    staleTime: 1000 * 60 * 10, // 10분 동안 fresh 상태 유지
+    retry: false, // 401 재시도 방지
+    staleTime: 1000 * 60 * 5, // 5분 동안 fresh 상태 유지
+    gcTime: 1000 * 60 * 5, // 미사용 시 캐시 메모리 정리 시간
+    refetchOnMount: false, // 마운트 시 리패치 방지
   });
 
   return result;
@@ -155,7 +169,13 @@ export function useLogout() {
       // refreshToken 쿠키는 서버에서 삭제
     },
     onError: (error) => {
-      console.error("로그아웃 실패: ", error);
+      const parsedError = parseServerError(error);
+      console.error("로그아웃 실패:", {
+        status: parsedError?.status,
+        message: parsedError?.message,
+        details: parsedError?.details,
+        fullError: error,
+      });
       // 서버 요청 실패해도 클라이언트 상태는 정리
       handleAuthError(queryClient);
     },

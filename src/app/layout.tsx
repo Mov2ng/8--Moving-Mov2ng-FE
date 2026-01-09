@@ -28,7 +28,7 @@ export default async function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className="min-h-screen">
+      <body className="min-h-screen bg-[#FFF]">
         <Provider>
           <RouteGuard>
             <Header />

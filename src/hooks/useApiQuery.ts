@@ -35,7 +35,6 @@ export function useApiQuery<TData, TError>({
   staleTime?: number;
   // Omit: UseQueryOptions에서 이미 타입 정의한 queryKey와 queryFn을 제외한 나머지 옵션들을 사용
 } & Omit<UseQueryOptions<TData, TError>, "queryKey" | "queryFn">) {
-
   return useQuery({
     queryKey,
     queryFn,

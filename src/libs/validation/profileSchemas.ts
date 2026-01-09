@@ -18,8 +18,7 @@ const baseProfileSchema = z.object({
     .refine(
       (val) => !val || /^https?:\/\/.+/.test(val),
       "올바른 이미지 URL을 입력해주세요"
-    )
-    .optional(),
+    ),
   serviceCategories: z
     .any()
     .refine(
@@ -35,7 +34,7 @@ const baseProfileSchema = z.object({
     )
     .pipe(z.array(z.string())),
   // DRIVER 전용 필드들 (USER일 때는 optional로 허용하되 validation에서는 무시)
-  nickname: z.string().optional(),
+  nickname: z.string(),
   driverYears: z
     .any()
     .refine(
@@ -43,10 +42,9 @@ const baseProfileSchema = z.object({
         val === undefined ||
         (typeof val === "number" && Number.isInteger(val) && val >= 0),
       "올바른 경력을 입력해주세요"
-    )
-    .optional(),
-  driverIntro: z.string().optional(),
-  driverContent: z.string().optional(),
+    ),
+  driverIntro: z.string(),
+  driverContent: z.string(),
 });
 
 export const profileSchema = (role?: "USER" | "DRIVER") => {
@@ -56,6 +54,8 @@ export const profileSchema = (role?: "USER" | "DRIVER") => {
     // DRIVER: 모든 필드 검증, DRIVER 전용 필드는 필수/선택 사항으로 검증
     return baseProfileSchema.extend({
       nickname: z.string().min(1, "닉네임을 입력해 주세요").max(50),
+      driverIntro: z.string().min(1, "한 줄 소개를 입력해 주세요"),
+      driverContent: z.string().min(1, "상세 설명을 입력해 주세요"),
     });
   } else {
     // USER: DRIVER 전용 필드들은 optional이지만 값이 없어야 함

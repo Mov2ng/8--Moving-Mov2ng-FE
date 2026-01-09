@@ -1,8 +1,6 @@
-import { BASE_URL } from "@/constants/api.constants";
-import { getToken, removeToken, setToken } from "@/utils/tokenStorage";
-
-// 기본 url
-export const API_URL = process.env.NEXT_PUBLIC_API || BASE_URL;
+import { API_URL } from "@/constants/api.constants";
+import { getToken, removeToken } from "@/libs/auth/tokenStorage";
+import { refreshAccessToken } from "@/libs/auth/tokenManager";
 // 기본 헤더
 const defaultHeaders: Record<string, string> = {
   "Content-Type": "application/json",
@@ -13,62 +11,10 @@ export type ApiRequestOptions = {
   body?: Record<string, unknown> | FormData | string;
   query?: Record<string, string | number | boolean> | URLSearchParams;
   headers?: Record<string, string>;
+  // useMe 쿼리 호출(skipAuthRefresh: true)에 401 발생 시 재발급 시도X
+  // refreshToken 재발급 API 호출 시 사용 (무한루프 방지)
+  skipAutoRefresh?: boolean; // 기본값(false: 자동 재발급 시도)
 };
-
-// 동시 요청 시 refresh 중복 호출 방지
-let isRefreshing = false; // refresh 중복 호출 방지 플래그
-let refreshPromise: Promise<string | null> | null = null; // refresh 프로미스
-
-// refreshToken으로 accessToken 재발급 (무한루프 방지를 위해 apiClient 사용X)
-export async function refreshAccessToken(): Promise<string | null> {
-  if (isRefreshing && refreshPromise) {
-    return refreshPromise; // 이미 리프레시 중이면 기존 프로미스 반환
-  }
-
-  isRefreshing = true; // 리프레시 중 플래그 설정
-  refreshPromise = (async () => {
-    try {
-      const response = await fetch(`${API_URL}/auth/refresh`, {
-        method: "POST",
-        credentials: "include", // refreshToken 쿠키 전송
-      });
-
-      // 리프레시 실패 시 토큰 삭제 후 로그인 페이지로 리디렉션
-      if (!response.ok) {
-        removeToken();
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
-        return null;
-      }
-
-      // HTTP 성공 시 응답 데이터 검증
-      const data = await response.json().catch(() => null);
-      if (!data || !data.accessToken) {
-        // JSON 파싱 실패 또는 accessToken이 없는 경우
-        removeToken();
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
-        return null;
-      }
-      setToken(data.accessToken);
-      return data.accessToken;
-    } catch {
-      // 네트워크 에러 등 예외 발생 시 토큰 삭제 후 로그인 페이지로 리디렉션
-      removeToken();
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
-      return null;
-    } finally {
-      isRefreshing = false;
-      refreshPromise = null;
-    }
-  })();
-
-  return refreshPromise;
-}
 
 /**
  * API 호출 래퍼
@@ -80,8 +26,19 @@ export async function refreshAccessToken(): Promise<string | null> {
  * - 요청/응답 처리 통일
  * - 성공/실패 시 에러 처리 통일
  */
-export async function apiClient(endpoint: string, options: ApiRequestOptions) {
-  const { method = "GET", body, query, headers } = options ?? {}; // 여기 headers가 상수 headers랑 options.headers랑 겹침 ㅠㅠ
+export async function apiClient(
+  endpoint: string,
+  options: Partial<ApiRequestOptions> & {
+    method?: ApiRequestOptions["method"];
+  } = {}
+) {
+  const {
+    method = "GET",
+    body,
+    query,
+    headers,
+    skipAutoRefresh = false,
+  } = options;
 
   // 1. body가 FormData인지 확인 (FormData일 때는 Content-Type을 제거해야 함)
   const isFormData = body instanceof FormData;
@@ -143,35 +100,39 @@ export async function apiClient(endpoint: string, options: ApiRequestOptions) {
 
     clearTimeout(timeoutId); // 성공 시 타임아웃 클리어
 
-    // 9. 401 응답 처리 (accessToken 만료)
+    // 9. 401 응답 처리 (accessToken 만료 또는 없을 시)
     if (response.status === 401) {
-      // `/me` API의 401은 비회원 상태로 처리 (에러가 아님)
-      if (endpoint === "/auth/me") {
-        return { data: null };
-      }
-
-      // refresh API 호출은 재시도하지 않음 (무한루프 방지)
-      if (endpoint === "/auth/refresh") {
+      // skipAutoRefresh 옵션이 true면 자동 재발급 시도하지 않음 (무한루프 방지)
+      if (skipAutoRefresh) {
         removeToken();
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
         throw {
           status: 401,
-          message: "리프레시 토큰 만료",
+          message: "회원 인증 실패",
         };
       }
 
-      // accessToken 재발급
+      // 401 발생 시 만료된 accessToken이 있으면 즉시 삭제
+      if (accessToken) {
+        removeToken();
+      }
+
+      // accessToken이 없거나 만료된 경우 refreshToken으로 재발급 시도
+      // accessToken이 있었지만 만료된 경우와 처음부터 없었던 경우 모두 처리
       const newAccessToken = await refreshAccessToken();
+
       if (!newAccessToken) {
+        // refreshToken도 만료되었거나 없으면 비회원 상태로 처리
+        // `/auth/me`의 경우만 { data: null } 반환, 나머지는 에러 throw
+        if (endpoint === "/auth/me") {
+          return { data: null };
+        }
         throw {
           status: 401,
           message: "토큰 재발급 실패",
         };
       }
 
-      // Authorization 헤더 갱신
+      // Authorization 헤더 갱신 (새로 받은 accessToken 사용)
       combinedHeaders["Authorization"] = `Bearer ${newAccessToken}`;
 
       // 원래 요청 재시도 (타임아웃 재설정)
@@ -180,7 +141,7 @@ export async function apiClient(endpoint: string, options: ApiRequestOptions) {
 
       const retryResponse = await fetch(url, {
         method,
-        headers: combinedHeaders, // Authorization 헤더 갱신
+        headers: combinedHeaders, // 새로 받은 accessToken으로 Authorization 헤더 갱신
         credentials: "include", // refreshToken 쿠키 자동 전송
         signal: retryController.signal, // 타임아웃 시 중단
         ...(jsonBody ? { body: jsonBody } : {}), // body 전송
@@ -188,7 +149,16 @@ export async function apiClient(endpoint: string, options: ApiRequestOptions) {
 
       clearTimeout(retryTimeoutId); // 성공 시 타임아웃 클리어
 
+      // 재시도 후 응답 처리
       if (!retryResponse.ok) {
+        // `/auth/me`의 경우 재시도 후에도 401이면 비회원 상태로 처리
+        if (endpoint === "/auth/me" && retryResponse.status === 401) {
+          // refreshToken으로 새 accessToken을 받았는데도 401이면
+          // refreshToken이 실제로는 유효하지 않거나 서버 문제인 경우
+          // 토큰을 삭제하고 비회원으로 처리
+          removeToken();
+          return { data: null };
+        }
         const errorData = await retryResponse.json().catch(() => null);
         throw {
           status: retryResponse.status,

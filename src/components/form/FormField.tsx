@@ -10,6 +10,7 @@ interface FormFieldProps {
   label: string;
   register: UseFormRegisterReturn;
   error?: FieldError;
+  touched?: boolean;
   type?: FormFieldType;
   placeholder?: string;
   children?: React.ReactNode;
@@ -28,6 +29,7 @@ export default function FormField({
   label,
   register,
   error,
+  touched = false,
   type = "text",
   placeholder,
   children,
@@ -36,20 +38,45 @@ export default function FormField({
     // input 타입에 따라 다른 컴포넌트 렌더링
     switch (type) {
       case "password":
-        return <PasswordInput register={register} placeholder={placeholder} />;
+        return (
+          <PasswordInput
+            register={register}
+            placeholder={placeholder}
+            error={error}
+            touched={touched}
+          />
+        );
       case "textarea":
-        return <Textarea register={register} placeholder={placeholder} />;
+        return (
+          <Textarea
+            register={register}
+            placeholder={placeholder}
+            error={error}
+            touched={touched}
+          />
+        );
       case "text":
       default:
-        return <TextInput register={register} placeholder={placeholder} />;
+        return (
+          <TextInput
+            register={register}
+            placeholder={placeholder}
+            error={error}
+            touched={touched}
+          />
+        );
     }
   };
 
   return (
-    <div>
-      <label>{label}</label>
+    <div className="w-full flex flex-col">
+      <label className="text-xl text-black-400 font-medium mb-3">{label}</label>
       {children || renderInput()}
-      {error && <p className="text-red-600 text-xs">{error.message}</p>}
+      {touched && error && (
+        <p className="text-secondary-red-200 text-sm mt-1 mb-[-12px] text-right">
+          {error.message}
+        </p>
+      )}
     </div>
   );
 }
