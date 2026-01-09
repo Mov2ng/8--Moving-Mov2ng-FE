@@ -1,0 +1,24 @@
+import React from "react";
+
+
+export const SearchBar: React.FC = () => {
+return (
+<div className="p-5 border-b border-gray-200">
+<div className="flex items-center gap-3">
+<div className="flex-1 relative">
+<input
+type="text"
+placeholder="어떤 고객님을 찾고 계세요?"
+className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-[14px] focus:outline-none focus:border-blue-500"
+/>
+</div>
+<button className="px-4 h-10 text-[14px] text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+견적 현황 <span className="text-blue-500">▼</span>
+</button>
+<button className="px-4 h-10 text-[14px] text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+최신 제출순 <span className="text-blue-500">▼</span>
+</button>
+</div>
+</div>
+);
+};
