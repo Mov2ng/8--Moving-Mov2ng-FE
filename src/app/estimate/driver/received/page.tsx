@@ -1,55 +1,74 @@
+// app/driver/received/page.tsx
 "use client";
 
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Sidebar } from "../(components)/SideBar";
 import { SearchBar } from "../(components)/SearchBar";
 import { RequestList } from "../(components)/RequestList";
-import type { RequestItem } from "../(components)/RequestsCard";
-
+import { getMe } from "@/types/api/auth";
+import { getDriverRequests } from "@/types/api/driverRequests";
+import type { DriverRequest } from "@/types/api/driverRequests";
+import { useRouter } from "next/navigation";
 
 export default function ReceivedPage() {
-const SAMPLE_REQUESTS: RequestItem[] = [
-{
-id: 1,
-name: "김연서",
-moveType: "소형이사",
-tags: ["지정 견적 요청"],
-timeAgo: "1시간 전",
-date: "2024. 07. 01(월)",
-from: "인천시 남동구",
-to: "경기도 수원시",
-},
-{
-id: 2,
-name: "김연서",
-moveType: "소형이사",
-tags: ["지정 견적 요청"],
-timeAgo: "2시간 전",
-date: "2024. 07. 01(월)",
-from: "인천시 남동구",
-to: "경기도 수원시",
-},
-];
+  const [items, setItems] = useState<DriverRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const meRes = await getMe();
+        if (!meRes?.data) {
+          router.push("/login"); // 인증이 필요한 경우
+          return;
+        }
 
-return (
-<div className="w-full min-h-screen bg-gray-50">
+        const res = await getDriverRequests(1);
+        if (!mounted) return;
+        setItems(res.items || []);
+      } catch (e: unknown) {
+        console.error(e);
+        setError(e instanceof Error ? e.message : "데이터 로드 실패");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
 
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
 
-<div className="max-w-[1400px] mx-auto px-6 py-8">
-<div className="flex gap-6">
-<Sidebar />
+  if (loading) return <div className="p-6">로딩중...</div>;
+  if (error) return <div className="p-6 text-red-500">에러: {error}</div>;
 
+  return (
+    <div className="w-full min-h-screen bg-gray-50">
 
-<main className="flex-1">
-<div className="bg-white rounded-lg shadow-sm">
-<SearchBar />
-<RequestList items={SAMPLE_REQUESTS} />
-</div>
-</main>
-</div>
-</div>
-</div>
-);
+      <div className="max-w-[1400px] mx-auto px-6 py-8">
+        <div className="flex gap-6">
+          <Sidebar />
+          <main className="flex-1">
+            <div className="bg-white rounded-lg shadow-sm">
+              <SearchBar />
+              <RequestList items={items.map(it => ({
+                id: it.requestId,
+                name: "고객", // 실제 이름 API에 있다면 사용
+                moveType: it.movingType,
+                tags: it.isDesignated ? ["지정 견적 요청"] : undefined,
+                timeAgo: it.requestCreatedAt ? new Date(it.requestCreatedAt).toLocaleString() : "",
+                date: it.movingDate ? new Date(it.movingDate).toLocaleDateString() : "",
+                from: it.origin,
+                to: it.destination,
+              }))} />
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  );
 }
