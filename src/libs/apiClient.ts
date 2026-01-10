@@ -88,7 +88,7 @@ export async function apiClient(
   try {
     // AbortController를 사용하여 타임아웃 구현
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2초 타임아웃
 
     const response = await fetch(url, {
       method,
@@ -117,7 +117,6 @@ export async function apiClient(
       }
 
       // accessToken이 없거나 만료된 경우 refreshToken으로 재발급 시도
-      // accessToken이 있었지만 만료된 경우와 처음부터 없었던 경우 모두 처리
       const newAccessToken = await refreshAccessToken();
 
       if (!newAccessToken) {
@@ -137,7 +136,7 @@ export async function apiClient(
 
       // 원래 요청 재시도 (타임아웃 재설정)
       const retryController = new AbortController();
-      const retryTimeoutId = setTimeout(() => retryController.abort(), 10000); // 10초 타임아웃
+      const retryTimeoutId = setTimeout(() => retryController.abort(), 2000); // 2초 타임아웃
 
       const retryResponse = await fetch(url, {
         method,
@@ -151,7 +150,7 @@ export async function apiClient(
 
       // 재시도 후 응답 처리
       if (!retryResponse.ok) {
-        // `/auth/me`의 경우 재시도 후에도 401이면 비회원 상태로 처리
+        // `/auth/me`의 경우 재시도 후에도 401이면 비회원 상태로 처리 (재시도 중단)
         if (endpoint === "/auth/me" && retryResponse.status === 401) {
           // refreshToken으로 새 accessToken을 받았는데도 401이면
           // refreshToken이 실제로는 유효하지 않거나 서버 문제인 경우
@@ -159,6 +158,7 @@ export async function apiClient(
           removeToken();
           return { data: null };
         }
+        // 네트워크 에러나 타임아웃 등 다른 에러는 그대로 throw
         const errorData = await retryResponse.json().catch(() => null);
         throw {
           status: retryResponse.status,
