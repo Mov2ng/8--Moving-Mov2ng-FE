@@ -1,6 +1,5 @@
 "use client";
-import React, { useState } from "react";
-import EstimatePage from "./estimatePage"; 
+import EstimatePage from "./EstimatePage"; 
 export default function EstimatePageDetail() {
   return (
     <EstimatePage />
