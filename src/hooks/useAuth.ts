@@ -55,8 +55,8 @@ export function useLogin() {
         setToken(accessToken);
       }
 
-      // 3. 사용자 정보(me) 쿼리 무효화해 최신 정보로 업데이트
-      queryClient.invalidateQueries({ queryKey: ["me"] });
+      // 3. 사용자 정보(me) 쿼리 캐시 삭제 (다음 useMe 호출 시 자동으로 새로 가져옴)
+      queryClient.removeQueries({ queryKey: ["me"] });
 
       // 4. 프로필 완성 여부 확인하여 첫 로그인 판단
       try {
@@ -116,25 +116,22 @@ export function useLogin() {
  * @returns useApiQuery 결과
  */
 export function useMe() {
-  // /auth/me API는 apiClient에서 refresh token도 만료된 경우에만 { data: null }로 반환하므로
-  // React Query 입장에서는 에러가 아닌 성공 응답으로 처리 → 여기서 401 에러 처리는 필요X
-
-  const result = useApiQuery({
+  return useApiQuery({
     queryKey: ["me"],
     queryFn: userService.me,
     retry: false, // 401 재시도 방지
     staleTime: 1000 * 60 * 5, // 5분 동안 fresh 상태 유지
     gcTime: 1000 * 60 * 5, // 미사용 시 캐시 메모리 정리 시간
     refetchOnMount: false, // 마운트 시 리패치 방지
+    refetchOnWindowFocus: false, // 창 포커스 시 리패치 방지
+    refetchOnReconnect: false, // 네트워크 재연결 시 리패치 방지
   });
-
-  return result;
 }
 
 /**
  * 사용자 권한(role) 조회 훅
  * 데이터 접근은 useMe에 맡기고, 판단 로직만 공통화
- * @returns 사용자 권한 판단 결과 
+ * @returns 사용자 권한 판단 결과
  */
 export function useAuth() {
   // 사용자 정보 조회
@@ -193,8 +190,8 @@ export function useRefresh() {
     mutationKey: ["refresh"],
     mutationFn: userService.refresh,
     onSuccess: () => {
-      // refreshAccessToken에서 이미 토큰 저장 처리 → me 캐시 갱신
-      queryClient.invalidateQueries({ queryKey: ["me"] });
+      // refreshAccessToken에서 이미 토큰 저장 처리 → me 캐시 삭제 (다음 useMe 호출 시 자동으로 새로 가져옴)
+      queryClient.removeQueries({ queryKey: ["me"] });
     },
   });
 }
