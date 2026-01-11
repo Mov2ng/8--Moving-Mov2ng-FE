@@ -6,5 +6,16 @@
   "profile": "个人资料",
   "language_korean": "韩语",
   "language_english": "英语",
-  "language_chinese": "中文"
+  "language_chinese": "中文",
+  "driver_search": "寻找司机",
+  "quote_request": "报价请求",
+  "my_quotes": "我的报价",
+  "received_requests": "收到的请求",
+  "received_quotes": "收到的报价",
+  "profile_edit": "编辑个人资料",
+  "favorite_drivers": "收藏的司机",
+  "moving_reviews": "搬家评论",
+  "my_page": "我的页面",
+  "customer_suffix": "",
+  "driver_suffix": "司机"
 }

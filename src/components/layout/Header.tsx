@@ -2,11 +2,12 @@
 
 import { useAuth, useLogout } from "@/hooks/useAuth";
 import Button from "../common/button";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useGetViewPresignedUrl } from "@/hooks/useFileService";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 // 메뉴 링크 타입
 type MenuItem = {
@@ -14,28 +15,33 @@ type MenuItem = {
   label: string;
 };
 
-// 역할별 메뉴 정의
-const MENU_ITEMS: Record<string, MenuItem[]> = {
-  GUEST: [
-    { href: "/movers", label: "기사님 찾기" },
-    { href: "/login", label: "로그인" },
-  ],
-  USER: [
-    { href: "/quote/request", label: "견적 요청" },
-    { href: "/movers", label: "기사님 찾기" },
-    { href: "/estimate/user", label: "내 견적 관리" },
-  ],
-  DRIVER: [
-    { href: "/estimate/user/received", label: "받은 요청" },
-    { href: "/estimate/user", label: "내 견적 관리" },
-  ],
-};
-
 export default function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { me, isGuest, isLoading, isUser, isDriver } = useAuth();
   const logoutMutation = useLogout();
+  const { t, locale, setLocale } = useI18n();
+
+  // 역할별 메뉴 정의 (다국어 지원)
+  const MENU_ITEMS: Record<string, MenuItem[]> = useMemo(
+    () => ({
+      GUEST: [
+        { href: "/movers", label: t("driver_search") },
+        { href: "/login", label: t("login") },
+      ],
+      USER: [
+        { href: "/quote/request", label: t("quote_request") },
+        { href: "/movers", label: t("driver_search") },
+        { href: "/estimate/user", label: t("my_quotes") },
+      ],
+      DRIVER: [
+        { href: "/estimate/user/received", label: t("received_requests") },
+        { href: "/estimate/user", label: t("my_quotes") },
+      ],
+    }),
+    [t]
+  );
 
   // 사용자 표시 이름 (USER: name, DRIVER: nickname)
   const displayName = isUser
@@ -52,6 +58,11 @@ export default function Header() {
   // 드롭다운 영역 참조
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // 언어 선택 드롭다운 상태 관리
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  // 언어 드롭다운 영역 참조
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!isDropdownOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -66,6 +77,32 @@ export default function Header() {
     return () => document.removeEventListener("click", handleClick);
   }, [isDropdownOpen]);
 
+  useEffect(() => {
+    if (!isLanguageDropdownOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      // 언어 드롭다운 영역 외부 클릭 시 닫기
+      if (!languageDropdownRef.current?.contains(e.target as Node)) {
+        setIsLanguageDropdownOpen(false);
+      }
+    };
+    // 외부 클릭 이벤트 등록
+    document.addEventListener("click", handleClick);
+    // 컴포넌트 언마운트 시 이벤트 정리
+    return () => document.removeEventListener("click", handleClick);
+  }, [isLanguageDropdownOpen]);
+
+  // 언어 목록
+  const languages = [
+    { code: "ko" as const, label: t("language_korean") },
+    { code: "en" as const, label: t("language_english") },
+    { code: "zh" as const, label: t("language_chinese") },
+  ];
+
+  // 현재 언어 라벨
+  const currentLanguageLabel =
+    languages.find((lang) => lang.code === locale)?.label ||
+    t("language_korean");
+
   // 메뉴 네비게이션 렌더링
   const renderMenuNav = () => {
     const menuItems = isGuest
@@ -76,18 +113,24 @@ export default function Header() {
 
     return (
       <nav
-        className="max-md:hidden flex items-center gap-4"
+        className="max-md:hidden flex items-center gap-10"
         aria-label="주요 메뉴"
       >
-        {menuItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="pret-lg-regular text-black-400"
-          >
-            {item.label}
-          </Link>
-        ))}
+        {menuItems.map((item) => {
+          // 현재 경로와 메뉴 링크 경로가 일치하는지 확인
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`pret-lg-regular font-bold ${
+                isActive ? "text-black-400" : "text-gray-500"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
     );
   };
@@ -129,14 +172,61 @@ export default function Header() {
     );
   };
 
+  // 언어 선택 드롭다운 렌더링
+  const renderLanguageSelector = () => {
+    return (
+      <div ref={languageDropdownRef} className="relative">
+        <button
+          onClick={() => setIsLanguageDropdownOpen((prev) => !prev)}
+          className="pret-lg-regular text-black-400 flex items-center gap-1 px-2 py-1 hover:text-primary-blue-300 transition-colors"
+          aria-label="언어 선택"
+        >
+          {currentLanguageLabel}
+          <Image
+            src="/assets/icon/ic-chevron-down.svg"
+            alt="chevron"
+            width={16}
+            height={16}
+            className={
+              isLanguageDropdownOpen
+                ? "rotate-180 transition-transform"
+                : "transition-transform"
+            }
+          />
+        </button>
+        {isLanguageDropdownOpen && (
+          <div className="absolute top-full right-0 mt-2 w-32 rounded-lg border border-line-100 bg-white z-30 shadow-lg">
+            {languages.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => {
+                  setLocale(lang.code);
+                  setIsLanguageDropdownOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2 pret-lg-regular hover:bg-primary-blue-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                  locale === lang.code
+                    ? "text-primary-blue-300 bg-primary-blue-50"
+                    : "text-black-400"
+                }`}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // 오른쪽 섹션 렌더링
   const renderRightSection = () => {
     // 비로그인 상태
     if (isGuest) {
       return (
         <div className="flex items-center gap-4">
+          {renderLanguageSelector()}
           <Button
-            text="로그인"
+            text={t("login")}
             onClick={() => router.push("/login")}
             width="100px"
             className="px-10 max-md:hidden"
@@ -159,6 +249,7 @@ export default function Header() {
     // 로그인 상태
     return (
       <div className="flex items-center gap-8">
+        {renderLanguageSelector()}
         <button aria-label="알림" onClick={() => {}}>
           <Image
             src="/assets/icon/ic-alarm.svg"
@@ -192,14 +283,15 @@ export default function Header() {
               {isUser ? (
                 <div className="flex flex-col px-6">
                   <div className="text-lg font-bold py-3.5">
-                    {me?.name} 고객님
+                    {me?.name}
+                    {t("customer_suffix") && ` ${t("customer_suffix")}`}
                   </div>
                   <div className="py-3.5">
                     <Link
                       href="/profile/edit"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      프로필 수정
+                      {t("profile_edit")}
                     </Link>
                   </div>
                   <div className="py-3.5">
@@ -207,7 +299,7 @@ export default function Header() {
                       href="/movers/favorites"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      찜한 기사님
+                      {t("favorite_drivers")}
                     </Link>
                   </div>
                   <div className="py-3.5">
@@ -215,21 +307,21 @@ export default function Header() {
                       href="/review/user"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      이사 리뷰
+                      {t("moving_reviews")}
                     </Link>
                   </div>
                 </div>
               ) : isDriver ? (
                 <div className="flex flex-col px-6">
                   <div className="text-lg font-bold py-3.5">
-                    {me?.nickname ?? me?.name} 기사님
+                    {me?.nickname ?? me?.name} {t("driver_suffix")}
                   </div>
                   <div className="py-3.5">
                     <Link
                       href="/estimate/user/received"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      받은 견적
+                      {t("received_quotes")}
                     </Link>
                   </div>
                   <div className="py-3.5">
@@ -237,7 +329,7 @@ export default function Header() {
                       href="/profile"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      마이페이지
+                      {t("my_page")}
                     </Link>
                   </div>
                 </div>
@@ -250,7 +342,7 @@ export default function Header() {
                   logoutMutation.mutate();
                 }}
               >
-                로그아웃
+                {t("logout")}
               </button>
             </div>
           )}
@@ -294,7 +386,7 @@ export default function Header() {
     <>
       <header className="border-b border-line-100 max-md:border-b-0">
         <div className="max-w-[1400px] mx-auto px-[24px] py-[15px] md:px-[120px] md:py-[26px] flex justify-between items-center">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-20">
             <Link href="/" aria-label="홈으로 이동">
               <Image
                 src="/assets/image/logo.png"

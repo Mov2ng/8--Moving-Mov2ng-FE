@@ -6,5 +6,16 @@
   "profile": "프로필",
   "language_korean": "한국어",
   "language_english": "영어",
-  "language_chinese": "중국어"
+  "language_chinese": "중국어",
+  "driver_search": "기사님 찾기",
+  "quote_request": "견적 요청",
+  "my_quotes": "내 견적 관리",
+  "received_requests": "받은 요청",
+  "received_quotes": "받은 견적",
+  "profile_edit": "프로필 수정",
+  "favorite_drivers": "찜한 기사님",
+  "moving_reviews": "이사 리뷰",
+  "my_page": "마이페이지",
+  "customer_suffix": "고객님",
+  "driver_suffix": "기사님"
 }

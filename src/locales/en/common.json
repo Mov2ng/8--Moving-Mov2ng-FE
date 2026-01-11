@@ -6,5 +6,16 @@
   "profile": "Profile",
   "language_korean": "Korean",
   "language_english": "English",
-  "language_chinese": "Chinese"
+  "language_chinese": "Chinese",
+  "driver_search": "Find Driver",
+  "quote_request": "Request Quote",
+  "my_quotes": "My Quotes",
+  "received_requests": "Received Requests",
+  "received_quotes": "Received Quotes",
+  "profile_edit": "Edit Profile",
+  "favorite_drivers": "Favorite Drivers",
+  "moving_reviews": "Moving Reviews",
+  "my_page": "My Page",
+  "customer_suffix": "",
+  "driver_suffix": "Driver"
 }
