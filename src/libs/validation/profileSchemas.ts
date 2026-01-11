@@ -16,7 +16,7 @@ const baseProfileSchema = z.object({
   profileImage: z
     .string()
     .refine(
-      (val) => !val || /^https?:\/\/.+/.test(val),
+      (val) => !val || /^blob:.+/.test(val),
       "올바른 이미지 URL을 입력해주세요"
     ),
   serviceCategories: z

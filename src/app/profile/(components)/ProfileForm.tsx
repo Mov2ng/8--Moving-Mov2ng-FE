@@ -97,8 +97,7 @@ export default function ProfileForm() {
     };
   }, [previewObjectUrl]);
 
-  // 기존 프로필 이미지가 있을 때 조회용 presigned URL로 미리보기 표시
-  // (프로필 수정 모드 등에서 사용)
+  // 기존 프로필 이미지가 있을 때 조회용 presigned URL로 미리보기 표시 (프로필 수정 모드 등에서 사용)
   // 사용 예시: useEffect(() => { if (initialProfileImage) loadExistingProfileImage(initialProfileImage); }, []);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const loadExistingProfileImage = async (fileKey: string) => {
@@ -159,6 +158,7 @@ export default function ProfileForm() {
     setPreviewObjectUrl(objectUrl); // object URL 저장 (cleanup용으로만 사용)
     setSelectedFile(file); // 제출 시 업로드할 파일 저장
     setUploadedFileKey(null); // 새 파일 선택 시 기존 업로드된 키 초기화
+    setValue("profileImage", objectUrl); // react-hook-form에 값 등록 (검증을 위한 임시 blob URL)
     // 파일 선택 시 에러 제거
     clearErrors("profileImage");
   };
