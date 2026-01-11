@@ -17,5 +17,21 @@
   "moving_reviews": "搬家评论",
   "my_page": "我的页面",
   "customer_suffix": "",
-  "driver_suffix": "司机"
+  "driver_suffix": "司机",
+  "signup_already_member": "已经是搬家会员了吗？",
+  "signup_login_link": "使用电子邮件登录",
+  "signup_name": "姓名",
+  "signup_name_placeholder": "请输入您的姓名",
+  "signup_email": "电子邮件",
+  "signup_email_placeholder": "请输入您的电子邮件",
+  "signup_phone": "电话号码",
+  "signup_phone_placeholder": "请输入您的电话号码",
+  "signup_password": "密码",
+  "signup_password_placeholder": "请输入您的密码",
+  "signup_password_confirm": "确认密码",
+  "signup_password_confirm_placeholder": "请再次输入您的密码",
+  "signup_submitting": "注册中...",
+  "signup_submit": "开始",
+  "signup_error": "注册过程中发生错误。",
+  "signup_error_unknown": "注册过程中发生未知错误。"
 }

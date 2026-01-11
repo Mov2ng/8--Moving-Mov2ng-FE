@@ -7,6 +7,10 @@ import { useForm } from "react-hook-form";
 import FormField from "../../../components/form/FormField";
 import { parseServerError } from "@/utils/parseServerError";
 import RoleToggle from "../../../components/toggle/RoleToggle";
+import { useI18n } from "@/libs/i18n/I18nProvider";
+import Image from "next/image";
+import Link from "next/link";
+import OAuth from "@/components/form/OAuth";
 
 /**
  * 회원가입 폼 컴포넌트
@@ -15,6 +19,8 @@ import RoleToggle from "../../../components/toggle/RoleToggle";
  * - 모든 입력 필드에 주석으로 설명 포함
  */
 export default function SignupForm() {
+  const { t } = useI18n();
+
   // react-hook-form 세팅 (zod 검증)
   const {
     register,
@@ -49,66 +55,82 @@ export default function SignupForm() {
 
       // 파싱 실패시 서버 에러
       if (!parsed) {
-        alert("회원가입 중 오류가 발생했습니다.");
+        alert(t("signup_error"));
         return;
       }
 
       // 에러 메시지 표시
-      alert(parsed.message || "회원가입 중 알 수 없는 오류가 발생했습니다.");
+      alert(parsed.message || t("signup_error_unknown"));
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="w-full max-w-[640px] max-md:max-w-[327px] flex flex-col gap-6"
-    >
-      <RoleToggle register={register("role")} error={errors.role} />
-      <FormField
-        label="이름"
-        register={register("name")}
-        placeholder="이름을 입력해주세요"
-        error={errors.name}
-        touched={!!touchedFields.name}
+    <div className="mt-14 flex flex-col items-center justify-center">
+      <Image
+        src="/assets/image/logo-text.png"
+        alt="signup-title"
+        width={106.698}
+        height={55.138}
+        className="mb-18"
       />
-      <FormField
-        label="이메일"
-        register={register("email")}
-        placeholder="이메일을 입력해주세요"
-        error={errors.email}
-        touched={!!touchedFields.email}
-      />
-      <FormField
-        label="전화번호"
-        register={register("phoneNum")}
-        placeholder="전화번호를 입력해주세요"
-        error={errors.phoneNum}
-        touched={!!touchedFields.phoneNum}
-      />
-      <FormField
-        label="비밀번호"
-        type="password"
-        register={register("password")}
-        placeholder="비밀번호를 입력해주세요"
-        error={errors.password}
-        touched={!!touchedFields.password}
-      />
-      <FormField
-        label="비밀번호 확인"
-        type="password"
-        register={register("passwordConfirm")}
-        placeholder="비밀번호를 다시 한 번 입력해주세요"
-        error={errors.passwordConfirm}
-        touched={!!touchedFields.passwordConfirm}
-      />
-      {/* TODO: 추후 Button 컴포넌트로 리팩토링 */}
-      <button
-        type="submit"
-        className="mt-4 w-full h-12 rounded-xl bg-primary-blue-300 text-white pret-lg-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
-        disabled={isSubmitting || !isValid}
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="w-full max-w-[640px] max-md:max-w-[327px] flex flex-col gap-6"
       >
-        {isSubmitting ? "가입 처리 중..." : "시작하기"}
-      </button>
-    </form>
+        <RoleToggle register={register("role")} error={errors.role} />
+        <FormField
+          label={t("signup_name")}
+          register={register("name")}
+          placeholder={t("signup_name_placeholder")}
+          error={errors.name}
+          touched={!!touchedFields.name}
+        />
+        <FormField
+          label={t("signup_email")}
+          register={register("email")}
+          placeholder={t("signup_email_placeholder")}
+          error={errors.email}
+          touched={!!touchedFields.email}
+        />
+        <FormField
+          label={t("signup_phone")}
+          register={register("phoneNum")}
+          placeholder={t("signup_phone_placeholder")}
+          error={errors.phoneNum}
+          touched={!!touchedFields.phoneNum}
+        />
+        <FormField
+          label={t("signup_password")}
+          type="password"
+          register={register("password")}
+          placeholder={t("signup_password_placeholder")}
+          error={errors.password}
+          touched={!!touchedFields.password}
+        />
+        <FormField
+          label={t("signup_password_confirm")}
+          type="password"
+          register={register("passwordConfirm")}
+          placeholder={t("signup_password_confirm_placeholder")}
+          error={errors.passwordConfirm}
+          touched={!!touchedFields.passwordConfirm}
+        />
+        {/* TODO: 추후 Button 컴포넌트로 리팩토링 */}
+        <button
+          type="submit"
+          className="mt-4 w-full h-12 rounded-xl bg-primary-blue-300 text-white pret-lg-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
+          disabled={isSubmitting || !isValid}
+        >
+          {isSubmitting ? t("signup_submitting") : t("signup_submit")}
+        </button>
+      </form>
+      <div className="mt-6 mb-18">
+        {t("signup_already_member")}{" "}
+        <Link href="/login" className="text-primary-blue-300 underline">
+          {t("signup_login_link")}
+        </Link>
+      </div>
+      <OAuth />
+    </div>
   );
 }

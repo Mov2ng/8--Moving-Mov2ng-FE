@@ -17,5 +17,21 @@
   "moving_reviews": "Moving Reviews",
   "my_page": "My Page",
   "customer_suffix": "",
-  "driver_suffix": "Driver"
+  "driver_suffix": "Driver",
+  "signup_already_member": "Already a Moving member?",
+  "signup_login_link": "Log in with email",
+  "signup_name": "Name",
+  "signup_name_placeholder": "Enter your name",
+  "signup_email": "Email",
+  "signup_email_placeholder": "Enter your email",
+  "signup_phone": "Phone Number",
+  "signup_phone_placeholder": "Enter your phone number",
+  "signup_password": "Password",
+  "signup_password_placeholder": "Enter your password",
+  "signup_password_confirm": "Confirm Password",
+  "signup_password_confirm_placeholder": "Enter your password again",
+  "signup_submitting": "Signing up...",
+  "signup_submit": "Get Started",
+  "signup_error": "An error occurred during signup.",
+  "signup_error_unknown": "An unknown error occurred during signup."
 }
