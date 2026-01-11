@@ -29,7 +29,7 @@ type DeletePresignedUrlResponse = {
  * - getViewPresignedUrl: 조회용 presigned URL 요청
  * - getDeletePresignedUrl: 삭제용 presigned URL 요청
  * - uploadToS3: S3에 파일 업로드
- * - deleteFromS3: S3에서 파일 삭제
+ * - deleteFileFromS3: S3에서 파일 삭제
  */
 export const fileService = {
   /**
@@ -181,7 +181,7 @@ export const fileService = {
    * S3에서 파일 삭제 (DELETE 요청으로 presigned URL 사용)
    * @param fileKey - 삭제할 파일의 S3 키
    */
-  deleteFile: async (fileKey: string): Promise<void> => {
+  deleteFileFromS3: async (fileKey: string): Promise<void> => {
     // fileKey 필수 검증
     if (!fileKey || typeof fileKey !== "string" || fileKey.trim() === "") {
       throw new Error("파일 키는 필수입니다.");
