@@ -6,10 +6,22 @@ import Textarea from "./Textarea";
 // 지원하는 필드 타입만 명시적으로 제한
 type FormFieldType = "text" | "password" | "textarea" | "file";
 
+// 배열 필드용 에러 타입
+export type FormFieldError = { message?: string | React.ReactNode } | undefined;
+
+// 타입 가드 함수: type 속성이 있으면 FieldError
+export function isFieldError(
+  error: FieldError | FormFieldError | undefined
+  // 반환 타입
+): error is FieldError {
+  // 실제 반환값 (boolean)
+  return error !== undefined && "type" in error;
+}
+
 interface FormFieldProps {
   label: string;
   register: UseFormRegisterReturn;
-  error?: FieldError;
+  error?: FieldError | FormFieldError;
   touched?: boolean;
   type?: FormFieldType;
   placeholder?: string;
@@ -35,6 +47,9 @@ export default function FormField({
   children,
 }: FormFieldProps) {
   const renderInput = () => {
+    // 타입 가드로 FieldError인지 확인 (text, textarea, password 타입일 때 FieldError 사용)
+    const fieldError = isFieldError(error) ? error : undefined;
+
     // input 타입에 따라 다른 컴포넌트 렌더링
     switch (type) {
       case "password":
@@ -42,7 +57,7 @@ export default function FormField({
           <PasswordInput
             register={register}
             placeholder={placeholder}
-            error={error}
+            error={fieldError}
             touched={touched}
           />
         );
@@ -51,7 +66,7 @@ export default function FormField({
           <Textarea
             register={register}
             placeholder={placeholder}
-            error={error}
+            error={fieldError}
             touched={touched}
           />
         );
@@ -61,7 +76,7 @@ export default function FormField({
           <TextInput
             register={register}
             placeholder={placeholder}
-            error={error}
+            error={fieldError}
             touched={touched}
           />
         );
@@ -74,7 +89,7 @@ export default function FormField({
       {children || renderInput()}
       {touched && error && (
         <p className="text-secondary-red-200 text-sm mt-1 mb-[-12px] text-right">
-          {error.message}
+          {error?.message || ""}
         </p>
       )}
     </div>
