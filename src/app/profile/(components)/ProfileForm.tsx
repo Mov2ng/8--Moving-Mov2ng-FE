@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import FormField from "@/components/form/FormField";
+import FormField, { isFieldError } from "@/components/form/FormField";
 import TextInput from "@/components/form/TextInput";
-import { FieldError, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/useAuth";
 import { usePostProfile } from "@/hooks/useProfile";
@@ -18,22 +18,6 @@ import { REGIONS, SERVICE_CATEGORIES } from "@/constants/profile.constants";
 import ProfileChips from "@/components/common/ProfileChips";
 import { useRouter } from "next/navigation";
 import { fileService } from "@/services/fileService";
-
-// RHF FieldError 형태인지 판별 (배열 필드 등에서 좁히기 용도)
-function isFieldError(error: unknown): error is FieldError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "message" in error &&
-    "type" in error
-  );
-}
-
-// 넓은 에러 타입을 FormField가 요구하는 FieldError로 안전하게 변환
-function toFieldError(error: unknown): FieldError | undefined {
-  if (isFieldError(error)) return error;
-  return undefined;
-}
 
 const DEFAULT_PROFILE_IMAGE = "/assets/image/upload-default.png";
 
@@ -50,7 +34,6 @@ export default function ProfileForm() {
     handleSubmit,
     formState: { isSubmitting, errors, touchedFields, isValid },
     reset,
-    setValue,
     setError,
     clearErrors,
   } = useForm<ProfileFormValues>({
@@ -72,21 +55,11 @@ export default function ProfileForm() {
     DEFAULT_PROFILE_IMAGE
   ); // 화면에 표시할 이미지 URL (presigned URL 또는 object URL)
   const [selectedFile, setSelectedFile] = useState<File | null>(null); // 선택된 파일 (제출 시 업로드)
-  const [uploadedFileKey, setUploadedFileKey] = useState<string | null>(null); // S3에 업로드된 파일 키 (기존 이미지)
+  const [uploadedFileKey, setUploadedFileKey] = useState<string | null>(null); // 임시 저장용 파일 키
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null); // URL.createObjectURL로 생성한 object URL (cleanup용으로만 사용)
 
   // 파일 input ref (Image 클릭 시 파일 선택 창 열기용)
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // 파일 선택 창이 열렸는지 추적 (취소 감지용)
-  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
-
-  // register의 ref와 fileInputRef를 병합
-  const profileImageRegister = register("profileImage");
-  const mergedRef = (node: HTMLInputElement | null) => {
-    profileImageRegister.ref(node);
-    fileInputRef.current = node;
-  };
 
   // 컴포넌트 언마운트 시 또는 값 변경 시 previewObjectUrl 정리
   useEffect(() => {
@@ -97,43 +70,9 @@ export default function ProfileForm() {
     };
   }, [previewObjectUrl]);
 
-  // 기존 프로필 이미지가 있을 때 조회용 presigned URL로 미리보기 표시 (프로필 수정 모드 등에서 사용)
-  // 사용 예시: useEffect(() => { if (initialProfileImage) loadExistingProfileImage(initialProfileImage); }, []);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const loadExistingProfileImage = async (fileKey: string) => {
-    if (!fileKey) return;
-
-    try {
-      // 조회용 presigned URL 요청
-      const { presignedUrl } = await fileService.getViewPresignedUrl(fileKey);
-      setPreviewImage(presignedUrl);
-      setUploadedFileKey(fileKey);
-    } catch (error) {
-      console.error("프로필 이미지 조회 실패:", error);
-      setPreviewImage(DEFAULT_PROFILE_IMAGE);
-    }
-  };
-
-  // 프로필 이미지 에러 체크 함수
-  const checkProfileImageError = () => {
-    if (
-      previewImage === DEFAULT_PROFILE_IMAGE &&
-      !selectedFile &&
-      !uploadedFileKey
-    ) {
-      setError("profileImage", {
-        type: "required",
-        message: "프로필 이미지를 업로드해주세요.",
-      });
-    }
-  };
-
   // 프로필 이미지 선택 핸들러 (미리보기만 표시, 업로드는 제출 시)
   const handleProfileImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
-    // 파일 선택 창이 닫혔음을 표시
-    setIsFileDialogOpen(false);
 
     // 이전 object URL 정리 (메모리 누수 방지)
     if (previewObjectUrl) {
@@ -143,13 +82,10 @@ export default function ProfileForm() {
 
     // 파일이 선택되지 않은 경우 정리
     if (!file) {
-      setValue("profileImage", ""); // profileImage를 빈 문자열로 설정 (파일 선택 취소 시)
       setPreviewImage(DEFAULT_PROFILE_IMAGE); // 기본 이미지로 복원
       setSelectedFile(null); // 선택된 파일 정리
-      setUploadedFileKey(null); // 업로드된 파일 키 정리 (S3에 업로드된 파일 키)
-      // 파일 선택 취소 시 에러 체크
-      checkProfileImageError();
-      return; // 파일 선택 취소 시 종료
+      setUploadedFileKey(null); // S3에 업로드된 파일 키 정리
+      return;
     }
 
     // 파일 선택 시 미리보기 표시 (로컬 object URL 사용)
@@ -158,69 +94,47 @@ export default function ProfileForm() {
     setPreviewObjectUrl(objectUrl); // object URL 저장 (cleanup용으로만 사용)
     setSelectedFile(file); // 제출 시 업로드할 파일 저장
     setUploadedFileKey(null); // 새 파일 선택 시 기존 업로드된 키 초기화
-    setValue("profileImage", objectUrl); // react-hook-form에 값 등록 (검증을 위한 임시 blob URL)
-    // 파일 선택 시 에러 제거
     clearErrors("profileImage");
   };
 
   // Image 클릭 핸들러 (파일 선택 창 열기)
   const handleImageClick = () => {
-    setIsFileDialogOpen(true);
     fileInputRef.current?.click();
   };
 
-  // window focus 이벤트로 파일 선택 창 취소 감지
-  useEffect(() => {
-    const handleWindowFocus = () => {
-      // 파일 선택 창이 열려있었는데 window가 다시 focus를 받으면 취소된 것으로 간주
-      if (isFileDialogOpen) {
-        setIsFileDialogOpen(false);
-        // 약간의 지연 후 체크 (onChange가 발생할 수 있으므로)
-        setTimeout(() => {
-          if (
-            !selectedFile &&
-            !uploadedFileKey &&
-            previewImage === DEFAULT_PROFILE_IMAGE
-          ) {
-            setError("profileImage", {
-              type: "required",
-              message: "프로필 이미지를 업로드해주세요.",
-            });
-          }
-        }, 100);
-      }
-    };
-
-    // window focus 이벤트 리스너 등록
-    window.addEventListener("focus", handleWindowFocus);
-
-    // window focus 이벤트 리스너 제거
-    return () => {
-      window.removeEventListener("focus", handleWindowFocus);
-    };
-  }, [isFileDialogOpen, selectedFile, uploadedFileKey, previewImage, setError]);
-
   // 프로필 등록 제출 핸들러
   const onSubmit = async (data: ProfileFormValues) => {
+    // 프로필 이미지 최종 검증
+    if (!selectedFile && !uploadedFileKey) {
+      setError("profileImage", {
+        type: "required",
+        message: "프로필 이미지를 업로드해주세요.",
+      });
+      return;
+    }
+
     try {
+      let fileKey: string; // 제출용 파일 키
+
       // 프로필 이미지 처리
       // 1. 새 파일이 선택된 경우: presignedUrl 요청 → S3 업로드 → fileKey 저장
       if (selectedFile) {
         try {
           // 1-1. 백엔드에서 presigned URL 요청
           const contentType = selectedFile.type || "image/jpeg";
-          const { presignedUrl, fileKey } = await fileService.getPresignedUrl({
-            fileName: selectedFile.name,
-            category: "PROFILE",
-            contentType,
-          });
+          const { presignedUrl, fileKey: uploadedKey } =
+            await fileService.getPresignedUrl({
+              fileName: selectedFile.name,
+              category: "PROFILE",
+              contentType,
+            });
 
           // 1-2. presigned URL로 S3에 파일 업로드 (PUT 요청)
           await fileService.uploadToS3(presignedUrl, selectedFile, contentType);
 
           // 1-3. 업로드 완료 후 fileKey 저장
-          data.profileImage = fileKey;
-          setUploadedFileKey(fileKey);
+          fileKey = uploadedKey; // 현재 제출용 fileKey 저장
+          setUploadedFileKey(fileKey); // 임시 저장용 파일 키 저장
         } catch (error) {
           console.error("파일 업로드 실패:", error);
           setError("profileImage", {
@@ -234,17 +148,13 @@ export default function ProfileForm() {
         }
       }
       // 2. 기존 업로드된 파일이 있는 경우: 해당 fileKey 사용
-      else if (uploadedFileKey) {
-        data.profileImage = uploadedFileKey;
+      else {
+        fileKey = uploadedFileKey!; // 기존 업로드된 파일 키 사용
       }
-      // 3. 파일이 없는 경우: 에러 처리
-      else if (!data.profileImage) {
-        setError("profileImage", {
-          type: "required",
-          message: "프로필 이미지를 업로드해주세요.",
-        });
-        return; // 제출 중단
-      }
+
+      // RHF 데이터에 fileKey 설정
+      data.profileImage = fileKey;
+
       // TODO: 추후 랜덤 아바타 선택할 수 있는 로직과 버튼 추가 예정
 
       // 프로필 등록 요청
@@ -252,8 +162,9 @@ export default function ProfileForm() {
 
       // 성공 시 form reset + 성공 UI 처리
       reset();
+      setPreviewImage(DEFAULT_PROFILE_IMAGE); // 기본 이미지로 복원
       setSelectedFile(null); // 선택된 파일 정리
-      setUploadedFileKey(null); // 업로드된 파일 키 정리 (S3에 업로드된 파일 키)
+      setUploadedFileKey(null); // 임시 저장용 파일 키 정리
       // previewObjectUrl 정리 (메모리 누수 방지)
       if (previewObjectUrl) {
         URL.revokeObjectURL(previewObjectUrl);
@@ -325,7 +236,7 @@ export default function ProfileForm() {
                 label="프로필 이미지"
                 type="file"
                 register={register("profileImage")}
-                error={toFieldError(errors.profileImage)}
+                error={errors.profileImage}
                 touched={!!touchedFields.profileImage}
                 placeholder="프로필 이미지"
               >
@@ -336,17 +247,22 @@ export default function ProfileForm() {
                     width={100}
                     height={100}
                     onClick={handleImageClick}
+                    // 웹 접근성 처리
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleImageClick();
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
                     className="cursor-pointer"
                   />
                   <input
-                    ref={mergedRef}
+                    ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    name={profileImageRegister.name}
-                    onChange={(e) => {
-                      profileImageRegister.onChange(e);
-                      handleProfileImageSelect(e);
-                    }}
+                    onChange={handleProfileImageSelect}
                     className="hidden"
                   />
                 </div>
@@ -355,21 +271,25 @@ export default function ProfileForm() {
                 label="별명"
                 type="text"
                 register={register("nickname")}
-                error={toFieldError(errors.nickname)}
+                error={errors.nickname}
                 placeholder="별명"
                 touched={!!touchedFields.nickname}
               />
               <FormField
                 label="경력"
                 register={register("driverYears", { valueAsNumber: true })}
-                error={toFieldError(errors.driverYears)}
+                error={errors.driverYears}
                 touched={!!touchedFields.driverYears || !!errors.driverYears}
               >
                 <div className="flex items-center gap-2">
                   <TextInput
                     register={register("driverYears", { valueAsNumber: true })}
                     placeholder="경력"
-                    error={toFieldError(errors.driverYears)}
+                    error={
+                      isFieldError(errors.driverYears)
+                        ? errors.driverYears
+                        : undefined
+                    }
                     touched={!!touchedFields.driverYears}
                     type="number"
                   />
@@ -380,7 +300,7 @@ export default function ProfileForm() {
                 label="한 줄 소개"
                 type="textarea"
                 register={register("driverIntro")}
-                error={toFieldError(errors.driverIntro)}
+                error={errors.driverIntro}
                 placeholder="한 줄 소개"
                 touched={!!touchedFields.driverIntro}
               />
@@ -392,14 +312,14 @@ export default function ProfileForm() {
                 label="상세 설명"
                 type="textarea"
                 register={register("driverContent")}
-                error={toFieldError(errors.driverContent)}
+                error={errors.driverContent}
                 placeholder="상세 설명"
                 touched={!!touchedFields.driverContent}
               />
               <FormField
                 label="제공 서비스"
                 register={register("serviceCategories")}
-                error={toFieldError(errors.serviceCategories)}
+                error={errors.serviceCategories}
                 placeholder="서비스"
                 touched={!!touchedFields.serviceCategories}
               >
@@ -411,7 +331,7 @@ export default function ProfileForm() {
               <FormField
                 label="서비스 가능 지역"
                 register={register("region")}
-                error={toFieldError(errors.region)}
+                error={errors.region}
                 placeholder="지역"
                 touched={!!touchedFields.region}
               >
@@ -438,7 +358,7 @@ export default function ProfileForm() {
               label="프로필 이미지"
               type="file"
               register={register("profileImage")}
-              error={toFieldError(errors.profileImage)}
+              error={errors.profileImage}
               touched={!!touchedFields.profileImage}
               placeholder="프로필 이미지"
             >
@@ -449,17 +369,22 @@ export default function ProfileForm() {
                   width={100}
                   height={100}
                   onClick={handleImageClick}
+                  // 웹 접근성 처리
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleImageClick();
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
                   className="cursor-pointer"
                 />
                 <input
-                  ref={mergedRef}
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
-                  name={profileImageRegister.name}
-                  onChange={(e) => {
-                    profileImageRegister.onChange(e);
-                    handleProfileImageSelect(e);
-                  }}
+                  onChange={handleProfileImageSelect}
                   className="hidden"
                 />
               </div>
@@ -467,7 +392,7 @@ export default function ProfileForm() {
             <FormField
               label="이용 서비스"
               register={register("serviceCategories")}
-              error={toFieldError(errors.serviceCategories)}
+              error={errors.serviceCategories}
               placeholder="서비스"
               touched={!!touchedFields.serviceCategories}
             >
@@ -479,7 +404,7 @@ export default function ProfileForm() {
             <FormField
               label="내가 사는 지역"
               register={register("region")}
-              error={toFieldError(errors.region)}
+              error={errors.region}
               placeholder="지역"
               touched={!!touchedFields.region}
             >

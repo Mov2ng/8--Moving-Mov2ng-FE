@@ -13,12 +13,7 @@ import z from "zod";
  */
 // 기본 스키마 (모든 필드 포함, 타입 안전성을 위해)
 const baseProfileSchema = z.object({
-  profileImage: z
-    .string()
-    .refine(
-      (val) => !val || /^blob:.+/.test(val),
-      "올바른 이미지 URL을 입력해주세요"
-    ),
+  profileImage: z.string(),
   serviceCategories: z
     .any()
     .refine(
