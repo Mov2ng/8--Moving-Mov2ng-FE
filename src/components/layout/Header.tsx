@@ -1,11 +1,12 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, useLogout } from "@/hooks/useAuth";
 import Button from "../common/button";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 
 // 메뉴 링크 타입
 type MenuItem = {
@@ -32,8 +33,9 @@ const MENU_ITEMS: Record<string, MenuItem[]> = {
 
 export default function Header() {
   const router = useRouter();
-  const { me, isGuest, isLoading, isUser, isDriver } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const { me, isGuest, isLoading, isUser, isDriver } = useAuth();
+  const logoutMutation = useLogout();
 
   // 사용자 표시 이름 (USER: name, DRIVER: nickname)
   const displayName = isUser
@@ -42,8 +44,27 @@ export default function Header() {
     ? (me as { nickname?: string })?.nickname ?? me?.name
     : undefined;
 
-  // 프로필 이미지 (기본값 처리)
-  const profileImage = me?.profileImage || "/assets/image/img-profile.png";
+  // 프로필 이미지 (s3 이미지 조회) - React Query 사용
+  const { data: profileImage } = useGetViewPresignedUrl(me?.profileImage);
+
+  // 프로필 드롭다운 상태 관리
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  // 드롭다운 영역 참조
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      // 드롭다운 영역 외부 클릭 시 닫기
+      if (!dropdownRef.current?.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    // 외부 클릭 이벤트 등록
+    document.addEventListener("click", handleClick);
+    // 컴포넌트 언마운트 시 이벤트 정리
+    return () => document.removeEventListener("click", handleClick);
+  }, [isDropdownOpen]);
 
   // 메뉴 네비게이션 렌더링
   const renderMenuNav = () => {
@@ -137,23 +158,103 @@ export default function Header() {
     }
     // 로그인 상태
     return (
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-8">
         <button aria-label="알림" onClick={() => {}}>
           <Image
             src="/assets/icon/ic-alarm.svg"
             alt="alarm"
-            width={24}
-            height={24}
+            width={36}
+            height={36}
           />
         </button>
-        <button aria-label="프로필" onClick={() => {}}>
-          <Image src={profileImage} alt="profile" width={36} height={36} />
-        </button>
-        {displayName && (
-          <span className="pret-lg-medium text-black-400 max-md:hidden">
-            {displayName}
-          </span>
-        )}
+        <div ref={dropdownRef} className="relative">
+          <div
+            aria-label="프로필"
+            onClick={() => setIsDropdownOpen((prev) => !prev)}
+            className="flex items-center gap-4 cursor-pointer"
+          >
+            <Image
+              src={profileImage || "/assets/image/avatartion-3.png"}
+              alt="profile"
+              width={36}
+              height={36}
+              unoptimized={!!profileImage} // presigned URL은 unoptimized로 처리
+              className="rounded-full"
+            />
+            {displayName && (
+              <span className="pret-lg-medium text-black-400 max-md:hidden">
+                {displayName}
+              </span>
+            )}
+          </div>
+          {isDropdownOpen && (
+            <div className="absolute top-full right-0 mt-2 w-55 rounded-lg border border-line-100 p-4 bg-white z-20 shadow-lg">
+              {isUser ? (
+                <div className="flex flex-col px-6">
+                  <div className="text-lg font-bold py-3.5">
+                    {me?.name} 고객님
+                  </div>
+                  <div className="py-3.5">
+                    <Link
+                      href="/profile/edit"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      프로필 수정
+                    </Link>
+                  </div>
+                  <div className="py-3.5">
+                    <Link
+                      href="/movers/favorites"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      찜한 기사님
+                    </Link>
+                  </div>
+                  <div className="py-3.5">
+                    <Link
+                      href="/review/user"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      이사 리뷰
+                    </Link>
+                  </div>
+                </div>
+              ) : isDriver ? (
+                <div className="flex flex-col px-6">
+                  <div className="text-lg font-bold py-3.5">
+                    {me?.nickname ?? me?.name} 기사님
+                  </div>
+                  <div className="py-3.5">
+                    <Link
+                      href="/estimate/user/received"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      받은 견적
+                    </Link>
+                  </div>
+                  <div className="py-3.5">
+                    <Link
+                      href="/profile"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      마이페이지
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
+              <div className="border-t border-line-100 my-3" />
+              <button
+                className="w-full text-center py-1.5 text-sm text-gray-500"
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  logoutMutation.mutate();
+                }}
+              >
+                로그아웃
+              </button>
+            </div>
+          )}
+        </div>
         <button
           className="md:hidden"
           aria-label="메뉴"
