@@ -146,16 +146,20 @@ export function useAuth() {
     isUser: me?.role === "USER", // 일반회원
     isDriver: me?.role === "DRIVER", // 기사님
     role: me?.role as "USER" | "DRIVER" | undefined,
+    profileImage: me?.profileImage,
+    nickname: me?.nickname,
   };
 }
 
 /**
  * 로그아웃 mutation 생성 훅
  * - 토큰 삭제, 쿼리 삭제 처리
+ * - 성공 시 홈페이지로 리디렉션
  * @returns useApiMutation 결과
  */
 export function useLogout() {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   return useApiMutation<unknown, void, unknown>({
     mutationKey: ["logout"],
@@ -164,6 +168,8 @@ export function useLogout() {
       // 인증 상태 정리 (토큰 삭제 + me 쿼리 삭제)
       handleAuthError(queryClient);
       // refreshToken 쿠키는 서버에서 삭제
+      // 홈페이지로 리디렉션
+      router.push("/");
     },
     onError: (error) => {
       const parsedError = parseServerError(error);
