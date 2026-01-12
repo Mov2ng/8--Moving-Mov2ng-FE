@@ -14,7 +14,9 @@ import {
   useGetMoverFull,
   usePostFavoriteMover,
   useDeleteFavoriteMover,
+  usePostRequestDriver,
 } from "@/hooks/useMover";
+import Toast from "@/components/common/Toast";
 
 // 무한 스크롤 캐시 데이터 타입
 interface MoversPageData {
@@ -64,7 +66,8 @@ export default function MoversDetailPage() {
   const idNumber = parseInt(id);
   const { isGuest } = useAuth(); // 비회원 여부 확인
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // 로그인 모달 열기
+  const [isToastOpen, setIsToastOpen] = useState(false); // 토스트 열기
 
   // 서비스 카테고리 라벨 매핑
   const SERVICE_CATEGORY_LABEL_MAP: Record<string, string> = Object.fromEntries(
@@ -147,10 +150,13 @@ export default function MoversDetailPage() {
   const { mutate: postFavoriteMover, isPending: isPostFavoriteMoverPending } =
     usePostFavoriteMover(idNumber);
   // 찜 취소
-    const {
+  const {
     mutate: deleteFavoriteMover,
     isPending: isDeleteFavoriteMoverPending,
   } = useDeleteFavoriteMover(idNumber);
+  // 지정 견적 요청
+  const { mutate: postRequestDriver, isPending: isPostRequestDriverPending } =
+    usePostRequestDriver(idNumber);
 
   // 찜 상태 관리
   const [isFavorite, setIsFavorite] = useState(false);
@@ -173,15 +179,15 @@ export default function MoversDetailPage() {
     if (isFavorite) {
       deleteFavoriteMover(idNumber, {
         onSuccess: () => {
-          setIsFavorite(false); // 찜 취소
           queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(false); // 찜 취소
         },
       });
     } else {
       postFavoriteMover(idNumber, {
         onSuccess: () => {
-          setIsFavorite(true); // 찜 추가
           queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(true); // 찜 추가
         },
       });
     }
@@ -193,8 +199,19 @@ export default function MoversDetailPage() {
       return;
     }
 
+    // 이미 지정 견적 요청한 상태면 취소, 아니면 요청
+    // me에 포함된 requests에 해당 기사님의 id가 있는지 확인 ??
+
     // 지정 견적 요청 로직 추가
-    
+    postRequestDriver(idNumber, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["movers"] });
+        setIsToastOpen(true);
+        setTimeout(() => {
+          setIsToastOpen(false);
+        }, 3000); 
+      },
+    });
   };
 
   const modalButtonClick = () => {
@@ -227,6 +244,9 @@ export default function MoversDetailPage() {
         setIsOpen={setIsModalOpen}
         buttonClick={modalButtonClick}
       />
+      {isToastOpen && (
+        <Toast content="지정 견적 요청이 완료되었습니다." info={false} />
+      )}
       <div className="flex flex-col gap-10 max-w-[955px] w-full">
         <FindDriverProfile
           name={driver.nickname}

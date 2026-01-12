@@ -34,4 +34,9 @@ export const moverService = {
       method: "DELETE",
     });
   },
+  postRequestDriver: (id: number) => {
+    return apiClient(`/requests/${id}/estimate`, {
+      method: "POST",
+    });
+  },
 };
