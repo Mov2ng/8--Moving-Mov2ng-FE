@@ -3,6 +3,7 @@
 import { useApiMutation } from "./useApiMutation";
 import { useApiQuery } from "./useApiQuery";
 import { userService } from "@/services/userService";
+import { fileService } from "@/services/fileService";
 import { useRouter } from "next/navigation";
 
 /**

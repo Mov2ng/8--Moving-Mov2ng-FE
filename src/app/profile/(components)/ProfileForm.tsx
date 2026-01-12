@@ -17,7 +17,11 @@ import { REGIONS, SERVICE_CATEGORIES } from "@/constants/profile.constants";
 // import { DEFAULT_AVATARS } from "@/constants/profile.constants"; // TODO: 추후 랜덤 아바타 선택 기능 추가 시 사용
 import ProfileChips from "@/components/common/ProfileChips";
 import { useRouter } from "next/navigation";
-import { fileService } from "@/services/fileService";
+import {
+  useDeleteFileFromS3,
+  useGetPresignedUrl,
+  useUploadToS3,
+} from "@/hooks/useFileService";
 
 const DEFAULT_PROFILE_IMAGE = "/assets/image/upload-default.png";
 
@@ -36,10 +40,11 @@ export default function ProfileForm() {
     reset,
     setError,
     clearErrors,
+    setValue,
   } = useForm<ProfileFormValues>({
     // 폼 검증 스키마 설정 및 전달
     resolver: zodResolver(profileSchema(me?.role)),
-    mode: "onTouched", // 커스텀 필드와 수동 값 설정이 많아 touchedFields 추적이 어려워 onTouched로 설정
+    mode: "all", // 커스텀 필드와 수동 값 설정이 많아 touchedFields 추적이 어려워 onTouched로 설정
   });
 
   // 서비스 카테고리 목록
@@ -49,6 +54,10 @@ export default function ProfileForm() {
 
   // 프로필 등록 mutation 준비
   const postProfileMutation = usePostProfile();
+  // 파일 관련 mutations 준비
+  const getPresignedUrlMutation = useGetPresignedUrl();
+  const uploadToS3Mutation = useUploadToS3();
+  const deleteFileMutation = useDeleteFileFromS3();
 
   // 프로필 이미지 미리보기용 state
   const [previewImage, setPreviewImage] = useState<string>(
@@ -94,6 +103,7 @@ export default function ProfileForm() {
     setPreviewObjectUrl(objectUrl); // object URL 저장 (cleanup용으로만 사용)
     setSelectedFile(file); // 제출 시 업로드할 파일 저장
     setUploadedFileKey(null); // 새 파일 선택 시 기존 업로드된 키 초기화
+    setValue("profileImage", ""); // validation을 통과하기 위해 빈 문자열로 설정 (TODO: 최선인가..)
     clearErrors("profileImage");
   };
 
@@ -123,14 +133,18 @@ export default function ProfileForm() {
           // 1-1. 백엔드에서 presigned URL 요청
           const contentType = selectedFile.type || "image/jpeg";
           const { presignedUrl, fileKey: uploadedKey } =
-            await fileService.getPresignedUrl({
+            await getPresignedUrlMutation.mutateAsync({
               fileName: selectedFile.name,
               category: "PROFILE",
               contentType,
             });
 
           // 1-2. presigned URL로 S3에 파일 업로드 (PUT 요청)
-          await fileService.uploadToS3(presignedUrl, selectedFile, contentType);
+          await uploadToS3Mutation.mutateAsync({
+            presignedUrl,
+            file: selectedFile,
+            contentType,
+          });
 
           // 1-3. 업로드 완료 후 fileKey 저장
           fileKey = uploadedKey; // 현재 제출용 fileKey 저장
@@ -158,6 +172,7 @@ export default function ProfileForm() {
       // TODO: 추후 랜덤 아바타 선택할 수 있는 로직과 버튼 추가 예정
 
       // 프로필 등록 요청
+      console.log("data: ", data);
       await postProfileMutation.mutateAsync(data);
 
       // 성공 시 form reset + 성공 UI 처리
@@ -167,14 +182,14 @@ export default function ProfileForm() {
       setUploadedFileKey(null); // 임시 저장용 파일 키 정리
       // previewObjectUrl 정리 (메모리 누수 방지)
       if (previewObjectUrl) {
-        URL.revokeObjectURL(previewObjectUrl);
+        // URL.revokeObjectURL(previewObjectUrl); TODO
         setPreviewObjectUrl(null);
       }
     } catch (error) {
       // s3 업로드는 완료 but 프로필 등록 실패 경우 롤백
       if (selectedFile && data.profileImage) {
         try {
-          await fileService.deleteFile(data.profileImage);
+          await deleteFileMutation.mutateAsync(data.profileImage);
           console.log("프로필 등록 실패로 인한 이미지 롤백 완료");
         } catch (rollbackError) {
           console.error("이미지 롤백 실패:", rollbackError);
