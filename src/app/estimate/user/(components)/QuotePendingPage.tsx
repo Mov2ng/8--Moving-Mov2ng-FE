@@ -96,12 +96,14 @@ export default function QuotePendingPage() {
   return (
     <>
       <div className="min-h-screen bg-background-200">
-        <header className="bg-white border-b border-line-100">
-          <div className="mx-auto max-w-6xl px-5">
-            <QuoteTabNav />
+        <header className="bg-white">
+          <div className="border-b border-line-100">
+            <div className="mx-auto max-w-6xl px-5">
+              <QuoteTabNav />
+            </div>
           </div>
           {summary && (
-            <div className="mx-auto max-w-6xl px-5 py-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-t border-line-100">
+            <div className="mx-auto max-w-6xl px-5 py-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 ">
               <div className="flex flex-col gap-1">
                 <span className="text-primary-black-400 pret-xl-semibold">
                   {summary.serviceType || "서비스 종류 미정"}

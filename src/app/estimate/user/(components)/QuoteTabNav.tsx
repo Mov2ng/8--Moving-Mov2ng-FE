@@ -14,7 +14,7 @@ export default function QuoteTabNav() {
   const go = (href: string) => router.push(href);
 
   return (
-    <nav className="flex items-center gap-6 border-b border-line-100 bg-white">
+    <nav className="flex items-center gap-6 bg-white">
       {TABS.map((tab) => {
         const isActive = pathname?.startsWith(tab.href);
         return (

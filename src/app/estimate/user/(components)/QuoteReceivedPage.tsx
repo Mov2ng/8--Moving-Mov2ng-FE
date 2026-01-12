@@ -7,7 +7,7 @@ import QuoteCard from "./QuoteCard";
 import QuoteTabNav from "./QuoteTabNav";
 import FilterDropdown from "@/components/common/FilterDropdown";
 import { formatDateLabel, formatDateTime } from "@/utils/date";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { STALE_TIME } from "@/constants/query";
 
 import type { ApiQuote, QuoteStatus } from "@/types/api/quotes";
@@ -51,6 +51,23 @@ const ENDPOINT = "/request/user/estimates";
 
 export default function QuoteReceivedPage() {
   const [filter, setFilter] = useState<"ALL" | "CONFIRMED">("ALL");
+  const [isCompact, setIsCompact] = useState(false);
+
+  useEffect(() => {
+    const calc = () => {
+      if (typeof window === "undefined") return;
+      setIsCompact(window.innerWidth < 769);
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
+
+  const confirmedLabel = isCompact ? "확정 견적" : "확정된 견적서";
+  const filterOptions = [
+    { label: "전체", value: "ALL" },
+    { label: confirmedLabel, value: "CONFIRMED" },
+  ];
   const { data, isLoading, error } = useApiQuery<
     {
       success: boolean;
@@ -75,7 +92,7 @@ export default function QuoteReceivedPage() {
       ? quotes.filter((q) => q.status === "confirmed")
       : quotes;
   const first = filteredQuotes[0] ?? quotes[0];
-  const filterLabel = filter === "ALL" ? "전체" : "확정된 견적서";
+  const filterLabel = filter === "ALL" ? "전체" : confirmedLabel;
 
   return (
     <div className="min-h-screen bg-background-200">
@@ -125,13 +142,10 @@ export default function QuoteReceivedPage() {
             {/* 필터 영역 */}
             <div className="flex flex-col gap-2">
               <h2 className="text-black-400 pret-2xl-semibold">견적서 목록</h2>
-              <div className="w-[160px]">
+              <div className="w-[190px] max-md:w-[127px]">
                 <FilterDropdown
                   menuName={filterLabel}
-                  menuList={[
-                    { label: "전체", value: "ALL" },
-                    { label: "확정된 견적서", value: "CONFIRMED" },
-                  ]}
+                  menuList={filterOptions}
                   onClick={(menu) =>
                     setFilter(menu.value === "CONFIRMED" ? "CONFIRMED" : "ALL")
                   }
