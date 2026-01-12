@@ -58,6 +58,7 @@ export default function DriverList({ size = 'md', id, name, driverIntro, likeCou
             label={label}
             iconSrc={imgUrl}
             size={size === 'sm' ? 'sm' : 'md'}
+            key={label}
           />
         ))}
         <MovingTypeChip
