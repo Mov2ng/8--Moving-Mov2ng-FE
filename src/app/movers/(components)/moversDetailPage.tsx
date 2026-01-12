@@ -131,8 +131,6 @@ export default function MoversDetailPage() {
     ? { ...cachedMover, ...extraData?.data }
     : fullData?.data;
 
-  console.log("driver:", driver);
-
   const regionLabels = driver?.regions?.map(
     (region: string) => REGION_LABEL_MAP[region]
   );
@@ -145,9 +143,11 @@ export default function MoversDetailPage() {
   const isLoading = hasExistingData ? isExtraLoading : isFullLoading;
 
   // ⚠️ 모든 hooks는 조건부 return 이전에 호출해야 함
+  // 찜하기
   const { mutate: postFavoriteMover, isPending: isPostFavoriteMoverPending } =
     usePostFavoriteMover(idNumber);
-  const {
+  // 찜 취소
+    const {
     mutate: deleteFavoriteMover,
     isPending: isDeleteFavoriteMoverPending,
   } = useDeleteFavoriteMover(idNumber);
@@ -280,7 +280,7 @@ export default function MoversDetailPage() {
         <ReviewPointBox
           rating={driver?.rating}
           reviewCount={driver?.reviewCount}
-          reviewList={driver?.reviewList}
+          reviewList={driver?.reviews}
         />
         <div>
           {driver?.reviews?.map((review: ReviewType) => (

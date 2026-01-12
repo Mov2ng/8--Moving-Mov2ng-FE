@@ -5,18 +5,21 @@ import StarRating from './StarRating';
 import type { ReviewType } from '@/types/driverProfileType';
 
 export default function ReviewPointBox({ rating, reviewCount, reviewList }: { rating: number, reviewCount: number, reviewList: ReviewType[] }) {
-  console.log(reviewList);
+  console.log("reviewList:", reviewList);
   
-  // 임시 리뷰 rating값
+  // 리뷰 rating 값 계산
   const ratingList = {
-    5: 170,
-    4: 8,
+    5: 0,
+    4: 0,
     3: 0,
     2: 0,
     1: 0,
-  }
-  // total 리뷰 건수
-  const totalRating = Object.values(ratingList).reduce((acc, curr) => acc + curr, 0);
+    ...reviewList.reduce((acc, curr) => {
+      acc[curr.rating] = (acc[curr.rating] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>),
+  };
+  
 
   return (
   <div className="flex items-center justify-center gap-[83px] max-w-[955px] w-full h-[296px] bg-background-200 rounded-4xl
@@ -32,7 +35,7 @@ export default function ReviewPointBox({ rating, reviewCount, reviewList }: { ra
         <div className="flex items-center gap-[30px] h-8 max-md:gap-4" key={key}> 
           <p className="w-9 pret-xl-medium text-black-300 max-md:pret-14-medium">{key}점</p>
           <div className="max-w-[370px] w-full h-[8px] bg-background-300 rounded-[15px]">
-            <div className="h-full bg-secondary-yellow-100 rounded-[15px]" style={{ width: `${(value / totalRating) * 100}%` }}></div>
+            <div className="h-full bg-secondary-yellow-100 rounded-[15px]" style={{ width: `${(value / reviewCount) * 100}%` }}></div>
           </div>
           <span className="w-11 pret-xl-medium text-gray-300 max-md:pret-14-medium">{value}</span>
         </div>
