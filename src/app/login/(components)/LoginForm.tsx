@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import FormField from "../../../components/form/FormField";
 import { parseServerError } from "@/utils/parseServerError";
 import RoleToggle from "../../../components/toggle/RoleToggle";
+import { useSearchParams } from "next/navigation";
 
 /**
  * 로그인 폼
@@ -14,6 +15,10 @@ import RoleToggle from "../../../components/toggle/RoleToggle";
  * - 로딩/에러 처리 포함
  */
 export default function LoginForm() {
+  // URL에서 redirect 파라미터 읽기
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get("redirect");
+
   // react-hook-form 세팅 (zod 검증)
   const {
     register,
@@ -26,7 +31,7 @@ export default function LoginForm() {
   });
 
   // useLogin hook: onSuccess에서 accessToken 저장 + me invalidate 처리
-  const loginMutation = useLogin();
+  const loginMutation = useLogin(redirectPath || undefined);
 
   const onSubmit = async (values: LoginFormValues) => {
     try {
