@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
 import { STALE_TIME } from "@/constants/query";
 import Image from "next/image";
+import ReviewTabNav from "./ReviewTabNav";
 
 const movingTypeMap: Record<string, string> = {
   SMALL: "소형이사",
@@ -89,21 +90,8 @@ export default function ReviewWrittenPage() {
   return (
     <div className="min-h-screen bg-background-200">
       <header className="bg-white border-b border-line-100">
-        <div className="mx-auto max-w-6xl px-5 py-5 flex items-center gap-6">
-          <Link href="/" className="text-primary-blue-300 pret-xl-semibold">
-            무빙
-          </Link>
-          <nav className="flex items-center gap-6 pret-15-semibold">
-            <Link
-              href="/review/writable"
-              className="text-black-200 hover:text-primary-black-400"
-            >
-              작성 가능한 리뷰
-            </Link>
-            <Link href="/review/written" className="text-primary-black-400">
-              내가 작성한 리뷰
-            </Link>
-          </nav>
+        <div className="mx-auto max-w-6xl flex items-center gap-6">
+          <ReviewTabNav />
         </div>
       </header>
 
