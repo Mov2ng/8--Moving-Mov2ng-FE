@@ -12,7 +12,7 @@ export default function Toast({
   return (
     <div
       className="flex items-center max-w-[955px] w-full border border-primary-blue-200 rounded-xl bg-primary-blue-100 
-      py-[18px] px-[24px] gap-4
+      py-[18px] px-[24px] gap-4 fixed top-20 left-0 right-0 mx-auto z-50 animate-fade-in-up 
       max-sm:gap-2 max-sm:px-[24px] max-sm:py-[10px]"
     >
       {info && (

@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import ReviewPointBox from "./ReviewPointBox";
 import ReviewList from "./ReviewList";
@@ -13,7 +13,28 @@ import {
   useGetMoverExtra,
   useGetMoverFull,
   usePostFavoriteMover,
+  useDeleteFavoriteMover,
+  usePostRequestDriver,
 } from "@/hooks/useMover";
+import Toast from "@/components/common/Toast";
+
+// 무한 스크롤 캐시 데이터 타입
+interface MoversPageData {
+  list: Mover[];
+  nextCursor: number | null;
+  hasNext: boolean;
+}
+
+interface MoversInfiniteCache {
+  pages: MoversPageData[];
+  pageParams: (number | undefined)[];
+}
+
+interface MoversNormalCache {
+  data: {
+    list: Mover[];
+  };
+}
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { SERVICE_CATEGORIES, REGIONS } from "@/constants/profile.constants";
@@ -45,8 +66,8 @@ export default function MoversDetailPage() {
   const idNumber = parseInt(id);
   const { isGuest } = useAuth(); // 비회원 여부 확인
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false); // 찜 상태 관리
+  const [isModalOpen, setIsModalOpen] = useState(false); // 로그인 모달 열기
+  const [isToastOpen, setIsToastOpen] = useState(false); // 토스트 열기
 
   // 서비스 카테고리 라벨 매핑
   const SERVICE_CATEGORY_LABEL_MAP: Record<string, string> = Object.fromEntries(
@@ -57,22 +78,35 @@ export default function MoversDetailPage() {
   const REGION_LABEL_MAP: Record<string, string> = Object.fromEntries(
     REGIONS.map((region) => [region.value, region.label])
   );
-  
 
   const queryClient = useQueryClient();
 
   // 캐시된 movers 목록에서 해당 id의 mover 찾기
   const cachedMover = useMemo(() => {
-    // 모든 movers 쿼리 캐시 검색 query Client가 달라서 못 가져옴.+key값도 다름
-    const queries = queryClient.getQueriesData<MoversCache>({
+    // 모든 movers 쿼리 캐시 검색
+    const queries = queryClient.getQueriesData<
+      MoversInfiniteCache | MoversNormalCache
+    >({
       queryKey: ["movers"],
     });
 
     for (const [, data] of queries) {
-      const found = data?.data?.list?.find(
-        (mover: Mover) => mover.id === idNumber
-      );
-      if (found) return found;
+      // useInfiniteQuery의 pages 구조 처리 (무한 스크롤 데이터)
+      if (data && "pages" in data) {
+        for (const page of data.pages) {
+          const found = page?.list?.find(
+            (mover: Mover) => mover.id === idNumber
+          );
+          if (found) return found;
+        }
+      }
+      // 일반 useQuery의 data.list 구조 처리 (fallback)
+      else if (data && "data" in data) {
+        const found = data.data.list.find(
+          (mover: Mover) => mover.id === idNumber
+        );
+        if (found) return found;
+      }
     }
     return null;
   }, [queryClient, idNumber]);
@@ -100,8 +134,6 @@ export default function MoversDetailPage() {
     ? { ...cachedMover, ...extraData?.data }
     : fullData?.data;
 
-  console.log("driver:", driver);
-
   const regionLabels = driver?.regions?.map(
     (region: string) => REGION_LABEL_MAP[region]
   );
@@ -109,13 +141,32 @@ export default function MoversDetailPage() {
   const serviceCategoryLabels = driver?.serviceCategories?.map(
     (category: string) => SERVICE_CATEGORY_LABEL_MAP[category]
   );
-  
+
   // 로딩 상태
   const isLoading = hasExistingData ? isExtraLoading : isFullLoading;
 
   // ⚠️ 모든 hooks는 조건부 return 이전에 호출해야 함
+  // 찜하기
   const { mutate: postFavoriteMover, isPending: isPostFavoriteMoverPending } =
     usePostFavoriteMover(idNumber);
+  // 찜 취소
+  const {
+    mutate: deleteFavoriteMover,
+    isPending: isDeleteFavoriteMoverPending,
+  } = useDeleteFavoriteMover(idNumber);
+  // 지정 견적 요청
+  const { mutate: postRequestDriver, isPending: isPostRequestDriverPending } =
+    usePostRequestDriver(idNumber);
+
+  // 찜 상태 관리
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // 기사님 정보 로딩 후 찜 상태 설정
+  useEffect(() => {
+    if (driver?.isFavorite !== undefined) {
+      setIsFavorite(driver.isFavorite);
+    }
+  }, [driver?.isFavorite]);
 
   // 기사님 찜하기 핸들러
   const handlePostFavoriteMover = () => {
@@ -124,12 +175,22 @@ export default function MoversDetailPage() {
       return;
     }
 
-    postFavoriteMover(idNumber, {
-      onSuccess: () => {
-        setIsFavorite(true); // 찜 상태 변경 -> 해당 기사님의 경우에만 변경되어야함
-        queryClient.invalidateQueries({ queryKey: ["movers"] });
-      },
-    });
+    // 이미 찜한 상태면 삭제, 아니면 추가
+    if (isFavorite) {
+      deleteFavoriteMover(idNumber, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(false); // 찜 취소
+        },
+      });
+    } else {
+      postFavoriteMover(idNumber, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(true); // 찜 추가
+        },
+      });
+    }
   };
 
   const handleRequestDriver = () => {
@@ -138,7 +199,19 @@ export default function MoversDetailPage() {
       return;
     }
 
+    // 이미 지정 견적 요청한 상태면 취소, 아니면 요청
+    // me에 포함된 requests에 해당 기사님의 id가 있는지 확인 ??
+
     // 지정 견적 요청 로직 추가
+    postRequestDriver(idNumber, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["movers"] });
+        setIsToastOpen(true);
+        setTimeout(() => {
+          setIsToastOpen(false);
+        }, 3000); 
+      },
+    });
   };
 
   const modalButtonClick = () => {
@@ -171,9 +244,12 @@ export default function MoversDetailPage() {
         setIsOpen={setIsModalOpen}
         buttonClick={modalButtonClick}
       />
+      {isToastOpen && (
+        <Toast content="지정 견적 요청이 완료되었습니다." info={false} />
+      )}
       <div className="flex flex-col gap-10 max-w-[955px] w-full">
         <FindDriverProfile
-          name={driver.name}
+          name={driver.nickname}
           likeCount={driver.favoriteCount}
           rating={driver.rating}
           reviewCount={driver.reviewCount}
@@ -195,11 +271,13 @@ export default function MoversDetailPage() {
         <div className="flex flex-col gap-8">
           <h2 className="pret-2xl-bold text-black-400">제공 서비스</h2>
           <div className="flex gap-3">
+            <RegionChip key={1} label={"전체"} size="md" selected={true} />
             {serviceCategoryLabels?.map((category: string) => (
               <RegionChip
                 key={category}
                 label={category}
                 size="md"
+                selected={true}
               />
             ))}
           </div>
@@ -211,11 +289,7 @@ export default function MoversDetailPage() {
           <h2 className="pret-2xl-bold text-black-400">서비스 가능 지역</h2>
           <div className="flex gap-3">
             {regionLabels?.map((region: string) => (
-              <RegionChip
-                key={region}
-                label={region}
-                size="md"
-              />
+              <RegionChip key={region} label={region} size="md" />
             ))}
           </div>
         </div>
@@ -226,7 +300,7 @@ export default function MoversDetailPage() {
         <ReviewPointBox
           rating={driver?.rating}
           reviewCount={driver?.reviewCount}
-          reviewList={driver?.reviewList}
+          reviewList={driver?.reviews}
         />
         <div>
           {driver?.reviews?.map((review: ReviewType) => (
@@ -273,7 +347,7 @@ export default function MoversDetailPage() {
           <Button
             text="지정 견적 요청"
             onClick={handleRequestDriver}
-            disabled={isGuest ? false : true}
+            disabled={isGuest ? true : false}
             width="full"
             className="flex items-center justify-center max-md:w-full max-md:h-full"
           />

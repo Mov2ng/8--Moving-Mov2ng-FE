@@ -52,12 +52,13 @@ export default function DriverList({ size = 'md', id, name, driverIntro, likeCou
   return (
     <div onClick={handleClick} className={`max-w-[955px] flex flex-col border border-line-100 rounded-2xl bg-gray-50 cursor-pointer shadow-[-2px_-2px_10px_0_rgba(220,220,220,0.14),_2px_2px_10px_0_rgba(220,220,220,0.14)]
         ${size === 'sm' ? 'gap-[14px] w-[328px] px-[14px] py-4' : 'gap-4 w-full px-6 py-5'}`}>
-      <div className={`flex gap-3 ${size === 'sm' ? 'gap-2' : 'gap-3'}`}>
+      <div className={`flex gap-3 ${size === 'sm' ? 'gap-2 max-md:gap-1' : 'gap-3 max-md:gap-2'}`}>
         {movingItems.map(({label, imgUrl}) => (
           <MovingTypeChip
             label={label}
             iconSrc={imgUrl}
             size={size === 'sm' ? 'sm' : 'md'}
+            key={label}
           />
         ))}
         <MovingTypeChip
