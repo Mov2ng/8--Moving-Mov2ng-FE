@@ -45,10 +45,11 @@ export default function DatePicker({
   return (
     <div
       className={[
-        "flex flex-col items-center justify-center gap-6",
-        "rounded-2xl bg-white py-6",
+        "flex flex-col items-center justify-center gap-4 md:gap-6",
+        "rounded-2xl bg-white py-4 md:py-6",
         "shadow-[2px_2px_10px_rgba(224,224,224,0.2)]",
-        size === "sm" ? "datepicker-sm w-[320px]" : "datepicker-md w-[640px]",
+        "w-full max-w-[320px] md:max-w-[640px]",
+        size === "sm" ? "datepicker-sm" : "datepicker-md",
       ].join(" ")}
     >
       <ReactDatePicker
@@ -62,23 +63,23 @@ export default function DatePicker({
           decreaseMonth,
           increaseMonth,
         }: ReactDatePickerCustomHeaderProps) => (
-          <div className="flex w-full items-center justify-between px-6">
+          <div className="flex w-full items-center justify-between px-4 md:px-6">
             <button
               type="button"
               onClick={decreaseMonth}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400"
+              className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 transition-colors"
             >
-              <img src="/icons/left.svg" alt="이전 달" />
+              <img src="/icons/left.svg" alt="이전 달" className="w-4 h-4 md:w-5 md:h-5" />
             </button>
 
-            <div className="font-semibold">{formatMonthLabel(date)}</div>
+            <div className="text-sm md:text-base font-semibold">{formatMonthLabel(date)}</div>
 
             <button
               type="button"
               onClick={increaseMonth}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400"
+              className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 transition-colors"
             >
-              <img src="/icons/right.svg" alt="다음 달" />
+              <img src="/icons/right.svg" alt="다음 달" className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           </div>
         )}
@@ -90,8 +91,10 @@ export default function DatePicker({
         disabled={!hasValue || !onConfirm}
         onClick={onConfirm}
         className={[
-          "h-16 w-[calc(100%-48px)] rounded-2xl font-semibold text-white",
-          hasValue ? "bg-[#1b92ff]" : "cursor-not-allowed bg-gray-300",
+          "h-12 md:h-16 w-[calc(100%-32px)] md:w-[calc(100%-48px)]",
+          "rounded-2xl font-semibold text-sm md:text-base text-white",
+          "transition-colors",
+          hasValue ? "bg-[#1b92ff] hover:bg-[#1680e6]" : "cursor-not-allowed bg-gray-300",
         ].join(" ")}
       >
         선택완료
