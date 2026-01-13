@@ -1,4 +1,9 @@
 // app/quote/request/api.ts
+"use client";
+
+import { apiClient } from "@/libs/apiClient";
+import { useApiMutation } from "@/hooks/useApiMutation";
+
 export type CreateEstimatePayload = {
   movingType: string; // API enum (e.g. "HOME")
   movingDate: string; // "YYYY-MM-DD"
@@ -6,22 +11,31 @@ export type CreateEstimatePayload = {
   destination: string; // "서울 종로구"
 };
 
+export type CreateEstimateResponse = {
+  data?: unknown;
+  [key: string]: unknown;
+};
+
+/**
+ * 견적 생성 API 서비스 함수
+ */
 export async function createEstimate(payload: CreateEstimatePayload) {
-  const res = await fetch("https://eight-moving-mov2ng-be.onrender.com", {
+  return apiClient("/requests", {
     method: "POST",
-    credentials: "include", // 중요: 인증이 필요하면 포함
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(payload),
+    body: payload,
   });
+}
 
-  const json = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw json || new Error("서버 오류");
-  }
-
-  return json;
+/**
+ * 견적 생성 커스텀 훅
+ */
+export function useCreateEstimate() {
+  return useApiMutation<
+    CreateEstimateResponse,
+    CreateEstimatePayload,
+    { status: number; message: string }
+  >({
+    mutationFn: createEstimate,
+    mutationKey: ["createEstimate"],
+  });
 }
