@@ -7,13 +7,9 @@ import { fileService } from "@/services/fileService";
 /**
  * 조회용 Presigned URL 가져오기 (이미지 표시용)
  * @param fileKey - S3 파일 키
- * @param enabled - 쿼리 활성화 여부
  * @returns presignedUrl
  */
-export function useGetViewPresignedUrl(
-  fileKey: string | null | undefined,
-  enabled?: boolean
-) {
+export function useGetViewPresignedUrl(fileKey: string | null | undefined) {
   return useApiQuery({
     queryKey: ["viewPresignedUrl", fileKey],
     queryFn: async () => {
@@ -21,7 +17,7 @@ export function useGetViewPresignedUrl(
       const { presignedUrl } = await fileService.getViewPresignedUrl(fileKey);
       return presignedUrl;
     },
-    enabled: enabled !== undefined ? enabled : !!fileKey,
+    enabled: !!fileKey, // fileKey가 있을 때만 쿼리 실행
     staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
   });
 }

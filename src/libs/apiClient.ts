@@ -14,6 +14,7 @@ export type ApiRequestOptions = {
   // useMe 쿼리 호출(skipAuthRefresh: true)에 401 발생 시 재발급 시도X
   // refreshToken 재발급 API 호출 시 사용 (무한루프 방지)
   skipAutoRefresh?: boolean; // 기본값(false: 자동 재발급 시도)
+  timeout?: number; // 요청 타임아웃 (밀리초, 기본값: 2000ms)
 };
 
 /**
@@ -38,6 +39,7 @@ export async function apiClient(
     query,
     headers,
     skipAutoRefresh = false,
+    timeout = 2000, // 기본 타임아웃 2초
   } = options;
 
   // 1. body가 FormData인지 확인 (FormData일 때는 Content-Type을 제거해야 함)
@@ -88,7 +90,7 @@ export async function apiClient(
   try {
     // AbortController를 사용하여 타임아웃 구현
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2초 타임아웃
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     const response = await fetch(url, {
       method,
@@ -136,7 +138,7 @@ export async function apiClient(
 
       // 원래 요청 재시도 (타임아웃 재설정)
       const retryController = new AbortController();
-      const retryTimeoutId = setTimeout(() => retryController.abort(), 2000); // 2초 타임아웃
+      const retryTimeoutId = setTimeout(() => retryController.abort(), timeout);
 
       const retryResponse = await fetch(url, {
         method,

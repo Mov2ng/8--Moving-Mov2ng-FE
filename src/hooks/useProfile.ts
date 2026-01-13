@@ -3,8 +3,10 @@
 import { useApiMutation } from "./useApiMutation";
 import { useApiQuery } from "./useApiQuery";
 import { userService } from "@/services/userService";
-import { fileService } from "@/services/fileService";
+import { moverService } from "@/services/moverService";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { BasicInfoFormValues } from "@/libs/validation/basicInfoSchemas";
 
 /**
  * 프로필 조회 query 생성 훅
@@ -15,7 +17,20 @@ export function useGetProfile(enabled?: boolean) {
   return useApiQuery({
     queryKey: ["profile"],
     queryFn: userService.getProfile,
-    retry: false,
+    enabled,
+    staleTime: 1000 * 60 * 1, // 1분 동안은 최신으로 간주
+  });
+}
+
+/**
+ * 기사님 본인 프로필 조회 query 생성 훅
+ * @param enabled - 쿼리 활성화 여부
+ * @returns useApiQuery 결과
+ */
+export function useGetMyMoverDetail(enabled?: boolean) {
+  return useApiQuery({
+    queryKey: ["myMoverDetail"],
+    queryFn: moverService.getMyMoverDetail,
     enabled,
     staleTime: 1000 * 60 * 1, // 1분 동안은 최신으로 간주
   });
@@ -27,16 +42,67 @@ export function useGetProfile(enabled?: boolean) {
  */
 export function usePostProfile() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useApiMutation({
     mutationKey: ["postProfile"],
     mutationFn: userService.postProfile,
     onSuccess: () => {
+      // 프로필 관련 쿼리 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["myMoverDetail"] });
       alert("프로필 등록이 완료되었습니다.");
       router.push("/");
     },
     onError: (error) => {
       console.error("프로필 등록 실패: ", error);
+    },
+  });
+}
+
+/**
+ * 프로필 수정 mutation 생성 훅
+ * @returns useApiMutation 결과
+ */
+export function usePutProfile() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useApiMutation({
+    mutationKey: ["putProfile"],
+    mutationFn: userService.putProfile,
+    onSuccess: () => {
+      // 프로필 관련 쿼리 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["myMoverDetail"] });
+      alert("프로필 수정이 완료되었습니다.");
+      router.push("/profile");
+    },
+    onError: (error) => {
+      console.error("프로필 수정 실패: ", error);
+    },
+  });
+}
+
+/**
+ * 기본정보 수정 mutation 생성 훅
+ * @returns useApiMutation 결과
+ */
+export function useUpdateBasicInfo() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useApiMutation({
+    mutationKey: ["updateBasicInfo"],
+    mutationFn: userService.updateBasicInfo,
+    onSuccess: () => {
+      // me 쿼리 캐시 무효화 (기본정보는 me에 포함됨)
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+      alert("기본정보 수정이 완료되었습니다.");
+      router.push("/profile");
+    },
+    onError: (error) => {
+      console.error("기본정보 수정 실패: ", error);
     },
   });
 }

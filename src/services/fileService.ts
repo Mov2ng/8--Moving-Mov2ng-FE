@@ -70,6 +70,7 @@ export const fileService = {
         category,
         contentType,
       },
+      timeout: 5000, // 파일 업로드용 presigned URL 요청은 5초 타임아웃
     });
 
     // 백엔드 응답 구조에 맞춰 반환

@@ -65,12 +65,14 @@ export const userService = {
     return apiClient("/profile", {
       method: "POST",
       body: data,
+      timeout: 5000, // 프로필 등록 API 타임아웃 5초
     });
   },
   putProfile: (data: ProfileFormValues) => {
     return apiClient("/profile/driver", {
       method: "PUT",
       body: data,
+      timeout: 5000, // 프로필 수정 API 타임아웃 5초
     });
   },
   updateBasicInfo: (data: BasicInfoFormValues) => {
