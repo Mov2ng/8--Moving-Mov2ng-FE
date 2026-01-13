@@ -1,6 +1,7 @@
 import { apiClient } from "@/libs/apiClient";
 import { refreshAccessToken } from "@/libs/auth/tokenManager";
 import { ProfileFormValues } from "@/libs/validation/profileSchemas";
+import { BasicInfoFormValues } from "@/libs/validation/basicInfoSchemas";
 
 /**
  * 사용자 관련 API 엔드포인트 레이어 서비스 user API endpoint layer service
@@ -56,20 +57,32 @@ export const userService = {
     });
   },
   getProfile: () => {
-    return apiClient("/user/profile", {
+    return apiClient("/profile", {
       method: "GET",
     });
   },
   postProfile: (data: ProfileFormValues) => {
-    return apiClient("/user/profile", {
+    return apiClient("/profile", {
       method: "POST",
       body: data,
     });
   },
   putProfile: (data: ProfileFormValues) => {
-    return apiClient("/user/profile", {
+    return apiClient("/profile/driver", {
       method: "PUT",
       body: data,
     });
   },
+  updateBasicInfo: (data: BasicInfoFormValues) => {
+    return apiClient("/profile/driver/basic", {
+      method: "PUT",
+      body: data,
+    });
+  },
+  // updateUserProfile: (data: UserProfileFormValues) => {
+  //   return apiClient("/profile/user", {
+  //     method: "PUT",
+  //     body: data,
+  //   });
+  // },
 };
