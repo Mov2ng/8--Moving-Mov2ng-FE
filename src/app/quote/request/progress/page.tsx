@@ -33,7 +33,7 @@ export default function QuoteRequestProgressPage() {
     createEstimateMutation(payload, {
       onSuccess: (res) => {
         alert("견적 요청이 완료되었습니다.");
-        router.push("/quote/complete");
+        router.push("/estimate/user/pending");
       },
       onError: (e) => {
         console.error("견적 생성 실패", e);
