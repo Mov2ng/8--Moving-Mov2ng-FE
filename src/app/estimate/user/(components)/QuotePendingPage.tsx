@@ -7,9 +7,12 @@ import QuoteCard from "./QuoteCard";
 import QuoteTabNav from "./QuoteTabNav";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import { formatDateLabel } from "@/utils/date";
 import { STALE_TIME } from "@/constants/query";
+import { useI18n } from "@/libs/i18n/I18nProvider";
+import ConfirmQuoteModal from "./ConfirmQuoteModal";
 
 import type { ApiQuote, QuoteStatus } from "@/types/api/quotes";
 import type { QuoteCardView } from "@/types/view/quote";
@@ -52,6 +55,7 @@ const ENDPOINT = "/request/user/estimates";
 export default function QuotePendingPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [confirmId, setConfirmId] = useState<number | null>(null);
   const { data, isLoading, error } = useApiQuery<
     {
@@ -73,6 +77,26 @@ export default function QuotePendingPage() {
 
   const quotes: QuoteCardView[] = data?.data ? data.data.map(adaptQuote) : [];
   const summary = quotes[0];
+
+  useEffect(() => {
+    if (!error) return;
+
+    const status =
+      typeof error === "object" && "status" in error
+        ? (error as { status?: number }).status
+        : undefined;
+    const code =
+      typeof error === "object" && "code" in error
+        ? (error as { code?: string }).code
+        : undefined;
+
+    const isForbidden = status === 403 || code === "FORBIDDEN";
+
+    if (isForbidden) {
+      alert(t("forbidden_user"));
+      setTimeout(() => router.replace("/estimate/driver/pending"), 0);
+    }
+  }, [error, router, t]);
 
   const { mutate: acceptQuote, isPending: isAccepting } = useApiMutation<
     { success: boolean; message: string },
@@ -106,10 +130,10 @@ export default function QuotePendingPage() {
             <div className="mx-auto max-w-6xl px-5 py-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 ">
               <div className="flex flex-col gap-1">
                 <span className="text-primary-black-400 pret-xl-semibold">
-                  {summary.serviceType || "서비스 종류 미정"}
+                  {summary.serviceType || t("service_type_unknown")}
                 </span>
                 <span className="text-gray-400 pret-14-medium">
-                  견적 신청일:{" "}
+                  {t("quote_request_date")}:{" "}
                   {summary.requestedAt
                     ? formatDateLabel(summary.requestedAt)
                     : "-"}
@@ -117,7 +141,9 @@ export default function QuotePendingPage() {
               </div>
               <div className="flex flex-wrap items-center gap-3 text-black-300 pret-15-medium">
                 <div className="flex flex-col gap-1 min-w-0">
-                  <span className="text-gray-300 pret-13-medium">출발지</span>
+                  <span className="text-gray-300 pret-13-medium">
+                    {t("departure")}
+                  </span>
                   <span className="text-primary-black-400">
                     {summary.departure}
                   </span>
@@ -126,13 +152,17 @@ export default function QuotePendingPage() {
                   →
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
-                  <span className="text-gray-300 pret-13-medium">도착지</span>
+                  <span className="text-gray-300 pret-13-medium">
+                    {t("arrival")}
+                  </span>
                   <span className="text-primary-black-400">
                     {summary.arrival}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
-                  <span className="text-gray-300 pret-13-medium">이사일</span>
+                  <span className="text-gray-300 pret-13-medium">
+                    {t("moving_date")}
+                  </span>
                   <span className="text-primary-black-400">
                     {summary.movingDate}
                   </span>
@@ -145,7 +175,7 @@ export default function QuotePendingPage() {
         <main className="max-w-6xl mx-auto px-5 py-6">
           {isLoading && (
             <div className="text-center text-gray-400 pret-14-medium">
-              불러오는 중...
+              {t("loading")}
             </div>
           )}
           {error && (
@@ -153,7 +183,19 @@ export default function QuotePendingPage() {
               {error.message}
             </div>
           )}
-          {!isLoading && !error && (
+          {!isLoading && !error && quotes.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-14 gap-4 text-center text-gray-400 pret-14-medium">
+              <Image
+                src="/assets/image/img-empty-blue.png"
+                alt="empty"
+                width={120}
+                height={120}
+                priority
+              />
+              <div>{t("empty_pending_quotes")}</div>
+            </div>
+          )}
+          {!isLoading && !error && quotes.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {quotes.map((quote) => (
                 <QuoteCard
@@ -186,36 +228,12 @@ export default function QuotePendingPage() {
         </main>
       </div>
 
-      {confirmId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg">
-            <div className="pret-lg-semibold text-black-300 mb-2">
-              견적을 확정하시겠습니까?
-            </div>
-            <p className="text-gray-500 pret-14-medium mb-6">
-              확정 후에는 기사님과의 매칭이 진행됩니다.
-            </p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmId(null)}
-                disabled={isAccepting}
-                className="w-full inline-flex items-center justify-center px-4 py-3 rounded-[12px] border border-primary-blue-300 text-primary-blue-300 pret-14-semibold hover:bg-primary-blue-50 transition-colors disabled:opacity-60"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={() => acceptQuote()}
-                disabled={isAccepting}
-                className="w-full inline-flex items-center justify-center px-4 py-3 rounded-[12px] bg-primary-blue-300 text-white pret-14-semibold hover:bg-primary-blue-400 transition-colors disabled:opacity-60"
-              >
-                {isAccepting ? "확정 중..." : "확정하기"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmQuoteModal
+        open={confirmId !== null}
+        onCancel={() => setConfirmId(null)}
+        onConfirm={() => acceptQuote()}
+        isSubmitting={isAccepting}
+      />
     </>
   );
 }

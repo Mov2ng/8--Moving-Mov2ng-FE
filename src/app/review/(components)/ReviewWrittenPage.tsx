@@ -11,6 +11,7 @@ import { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
 import { STALE_TIME } from "@/constants/query";
 import Image from "next/image";
 import ReviewTabNav from "./ReviewTabNav";
+import { useRouter } from "next/navigation";
 
 const movingTypeMap: Record<string, string> = {
   SMALL: "소형이사",
@@ -57,6 +58,7 @@ const adaptWritten = (item: ApiWrittenReview): ReviewWrittenItem => {
 export default function ReviewWrittenPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
+  const router = useRouter();
 
   useEffect(() => {
     const calc = () => {
@@ -86,6 +88,25 @@ export default function ReviewWrittenPage() {
   const totalCount = list.length;
   const paged = list.slice((page - 1) * pageSize, page * pageSize);
   const emptyText = "작성한 리뷰가 없습니다.";
+
+  useEffect(() => {
+    if (!error) return;
+
+    const status =
+      typeof error === "object" && "status" in error
+        ? (error as { status?: number }).status
+        : undefined;
+    const code =
+      typeof error === "object" && "code" in error
+        ? (error as { code?: string }).code
+        : undefined;
+    const isForbidden = status === 403 || code === "FORBIDDEN";
+
+    if (isForbidden) {
+      alert("일반 회원만 접근가능합니다.");
+      setTimeout(() => router.replace("/profile"), 0);
+    }
+  }, [error, router]);
 
   return (
     <div className="min-h-screen bg-background-200">

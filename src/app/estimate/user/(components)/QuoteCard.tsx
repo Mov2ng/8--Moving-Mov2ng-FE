@@ -8,6 +8,7 @@ import {
   SERVICE_ICON_MAP,
   SERVICE_LABEL_SHORT_MAP,
 } from "@/constants/serviceType";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 interface QuoteCardProps {
   // 기사님 정보
@@ -61,6 +62,13 @@ export default function QuoteCard({
   onDetail,
 }: QuoteCardProps) {
   const statusInfo = quoteStatusChip[status];
+  const { t } = useI18n();
+  const statusLabelMap: Record<QuoteCardProps["status"], string> = {
+    waiting: t("quote_status_waiting"),
+    confirmed: t("quote_status_confirmed"),
+    rejected: t("quote_status_rejected"),
+  };
+  const statusLabel = statusLabelMap[status] ?? statusInfo.label;
   const iconSrc =
     serviceType && isServiceTypeKey(serviceType)
       ? SERVICE_ICON_MAP[serviceType]
@@ -77,7 +85,7 @@ export default function QuoteCard({
         <span
           className={`px-2 py-1 pret-xs-semibold rounded ${statusInfo.className}`}
         >
-          {statusInfo.label}
+          {statusLabel}
         </span>
         {serviceType && (
           <>
@@ -103,7 +111,7 @@ export default function QuoteCard({
           <>
             <div className="lg:hidden">
               <MovingTypeChip
-                label="지정 견적"
+                label={t("designated_quote_short")}
                 iconSrc="/icons/redfile.svg"
                 size="sm"
                 variant="rd"
@@ -111,7 +119,7 @@ export default function QuoteCard({
             </div>
             <div className="hidden lg:inline-flex">
               <MovingTypeChip
-                label={designatedLabel}
+                label={designatedLabel ?? t("designated_quote_full")}
                 iconSrc="/icons/redfile.svg"
                 size="sm"
                 variant="rd"
@@ -142,7 +150,7 @@ export default function QuoteCard({
           {movingDate && (
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <span className="px-2 py-1 bg-background-400 text-gray-500 rounded">
-                이사일
+                {t("moving_date_label")}
               </span>
               <span className="text-black-400">{movingDate}</span>
             </div>
@@ -154,7 +162,7 @@ export default function QuoteCard({
               </span>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-1 bg-background-400 text-gray-500 rounded">
-                  출발
+                  {t("departure_short")}
                 </span>
                 <span className="text-black-400">{departure}</span>
               </div>
@@ -165,7 +173,7 @@ export default function QuoteCard({
               <span className="text-line-200 self-center">|</span>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-1 bg-background-400 text-gray-500 rounded">
-                  도착
+                  {t("arrival_short")}
                 </span>
                 <span className="text-black-400">{arrival}</span>
               </div>
@@ -176,7 +184,9 @@ export default function QuoteCard({
 
       {/* 견적 금액 */}
       <div className="flex justify-end items-center gap-2 mb-4">
-        <span className="text-black-100 pret-14-medium">견적 금액</span>
+        <span className="text-black-100 pret-14-medium">
+          {t("quote_price")}
+        </span>
         <span className="text-black-400 pret-xl-bold">
           {price.toLocaleString()}원
         </span>
@@ -186,7 +196,7 @@ export default function QuoteCard({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {onConfirm && (
           <Button
-            text="견적 확정하기"
+            text={t("quote_confirm")}
             variant="solid"
             width="100%"
             onClick={onConfirm}
@@ -194,7 +204,7 @@ export default function QuoteCard({
         )}
         {onDetail && (
           <Button
-            text="상세보기"
+            text={t("quote_detail")}
             variant="outline"
             width="100%"
             onClick={onDetail}

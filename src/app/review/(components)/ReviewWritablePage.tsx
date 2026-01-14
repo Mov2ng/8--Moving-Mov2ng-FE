@@ -12,6 +12,7 @@ import ReviewWriteModal from "./ReviewWriteModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { STALE_TIME } from "@/constants/query";
 import ReviewTabNav from "./ReviewTabNav";
+import { useRouter } from "next/navigation";
 
 import type { ApiWritableReview, ReviewItem } from "@/types/view/review";
 
@@ -44,6 +45,7 @@ export default function ReviewWritablePage() {
   const [selectedReview, setSelectedReview] = useState<ReviewItem | null>(null);
   const [pageSize, setPageSize] = useState(6);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   useEffect(() => {
     const calc = () => {
@@ -101,6 +103,25 @@ export default function ReviewWritablePage() {
   const totalCount = list.length;
   const paged = list.slice((page - 1) * pageSize, page * pageSize);
   const emptyText = "작성 가능한 리뷰가 없습니다.";
+
+  useEffect(() => {
+    if (!error) return;
+
+    const status =
+      typeof error === "object" && "status" in error
+        ? (error as { status?: number }).status
+        : undefined;
+    const code =
+      typeof error === "object" && "code" in error
+        ? (error as { code?: string }).code
+        : undefined;
+    const isForbidden = status === 403 || code === "FORBIDDEN";
+
+    if (isForbidden) {
+      alert("일반 회원만 접근가능합니다.");
+      setTimeout(() => router.replace("/profile"), 0);
+    }
+  }, [error, router]);
 
   return (
     <div className="min-h-screen bg-background-200">
