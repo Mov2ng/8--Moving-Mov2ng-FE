@@ -142,7 +142,7 @@ export function usePutUserProfile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["me"] });
       alert("일반유저 프로필 수정이 완료되었습니다.");
-      router.push("/profile/user");
+      router.push("/");
     },
     onError: (error) => {
       const parsedError = parseServerError(error);
