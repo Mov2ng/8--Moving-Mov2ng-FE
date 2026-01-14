@@ -34,4 +34,9 @@ export const moverService = {
       method: "DELETE",
     });
   },
+  getMyMoverDetail: () => {
+    return apiClient("/movers/me", {
+      method: "GET",
+    });
+  },
 };

@@ -124,6 +124,8 @@ export function useMe() {
     queryFn: userService.me,
     staleTime: 1000 * 60 * 5, // 5분 동안 fresh 상태 유지
     gcTime: 1000 * 60 * 5, // 미사용 시 캐시 메모리 정리 시간
+    refetchOnMount: false, // /auth/me는 무한 호출 방지를 위해 마운트 시 리패치 안 함
+    refetchOnWindowFocus: false, // /auth/me는 포커스 시 리패치 안 함 (staleTime 5분으로 충분)
   });
 }
 

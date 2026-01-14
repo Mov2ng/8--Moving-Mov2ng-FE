@@ -40,7 +40,6 @@ export function useApiQuery<TData, TError>({
     queryFn,
     enabled,
     staleTime,
-    retry: options.retry ?? 1, // 기본값 1, options에서 전달된 값이 있으면 그것 사용
     ...options,
   });
 }
