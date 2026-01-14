@@ -7,8 +7,10 @@ import QuoteCard from "./QuoteCard";
 import QuoteTabNav from "./QuoteTabNav";
 import FilterDropdown from "@/components/common/FilterDropdown";
 import { formatDateLabel, formatDateTime } from "@/utils/date";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { STALE_TIME } from "@/constants/query";
+import { useRouter } from "next/navigation";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 import type { ApiQuote, QuoteStatus } from "@/types/api/quotes";
 import type { QuoteCardView } from "@/types/view/quote";
@@ -45,6 +47,27 @@ const ENDPOINT = "/request/user/estimates";
 
 export default function QuoteReceivedPage() {
   const [filter, setFilter] = useState<"ALL" | "CONFIRMED">("ALL");
+  const [isCompact, setIsCompact] = useState(false);
+  const router = useRouter();
+  const { t } = useI18n();
+
+  useEffect(() => {
+    const calc = () => {
+      if (typeof window === "undefined") return;
+      setIsCompact(window.innerWidth < 769);
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
+
+  const confirmedLabel = isCompact
+    ? t("filter_confirmed_compact")
+    : t("filter_confirmed");
+  const filterOptions = [
+    { label: t("filter_all"), value: "ALL" },
+    { label: confirmedLabel, value: "CONFIRMED" },
+  ];
   const { data, isLoading, error } = useApiQuery<
     {
       success: boolean;
@@ -69,7 +92,27 @@ export default function QuoteReceivedPage() {
       ? quotes.filter((q) => q.status === "confirmed")
       : quotes;
   const first = filteredQuotes[0] ?? quotes[0];
-  const filterLabel = filter === "ALL" ? "전체" : "확정된 견적서";
+  const filterLabel = filter === "ALL" ? t("filter_all") : confirmedLabel;
+
+  useEffect(() => {
+    if (!error) return;
+
+    const status =
+      typeof error === "object" && "status" in error
+        ? (error as { status?: number }).status
+        : undefined;
+    const code =
+      typeof error === "object" && "code" in error
+        ? (error as { code?: string }).code
+        : undefined;
+
+    const isForbidden = status === 403 || code === "FORBIDDEN";
+
+    if (isForbidden) {
+      alert(t("forbidden_user"));
+      setTimeout(() => router.replace("/estimate/driver/received"), 0);
+    }
+  }, [error, router, t]);
 
   return (
     <div className="min-h-screen bg-background-200">
@@ -82,7 +125,7 @@ export default function QuoteReceivedPage() {
       <main className="max-w-5xl mx-auto px-0 sm:px-4 md:px-5 py-8">
         {isLoading && (
           <div className="text-center text-gray-400 pret-14-medium">
-            불러오는 중...
+            {t("loading")}
           </div>
         )}
         {error && (
@@ -96,21 +139,21 @@ export default function QuoteReceivedPage() {
             {first && (
               <div>
                 <h2 className="text-black-400 pret-2xl-semibold mb-4">
-                  견적 정보
+                  {t("estimate_info")}
                 </h2>
                 <div className="rounded-2xl bg-background-100 border border-line-100 px-6 py-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-10">
                     <InfoRow
-                      label="견적 요청일"
+                      label={t("quote_request_date")}
                       value={formatDateLabel(first.requestedAt ?? "")}
                     />
-                    <InfoRow label="서비스" value={first.serviceType} />
+                    <InfoRow label={t("service")} value={first.serviceType} />
                     <InfoRow
-                      label="이용일"
+                      label={t("moving_date")}
                       value={first.movingDateTimeLabel ?? "-"}
                     />
-                    <InfoRow label="출발지" value={first.departure} />
-                    <InfoRow label="도착지" value={first.arrival} />
+                    <InfoRow label={t("departure")} value={first.departure} />
+                    <InfoRow label={t("arrival")} value={first.arrival} />
                   </div>
                 </div>
               </div>
@@ -118,14 +161,13 @@ export default function QuoteReceivedPage() {
 
             {/* 필터 영역 */}
             <div className="flex flex-col gap-2">
-              <h2 className="text-black-400 pret-2xl-semibold">견적서 목록</h2>
-              <div className="w-[160px]">
+              <h2 className="text-black-400 pret-2xl-semibold">
+                {t("estimate_list")}
+              </h2>
+              <div className="w-[190px] max-md:w-[127px]">
                 <FilterDropdown
                   menuName={filterLabel}
-                  menuList={[
-                    { label: "전체", value: "ALL" },
-                    { label: "확정된 견적서", value: "CONFIRMED" },
-                  ]}
+                  menuList={filterOptions}
                   onClick={(menu) =>
                     setFilter(menu.value === "CONFIRMED" ? "CONFIRMED" : "ALL")
                   }

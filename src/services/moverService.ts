@@ -39,4 +39,9 @@ export const moverService = {
       method: "GET",
     });
   },
+  postRequestDriver: (id: number) => {
+    return apiClient(`/requests/${id}/estimate`, {
+      method: "POST",
+    });
+  },
 };

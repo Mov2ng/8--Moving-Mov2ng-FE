@@ -11,6 +11,8 @@ import { formatDate, formatDateTime } from "@/utils/date";
 import Image from "next/image";
 import { useState } from "react";
 import { STALE_TIME } from "@/constants/query";
+import { useI18n } from "@/libs/i18n/I18nProvider";
+import ConfirmQuoteModal from "./ConfirmQuoteModal";
 
 import type { QuoteDetailView } from "@/types/view/quote";
 import type { ApiQuoteDetail, QuoteStatus } from "@/types/api/quotes";
@@ -56,9 +58,11 @@ export default function QuotePendingDetailPage({
   estimateId,
 }: QuotePendingDetailPageProps) {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [favoriteOverride, setFavoriteOverride] = useState<boolean | undefined>(
     undefined
   );
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const id = estimateId;
   const invalidId = Number.isNaN(id);
 
@@ -83,12 +87,13 @@ export default function QuotePendingDetailPage({
         method: "POST",
       }),
     onSuccess: () => {
+      setIsConfirmOpen(false);
       queryClient.invalidateQueries({ queryKey: ["quote", "pending", id] });
       queryClient.invalidateQueries({ queryKey: ["quote", "pending"] });
-      alert("견적을 확정했어요.");
+      alert(t("quote_accept_success"));
     },
     onError: (err) => {
-      alert(err.message ?? "견적 확정에 실패했습니다.");
+      alert(err.message ?? t("quote_accept_fail"));
     },
   });
 
@@ -106,9 +111,9 @@ export default function QuotePendingDetailPage({
   const getCopyText = () => {
     if (!shareUrl) return "";
     return detail
-      ? `이사일: ${formatDateTime(
-          detail.movingDateTime
-        )}\n견적가: ${detail.price.toLocaleString()}원\n${shareUrl}`
+      ? `${t("moving_date")}: ${formatDateTime(detail.movingDateTime)}\n${t(
+          "quote_price_title"
+        )}: ${detail.price.toLocaleString()}원\n${shareUrl}`
       : shareUrl;
   };
 
@@ -120,14 +125,14 @@ export default function QuotePendingDetailPage({
       navigator.clipboard
         .writeText(copyText)
         .then(() => {
-          alert("견적 요약을 복사했어요. 메신저에 붙여넣기 하세요.");
+          alert(t("share_copy_success"));
         })
         .catch(() => {
-          alert("클립보드 복사에 실패했어요.");
+          alert(t("share_copy_fail"));
         });
       return;
     }
-    alert("공유를 지원하지 않는 브라우저입니다.");
+    alert(t("share_not_supported"));
   };
 
   const handleShareKakao = () => {
@@ -146,14 +151,12 @@ export default function QuotePendingDetailPage({
         : null;
 
     if (!kakaoAppKey) {
-      alert("NEXT_PUBLIC_KAKAO_APP_KEY가 설정되지 않았습니다.");
+      alert(t("kakao_app_key_missing"));
       return;
     }
 
     if (!kakao) {
-      alert(
-        "카카오 SDK가 아직 로드되지 않았어요. 새로고침 후 다시 시도해 주세요."
-      );
+      alert(t("share_kakao_not_ready"));
       return;
     }
 
@@ -164,8 +167,8 @@ export default function QuotePendingDetailPage({
     kakao.Share.sendDefault({
       objectType: "feed",
       content: {
-        title: "견적서 공유",
-        description: "받은 견적서를 확인해 주세요.",
+        title: t("share_title"),
+        description: t("share_received_desc"),
         imageUrl: `${window.location.origin}/assets/image/share-kakao-thumb.png`,
         link: {
           mobileWebUrl: shareUrl,
@@ -174,7 +177,7 @@ export default function QuotePendingDetailPage({
       },
       buttons: [
         {
-          title: "견적서 보기",
+          title: t("share_view_quote"),
           link: {
             mobileWebUrl: shareUrl,
             webUrl: shareUrl,
@@ -218,7 +221,7 @@ export default function QuotePendingDetailPage({
         if (res.message) alert(res.message);
       },
       onError: (err) => {
-        alert(err.message ?? "찜하기 처리중 오류 발생.");
+        alert(err.message ?? t("favorite_error"));
       },
     });
 
@@ -233,12 +236,12 @@ export default function QuotePendingDetailPage({
       <main className="max-w-6xl mx-auto px-5 py-8 pb-32 lg:pb-8">
         {invalidId && (
           <div className="text-center text-secondary-red-200 pret-14-medium">
-            잘못된 견적 ID입니다.
+            {t("invalid_estimate")}
           </div>
         )}
         {isLoading && (
           <div className="text-center text-gray-400 pret-14-medium">
-            불러오는 중...
+            {t("loading")}
           </div>
         )}
         {error && (
@@ -251,7 +254,9 @@ export default function QuotePendingDetailPage({
             {/*  카드 + 정보 */}
             <div className="flex flex-col gap-6">
               <div className="flex items-center justify-between">
-                <h1 className="pret-xl-semibold text-black-300">견적 상세</h1>
+                <h1 className="pret-xl-semibold text-black-300">
+                  {t("quote_detail_title")}
+                </h1>
               </div>
 
               <QuoteDetailCard
@@ -276,28 +281,33 @@ export default function QuotePendingDetailPage({
 
               <div className="text-black-400 pret-2xl-semibold">
                 <div className="text-black-300 pret-xl-semibold mb-3">
-                  견적가
+                  {t("quote_price_title")}
                 </div>
                 {detail.price.toLocaleString()}원
               </div>
 
               {/* 견적 정보 */}
               <div className="text-black-300 pret-lg-semibold mb-3">
-                <h1 className="pret-xl-semibold text-black-300">견적 정보</h1>
+                <h1 className="pret-xl-semibold text-black-300">
+                  {t("estimate_info")}
+                </h1>
               </div>
               <div className="rounded-[16px] border border-line-100 bg-background-100 px-5 py-6 shadow-sm">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
                   <InfoRow
-                    label="견적 요청일"
+                    label={t("quote_request_date")}
                     value={formatDate(detail.requestedAt)}
                   />
-                  <InfoRow label="서비스" value={detail.serviceType ?? "-"} />
                   <InfoRow
-                    label="이용일"
+                    label={t("service")}
+                    value={detail.serviceType ?? "-"}
+                  />
+                  <InfoRow
+                    label={t("moving_date")}
                     value={formatDateTime(detail.movingDateTime)}
                   />
-                  <InfoRow label="출발지" value={detail.origin} />
-                  <InfoRow label="도착지" value={detail.destination} />
+                  <InfoRow label={t("departure")} value={detail.origin} />
+                  <InfoRow label={t("arrival")} value={detail.destination} />
                 </div>
               </div>
             </div>
@@ -321,19 +331,19 @@ export default function QuotePendingDetailPage({
                   height={20}
                 />
                 <span className="pret-xl-semibold leading-8">
-                  기사님 찜하기
+                  {t("favorite_driver")}
                 </span>
               </button>
               <Button
-                text="견적 확정하기"
-                onClick={() => acceptQuote()}
+                text={t("quote_confirm")}
+                onClick={() => setIsConfirmOpen(true)}
                 disabled={invalidId || isAccepting}
                 width="100%"
                 className="hover:brightness-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               />
               <div className="flex flex-col gap-3">
                 <span className="pret-lg-semibold text-black-300">
-                  견적서 공유하기
+                  {t("share_quote")}
                 </span>
                 <div className="flex gap-3">
                   <button
@@ -390,7 +400,7 @@ export default function QuotePendingDetailPage({
             onClick={() => toggleFavorite()}
             disabled={isTogglingFavorite || !detail?.driverId}
             className="size-12 rounded-2xl border border-line-200 bg-white flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
-            aria-label="찜하기"
+            aria-label={t("favorite_driver")}
           >
             <Image
               src={
@@ -404,14 +414,21 @@ export default function QuotePendingDetailPage({
             />
           </button>
           <Button
-            text="견적 확정하기"
-            onClick={() => acceptQuote()}
+            text={t("quote_confirm")}
+            onClick={() => setIsConfirmOpen(true)}
             disabled={invalidId || isAccepting}
             width="100%"
             className="h-[54px] flex-1 flex items-center justify-center pret-xl-semibold leading-6 text-black-400 hover:brightness-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </div>
       </div>
+
+      <ConfirmQuoteModal
+        open={isConfirmOpen}
+        onCancel={() => setIsConfirmOpen(false)}
+        onConfirm={() => acceptQuote()}
+        isSubmitting={isAccepting}
+      />
     </div>
   );
 }

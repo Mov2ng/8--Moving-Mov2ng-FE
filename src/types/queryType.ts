@@ -13,7 +13,7 @@ export const moverSortOption: QuerySelectType[] = [
     value: "rating",
   },
   { label: "경력 높은순", value: "career" },
-  { label: "확정 높은순", value: "confirmed" },
+  { label: "확정 높은순", value: "confirm" },
 ];
 
 export const regionTypeOption: QuerySelectType[] = [

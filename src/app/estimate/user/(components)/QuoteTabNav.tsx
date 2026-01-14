@@ -1,21 +1,23 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-
-const TABS = [
-  { label: "대기 중인 견적", href: "/estimate/user/pending" },
-  { label: "받았던 견적", href: "/estimate/user/received" },
-];
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 export default function QuoteTabNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useI18n();
+
+  const tabs = [
+    { label: t("tab_pending_quotes"), href: "/estimate/user/pending" },
+    { label: t("tab_received_quotes"), href: "/estimate/user/received" },
+  ];
 
   const go = (href: string) => router.push(href);
 
   return (
-    <nav className="flex items-center gap-6 border-b border-line-100 bg-white">
-      {TABS.map((tab) => {
+    <nav className="flex items-center gap-6 bg-white">
+      {tabs.map((tab) => {
         const isActive = pathname?.startsWith(tab.href);
         return (
           <button
