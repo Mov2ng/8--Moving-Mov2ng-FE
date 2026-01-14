@@ -52,6 +52,7 @@ export function usePostProfile() {
       // 프로필 관련 쿼리 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["myMoverDetail"] });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
       alert("프로필 등록이 완료되었습니다.");
       router.push("/");
     },
@@ -82,6 +83,7 @@ export function usePutProfile() {
       // 프로필 관련 쿼리 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["myMoverDetail"] });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
       alert("프로필 수정이 완료되었습니다.");
       router.push("/profile");
     },
@@ -138,6 +140,7 @@ export function usePutUserProfile() {
     mutationKey: ["putUserProfile"],
     mutationFn: userService.putUserProfile,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["me"] });
       alert("일반유저 프로필 수정이 완료되었습니다.");
       router.push("/profile/user");
     },
