@@ -4,7 +4,7 @@ import ProfileEditCard from "@/components/common/ProfileEditCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useGetMyMoverDetail } from "@/hooks/useProfile";
 import { useGetViewPresignedUrl } from "@/hooks/useFileService";
-import ReviewSection from "./ReviewSection";
+import ReviewSection from "../../../components/common/ReviewSection";
 import { useRouter } from "next/navigation";
 
 /**
@@ -42,8 +42,10 @@ export default function ProfileContainer() {
     );
   }
   return (
-    <div className='flex flex-col gap-8'>
-      <h1 className="text-2xl max-md:text-lg font-bold text-black-400">마이페이지</h1>
+    <div className="flex flex-col gap-8">
+      <h1 className="text-2xl max-md:text-lg font-bold text-black-400">
+        마이페이지
+      </h1>
       <ProfileEditCard
         name={driver.nickname}
         description={driver.driverContent}

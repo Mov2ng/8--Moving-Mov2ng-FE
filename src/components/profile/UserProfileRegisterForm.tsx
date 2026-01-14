@@ -5,10 +5,8 @@ import Image from "next/image";
 import FormField from "@/components/form/FormField";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ProfileFormValues,
-  profileSchema,
-} from "@/libs/validation/profileSchemas";
+import { profileCreateSchema } from "@/libs/validation/profileSchemas";
+import { z } from "zod";
 import { parseServerError } from "@/utils/parseServerError";
 import { REGIONS, SERVICE_CATEGORIES } from "@/constants/profile.constants";
 import ProfileChips from "@/components/common/ProfileChips";
@@ -21,6 +19,9 @@ import {
 import { usePostProfile } from "@/hooks/useProfile";
 
 const DEFAULT_PROFILE_IMAGE = "/assets/image/upload-default.png";
+
+// USER 프로필 생성 스키마 타입
+type UserProfileCreateValues = z.infer<ReturnType<typeof profileCreateSchema>>;
 
 /**
  * 일반유저 프로필 등록 폼
@@ -37,8 +38,8 @@ export default function UserProfileRegisterForm() {
     setError,
     clearErrors,
     setValue,
-  } = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema("USER")),
+  } = useForm<UserProfileCreateValues>({
+    resolver: zodResolver(profileCreateSchema("USER")),
     mode: "all",
   });
 
@@ -113,7 +114,7 @@ export default function UserProfileRegisterForm() {
   };
 
   // 프로필 등록 제출 핸들러
-  const onSubmit = async (data: ProfileFormValues) => {
+  const onSubmit = async (data: UserProfileCreateValues) => {
     // 프로필 이미지 최종 검증
     if (!selectedFile && !uploadedFileKey) {
       setError("profileImage", {
