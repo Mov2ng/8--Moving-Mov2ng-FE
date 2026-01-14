@@ -125,7 +125,7 @@ export const userProfileCreateSchema = baseProfileCreateSchema;
  * - undefined가 아니면 변경된 필드로 간주하여 검증 수행
  */
 export const driverProfileSchema = baseProfileUpdateSchema
-  .extend({
+  .safeExtend({
     nickname: z.string().optional(),
     driverYears: z.number().optional(),
     driverIntro: z.string().optional(),

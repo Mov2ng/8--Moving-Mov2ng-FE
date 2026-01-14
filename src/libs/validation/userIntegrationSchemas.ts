@@ -8,7 +8,7 @@ import { basicInfoSchema } from "./basicInfoSchemas";
  * - 프로필 수정과 기본정보 수정을 한 번에 처리할 때 사용
  */
 export const userIntegrationSchema = baseProfileSchema
-  .extend(basicInfoSchema.shape)
+  .safeExtend(basicInfoSchema.shape)
   .refine(
     (data) => {
       // email 필드는 disabled 필드이므로 API 요청에 포함되면 안 됨
