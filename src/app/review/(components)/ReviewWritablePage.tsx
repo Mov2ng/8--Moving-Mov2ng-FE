@@ -14,20 +14,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { STALE_TIME } from "@/constants/query";
 
 import type { ApiWritableReview, ReviewItem } from "@/types/view/review";
-
-const movingTypeMap: Record<string, string> = {
-  SMALL: "소형이사",
-  HOME: "가정이사",
-  OFFICE: "사무실이사",
-};
+import { getServiceLabel } from "@/constants/profile.constants";
 
 const adaptWritable = (item: ApiWritableReview): ReviewItem => ({
   id: item.id,
   driverId: item.driver.id,
-  serviceType:
-    movingTypeMap[item.request.moving_type ?? ""] ??
-    item.request.moving_type ??
-    "",
+  serviceType: item.request.moving_type
+    ? getServiceLabel(item.request.moving_type)
+    : "",
   isDesignatedRequest: false,
   designatedLabel: "지정 견적 요청",
   name: item.driver.user?.name ?? item.driver.nickname ?? "기사님",
