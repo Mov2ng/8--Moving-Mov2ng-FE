@@ -18,6 +18,8 @@ import {
 } from "@/hooks/useMover";
 import Toast from "@/components/common/Toast";
 
+import type { Estimate, DriverEstimate } from "@/types/estimateType";
+
 // 무한 스크롤 캐시 데이터 타입
 interface MoversPageData {
   list: Mover[];
@@ -35,11 +37,13 @@ interface MoversNormalCache {
     list: Mover[];
   };
 }
+
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { SERVICE_CATEGORIES, REGIONS } from "@/constants/profile.constants";
 
 import type { ReviewType } from "@/types/driverProfileType";
+import { useGetUserEstimate } from "@/hooks/useUserEstimate";
 
 interface Mover {
   id: number;
@@ -66,8 +70,17 @@ export default function MoversDetailPage() {
   const idNumber = parseInt(id);
   const { isGuest } = useAuth(); // 비회원 여부 확인
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false); // 로그인 모달 열기
-  const [isToastOpen, setIsToastOpen] = useState(false); // 토스트 열기
+  const [modalState, setModalState] = useState({
+    title: "",
+    content: "",
+    buttonText: "",
+    isOpen: false,
+    buttonClick: () => {},
+  }); // 모달 열기
+  const [toastState, setToastState] = useState({
+    content: "",
+    isOpen: false,
+  }); // 토스트 열기
 
   // 서비스 카테고리 라벨 매핑
   const SERVICE_CATEGORY_LABEL_MAP: Record<string, string> = Object.fromEntries(
@@ -146,6 +159,7 @@ export default function MoversDetailPage() {
   const isLoading = hasExistingData ? isExtraLoading : isFullLoading;
 
   // ⚠️ 모든 hooks는 조건부 return 이전에 호출해야 함
+  // ===== 모든 hooks 시작 =====
   // 찜하기
   const { mutate: postFavoriteMover, isPending: isPostFavoriteMoverPending } =
     usePostFavoriteMover(idNumber);
@@ -154,12 +168,18 @@ export default function MoversDetailPage() {
     mutate: deleteFavoriteMover,
     isPending: isDeleteFavoriteMoverPending,
   } = useDeleteFavoriteMover(idNumber);
+  // 지정 견적 요청 조회
+  const { data: userEstimateData, isLoading: isUserEstimateLoading } =
+    useGetUserEstimate();
   // 지정 견적 요청
   const { mutate: postRequestDriver, isPending: isPostRequestDriverPending } =
     usePostRequestDriver(idNumber);
+  // ===== 모든 hooks 끝 =====
 
   // 찜 상태 관리
   const [isFavorite, setIsFavorite] = useState(false);
+  // 지정 견적 요청 조회 상태 관리
+  const [isEstimateRequested, setIsEstimateRequested] = useState(false);
 
   // 기사님 정보 로딩 후 찜 상태 설정
   useEffect(() => {
@@ -168,10 +188,40 @@ export default function MoversDetailPage() {
     }
   }, [driver?.isFavorite]);
 
+  // 지정 견적 요청 조회 후 조회 상태 설정
+  useEffect(() => {
+    console.log("isEstimateRequested before", isEstimateRequested);
+
+    // 지정 견적 요청 조회 데이터에서 기사님 목록 추출
+    const driverList = userEstimateData?.data.map(
+      (estimate: Estimate) => estimate.driver
+    );
+
+    // 지정 견적 요청 조회 데이터가 있고, 지정 견적 요청 개수가 5개 이상일때
+    if (userEstimateData && userEstimateData.data.length >= 5) {
+      // 지정 견적 요청 조회 데이터에 해당 기사님의 id가 있는지 확인
+      if (
+        driverList?.find((driver: DriverEstimate) => driver.id === idNumber)
+      ) {
+        setIsEstimateRequested(true);
+      } else {
+        // 전부 아닌 경우만 가능하도록
+        setIsEstimateRequested(false);
+      }
+    }
+    console.log("isEstimateRequested after", isEstimateRequested);
+  }, [userEstimateData, idNumber]);
+
   // 기사님 찜하기 핸들러
   const handlePostFavoriteMover = () => {
     if (isGuest) {
-      setIsModalOpen(true);
+      setModalState({
+        title: "로그인 필요",
+        content: "로그인 후 이용해주세요.",
+        buttonText: "로그인하러 가기",
+        isOpen: true,
+        buttonClick: () => {router.push("/login");},
+      });
       return;
     }
 
@@ -193,29 +243,66 @@ export default function MoversDetailPage() {
     }
   };
 
+  // 지정 견적 요청 핸들러
   const handleRequestDriver = () => {
     if (isGuest) {
-      setIsModalOpen(true);
+      setModalState({
+        title: "로그인 필요",
+        content: "로그인 후 이용해주세요.",
+        buttonText: "로그인하러 가기",
+        isOpen: true,
+        buttonClick: () => {router.push("/login");},
+      });
       return;
     }
 
-    // 이미 지정 견적 요청한 상태면 취소, 아니면 요청
-    // me에 포함된 requests에 해당 기사님의 id가 있는지 확인 ??
+    // 이미 지정 견적 요청한 상태면 알림, 아니면 요청
+    if (isEstimateRequested) {
+      // 이미 지정 견적 요청한 상태
+      setToastState({
+        content: "이미 지정 견적 요청한 상태입니다.",
+        isOpen: true,
+      });
+      setTimeout(() => {
+        setToastState({
+          content: "",
+          isOpen: false,
+        });
+      }, 3000);
+      return;
+    }
+
+    if (userEstimateData.data.length === 0) {
+      // 지정 견적 요청 개수가 0개일때
+      setModalState({
+        title: "지정 견적 요청하기",
+        content: "일반 견적 요청을 먼저 진행해주세요.",
+        buttonText: "일반 견적 요청 하기",
+        isOpen: true,
+        buttonClick: () => {router.push("/quote/request/type");},
+      });
+      return;
+    }
 
     // 지정 견적 요청 로직 추가
     postRequestDriver(idNumber, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["movers"] });
-        setIsToastOpen(true);
+        // 지정 견적 요청 완료 알림
+        setToastState({
+          content: "지정 견적 요청이 완료되었습니다.",
+          isOpen: true,
+        });
         setTimeout(() => {
-          setIsToastOpen(false);
-        }, 3000); 
+          setToastState({
+            content: "",
+            isOpen: false,
+          });
+        }, 3000);
+        // 지정 견적 요청 조회 상태 초기화
+        setIsEstimateRequested(false);
       },
     });
-  };
-
-  const modalButtonClick = () => {
-    router.push("/login");
   };
 
   // 로딩 UI 표시
@@ -237,16 +324,10 @@ export default function MoversDetailPage() {
   return (
     <section className="flex gap-[117px] w-full pt-[56px] max-md:flex-col max-md:gap-[50px] max-md:px-18 max-sm:px-6 bg-gray-50">
       <Modal
-        title="로그인 필요"
-        content="로그인 후 이용해주세요."
-        buttonText="확인"
-        isOpen={isModalOpen}
-        setIsOpen={setIsModalOpen}
-        buttonClick={modalButtonClick}
+        ModalState={modalState}
+        setIsOpen={setModalState}
       />
-      {isToastOpen && (
-        <Toast content="지정 견적 요청이 완료되었습니다." info={false} />
-      )}
+      {toastState.isOpen && <Toast content={toastState.content} info={false} />}
       <div className="flex flex-col gap-10 max-w-[955px] w-full">
         <FindDriverProfile
           name={driver.nickname}
@@ -347,7 +428,7 @@ export default function MoversDetailPage() {
           <Button
             text="지정 견적 요청"
             onClick={handleRequestDriver}
-            disabled={isGuest ? true : false}
+            disabled={isGuest ? true : isEstimateRequested ? true : false}
             width="full"
             className="flex items-center justify-center max-md:w-full max-md:h-full"
           />

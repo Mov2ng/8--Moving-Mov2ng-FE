@@ -5,8 +5,6 @@ import StarRating from './StarRating';
 import type { ReviewType } from '@/types/driverProfileType';
 
 export default function ReviewPointBox({ rating, reviewCount, reviewList }: { rating: number, reviewCount: number, reviewList: ReviewType[] }) {
-  console.log("reviewList:", reviewList);
-  
   // 리뷰 rating 값 계산
   const ratingList = {
     5: 0,
