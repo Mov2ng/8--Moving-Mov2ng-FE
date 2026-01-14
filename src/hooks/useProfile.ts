@@ -106,3 +106,25 @@ export function useUpdateBasicInfo() {
     },
   });
 }
+
+
+/** 
+ * 일반유저 프로필 수정 mutation 생성 훅
+ * @returns useApiMutation 결과
+ */
+export function usePutUserProfile() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useApiMutation({
+    mutationKey: ["putUserProfile"],
+    mutationFn: userService.putUserProfile,
+    onSuccess: () => {
+      alert("일반유저 프로필 수정이 완료되었습니다.");
+      router.push("/profile/user");
+    },
+    onError: (error) => {
+      console.error("일반유저 프로필 수정 실패: ", error);
+    },
+  });
+}

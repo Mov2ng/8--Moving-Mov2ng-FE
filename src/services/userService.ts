@@ -68,23 +68,30 @@ export const userService = {
       timeout: 5000, // 프로필 등록 API 타임아웃 5초
     });
   },
-  putProfile: (data: ProfileFormValues) => {
+  putProfile: (data: Partial<ProfileFormValues>) => {
+    // 기사님 프로필 수정: 변경된 필드만 전송
     return apiClient("/profile/driver", {
       method: "PUT",
       body: data,
       timeout: 5000, // 프로필 수정 API 타임아웃 5초
     });
   },
-  updateBasicInfo: (data: BasicInfoFormValues) => {
+  updateBasicInfo: (data: Partial<BasicInfoFormValues>) => {
+    // 기사님 기본정보 수정: 변경된 필드만 전송
     return apiClient("/profile/driver/basic", {
       method: "PUT",
       body: data,
     });
   },
-  // updateUserProfile: (data: UserProfileFormValues) => {
-  //   return apiClient("/profile/user", {
-  //     method: "PUT",
-  //     body: data,
-  //   });
-  // },
+  putUserProfile: (
+    data: Partial<ProfileFormValues> & Partial<BasicInfoFormValues>
+  ) => {
+    // 일반회원 프로필 수정: 프로필 필드와 기본정보 필드 모두 변경된 필드만 전송
+    // ProfileFormValues와 BasicInfoFormValues 모두 이미 optional이지만,
+    // 변경된 필드만 전송하는 로직을 명확히 하기 위해 Partial로 표시
+    return apiClient("/profile/user", {
+      method: "PUT",
+      body: data,
+    });
+  },
 };
