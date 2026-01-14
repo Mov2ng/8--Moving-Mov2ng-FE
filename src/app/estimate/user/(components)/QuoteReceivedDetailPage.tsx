@@ -12,17 +12,12 @@ import { STALE_TIME } from "@/constants/query";
 
 import type { QuoteDetailView } from "@/types/view/quote";
 import type { ApiQuoteDetail, QuoteStatus } from "@/types/api/quotes";
+import { getServiceLabel } from "@/constants/profile.constants";
 
 const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   PENDING: "waiting",
   ACCEPTED: "confirmed",
   REJECTED: "rejected",
-};
-
-const movingTypeMap: Record<string, string> = {
-  SMALL: "소형이사",
-  HOME: "가정이사",
-  OFFICE: "사무실이사",
 };
 
 const adaptQuoteDetail = (item: ApiQuoteDetail): QuoteDetailView => {
@@ -31,8 +26,7 @@ const adaptQuoteDetail = (item: ApiQuoteDetail): QuoteDetailView => {
     id: item.id,
     driverId,
     status: statusMap[item.status],
-    serviceType:
-      movingTypeMap[item.request.moving_type] ?? item.request.moving_type,
+    serviceType: getServiceLabel(item.request.moving_type),
     isDesignatedRequest: item.isRequest ?? false,
     designatedLabel: "지정 견적 요청",
     description: item.driver?.driver_intro ?? "",
