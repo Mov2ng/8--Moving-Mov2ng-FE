@@ -18,10 +18,14 @@ const PROTECTED_ROUTES = ["/profile", "/quote", "/estimate", "/review"];
 const GUEST_ONLY_ROUTES = ["/login", "/signup"];
 
 // 기사님만 접근 가능한 경로
-const DRIVER_ONLY_ROUTES = ["/profile", "/estimate/driver"];
+// /profile은 정확히 일치하는 경우만, /profile/driver로 시작하는 경로는 모두 기사 전용
+const DRIVER_ONLY_ROUTES = ["/estimate/driver, /profile/driver"];
 
 // 일반 회원만 접근 가능한 경로
-// TODO: 일반 회원만 접근 가능한 경로 추가
+const USER_ONLY_ROUTES = ["/profile/user"];
+
+// 모든 회원 접근 가능한 경로 (예외 처리용)
+const PUBLIC_PROFILE_ROUTES = ["/profile/register"];
 
 /**
  * 프로필 미등록 여부 체크
@@ -78,8 +82,18 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     pathname.startsWith(route)
   );
 
+  // 모든 회원 접근 가능한 프로필 경로 (예외 처리용)
+  const isProfileRegisterRoute = PUBLIC_PROFILE_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+
   // 기사님 전용 경로 접근 시도
-  const isDriverOnlyRoute = DRIVER_ONLY_ROUTES.some((route) =>
+  const isDriverOnlyRoute =
+    pathname === "/profile" ||
+    DRIVER_ONLY_ROUTES.some((route) => pathname.startsWith(route));
+
+  // 일반 회원 전용 경로 접근 시도
+  const isUserOnlyRoute = USER_ONLY_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
   // 드라이버 전용 경로에서 프로필 조회 (드라이버이고 로딩이 완료되었을 때만)
@@ -102,7 +116,13 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     }
 
     // 기사님이 아닌 회원이 기사님 전용 경로 접근 시도 시 홈으로 리디렉션
-    if (isDriverOnlyRoute && !isGuest && !isDriver) {
+    if (isDriverOnlyRoute && !isGuest && !isDriver && !isProfileRegisterRoute) {
+      router.push("/");
+      return;
+    }
+
+    // 일반 회원이 아닌 회원이 일반 회원 전용 경로 접근 시도 시 홈으로 리디렉션
+    if (isUserOnlyRoute && !isGuest && isDriver) {
       router.push("/");
       return;
     }
@@ -140,6 +160,8 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     isProtectedRoute,
     isGuestOnlyRoute,
     isDriverOnlyRoute,
+    isUserOnlyRoute,
+    isProfileRegisterRoute,
   ]);
 
   // 로딩 중일 때는 로딩 UI 표시
@@ -154,9 +176,10 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
 
   // 리디렉션 중이면 렌더링하지 않음 (깜빡임 방지)
   if (
-    (isProtectedRoute && isGuest) ||
-    (isDriverOnlyRoute && !isGuest && !isDriver) ||
-    (isGuestOnlyRoute && !isGuest)
+    (isProtectedRoute && isGuest) || // 보호된 경로 접근 시도 시
+    (isDriverOnlyRoute && !isGuest && !isDriver && !isProfileRegisterRoute) || // 기사님 전용 경로 접근 시도 시
+    (isUserOnlyRoute && !isGuest && isDriver) || // 일반 회원 전용 경로 접근 시도 시
+    (isGuestOnlyRoute && !isGuest) // 게스트 전용 경로 접근 시도 시
   ) {
     return null;
   }
