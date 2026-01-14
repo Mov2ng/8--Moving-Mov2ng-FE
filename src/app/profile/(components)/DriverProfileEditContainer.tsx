@@ -58,6 +58,7 @@ export default function DriverProfileEditContainer() {
         mode="edit"
         initialData={{
           profileImage: profileImageUrl ?? "/assets/image/avatartion-3.png",
+          profileImageKey: profile.profileImage, // fileKey (비교용)
           nickname: profile.nickname,
           driverYears: profile.driverYears,
           driverIntro: profile.driverIntro,

@@ -50,21 +50,27 @@ export default function DriverBasicInfoForm({
   const updateBasicInfoMutation = useUpdateBasicInfo();
 
   const onSubmit = async (data: BasicInfoFormValues) => {
-    // 비밀번호가 입력되지 않은 경우 비밀번호 필드 제외
-    // email은 disabled 필드이므로 API 요청에서 제외
-    const updateData = { ...data };
-    delete updateData.email; // disabled 필드이므로 제외
-    if (
-      !data.currentPassword &&
-      !data.newPassword &&
-      !data.newPasswordConfirm
-    ) {
-      delete updateData.currentPassword;
-      delete updateData.newPassword;
-      delete updateData.newPasswordConfirm;
+    // 변경된 필드만 포함한 데이터 생성
+    const submitData: any = {};
+
+    // 이름: 변경된 경우
+    if (data.name && data.name !== initialData?.name) {
+      submitData.name = data.name;
     }
 
-    await updateBasicInfoMutation.mutateAsync(updateData);
+    // 전화번호: 변경된 경우
+    if (data.phoneNum && data.phoneNum !== initialData?.phoneNum) {
+      submitData.phoneNum = data.phoneNum;
+    }
+
+    // 비밀번호가 입력된 경우에만 비밀번호 필드 추가
+    if (data.currentPassword && data.newPassword && data.newPasswordConfirm) {
+      submitData.currentPassword = data.currentPassword;
+      submitData.newPassword = data.newPassword;
+      submitData.newPasswordConfirm = data.newPasswordConfirm;
+    }
+
+    await updateBasicInfoMutation.mutateAsync(submitData);
     alert("기본 정보 수정이 완료 되었습니다.");
     router.push("/profile");
   };
@@ -157,3 +163,4 @@ export default function DriverBasicInfoForm({
     </form>
   );
 }
+

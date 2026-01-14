@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ProfileFormValues,
   profileSchema,
+  profileCreateSchema,
 } from "@/libs/validation/profileSchemas";
 import { parseServerError } from "@/utils/parseServerError";
 import { REGIONS, SERVICE_CATEGORIES } from "@/constants/profile.constants";
@@ -25,7 +26,8 @@ const DEFAULT_PROFILE_IMAGE = "/assets/image/upload-default.png";
 interface DriverProfileFormProps {
   mode: "create" | "edit";
   initialData?: {
-    profileImage?: string;
+    profileImage?: string; // presigned URL (화면 표시용)
+    profileImageKey?: string; // fileKey (비교용, edit 모드에서만 사용)
     nickname?: string;
     driverYears?: number;
     driverIntro?: string;
@@ -41,7 +43,7 @@ interface DriverProfileFormProps {
  * @param mode - 모드 ("create" | "edit")
  * @param initialData - 초기 데이터
  * @param onSubmit - 폼 제출 핸들러
- * @returns 
+ * @returns
  */
 export default function DriverProfileForm({
   mode,
@@ -61,17 +63,24 @@ export default function DriverProfileForm({
     setValue,
     watch,
   } = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema("DRIVER")),
+    resolver: zodResolver(
+      mode === "create"
+        ? profileCreateSchema("DRIVER")
+        : profileSchema("DRIVER")
+    ),
     mode: "all",
-    defaultValues: mode === "edit" && initialData ? {
-      profileImage: initialData.profileImage || "",
-      nickname: initialData.nickname || "",
-      driverYears: initialData.driverYears || 0,
-      driverIntro: initialData.driverIntro || "",
-      driverContent: initialData.driverContent || "",
-      serviceCategories: initialData.serviceCategories || [],
-      region: initialData.region || [],
-    } : undefined,
+    defaultValues:
+      mode === "edit" && initialData
+        ? {
+            profileImage: initialData.profileImage || "",
+            nickname: initialData.nickname || "",
+            driverYears: initialData.driverYears || 0,
+            driverIntro: initialData.driverIntro || "",
+            driverContent: initialData.driverContent || "",
+            serviceCategories: initialData.serviceCategories || [],
+            region: initialData.region || [],
+          }
+        : undefined,
   });
 
   // 서비스 카테고리 목록
@@ -89,7 +98,7 @@ export default function DriverProfileForm({
   const [previewImage, setPreviewImage] = useState<string>(initialImageUrl);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadedFileKey, setUploadedFileKey] = useState<string | null>(
-    initialData?.profileImage || null
+    initialData?.profileImageKey || null // fileKey (비교용)
   );
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
 
@@ -125,18 +134,8 @@ export default function DriverProfileForm({
       setPreviewObjectUrl(null);
     }
 
-    // 파일이 선택되지 않은 경우
+    // 파일이 선택되지 않은 경우 early return
     if (!file) {
-      setPreviewImage(mode === "edit" && initialData?.profileImage ? initialData.profileImage : DEFAULT_PROFILE_IMAGE);
-      setSelectedFile(null);
-      setUploadedFileKey(mode === "edit" && initialData?.profileImage ? initialData.profileImage : null);
-      setValue("profileImage", mode === "edit" && initialData?.profileImage ? initialData.profileImage : "");
-      if (!initialData?.profileImage) {
-        setError("profileImage", {
-          type: "required",
-          message: "프로필 이미지를 업로드해주세요.",
-        });
-      }
       return;
     }
 
@@ -175,12 +174,14 @@ export default function DriverProfileForm({
         try {
           const contentType = selectedFile.type || "image/jpeg";
           const { presignedUrl, fileKey: uploadedKey } =
+            // fileKey 받아오기
             await getPresignedUrlMutation.mutateAsync({
               fileName: selectedFile.name,
               category: "PROFILE",
               contentType,
             });
 
+          // S3 업로드
           await uploadToS3Mutation.mutateAsync({
             presignedUrl,
             file: selectedFile,
@@ -188,7 +189,7 @@ export default function DriverProfileForm({
           });
 
           fileKey = uploadedKey;
-          setUploadedFileKey(fileKey);
+          setUploadedFileKey(fileKey); // fileKey 저장
         } catch (error) {
           console.error("파일 업로드 실패:", error);
           setError("profileImage", {
@@ -205,9 +206,77 @@ export default function DriverProfileForm({
         fileKey = uploadedFileKey!;
       }
 
-      data.profileImage = fileKey;
+      // create 모드: 모든 필드 전송
+      // edit 모드: 변경된 필드만 전송
+      if (mode === "create") {
+        data.profileImage = fileKey;
+        await handleSubmitProp(data);
+      } else {
+        // edit 모드: 변경된 필드만 포함한 데이터 생성
+        const submitData: any = {};
 
-      await handleSubmitProp(data);
+        // 프로필 이미지: 새 파일이 선택되었거나 변경된 경우
+        if (selectedFile) {
+          // 새 파일이 선택된 경우 무조건 변경된 것으로 간주
+          submitData.profileImage = fileKey;
+        } else if (fileKey && fileKey !== initialData?.profileImageKey) {
+          // 기존 파일이지만 fileKey가 초기값과 다른 경우 변경된 것으로 간주
+          submitData.profileImage = fileKey;
+        }
+
+        // 별명: 변경된 경우
+        if (data.nickname && data.nickname !== initialData?.nickname) {
+          submitData.nickname = data.nickname;
+        }
+
+        // 경력: 변경된 경우
+        if (
+          data.driverYears !== undefined &&
+          data.driverYears !== initialData?.driverYears
+        ) {
+          submitData.driverYears = data.driverYears;
+        }
+
+        // 한 줄 소개: 변경된 경우
+        if (data.driverIntro && data.driverIntro !== initialData?.driverIntro) {
+          submitData.driverIntro = data.driverIntro;
+        }
+
+        // 상세 설명: 변경된 경우
+        if (
+          data.driverContent &&
+          data.driverContent !== initialData?.driverContent
+        ) {
+          submitData.driverContent = data.driverContent;
+        }
+
+        // 서비스 카테고리: 변경된 경우 (배열 비교)
+        if (data.serviceCategories !== undefined) {
+          const initialServiceCategories = initialData?.serviceCategories || [];
+          const hasServiceCategoriesChanged =
+            JSON.stringify([...data.serviceCategories].sort()) !==
+            JSON.stringify([...initialServiceCategories].sort());
+          if (
+            hasServiceCategoriesChanged &&
+            data.serviceCategories.length > 0
+          ) {
+            submitData.serviceCategories = data.serviceCategories;
+          }
+        }
+
+        // 지역: 변경된 경우 (배열 비교)
+        if (data.region !== undefined) {
+          const initialRegion = initialData?.region || [];
+          const hasRegionChanged =
+            JSON.stringify([...data.region].sort()) !==
+            JSON.stringify([...initialRegion].sort());
+          if (hasRegionChanged && data.region.length > 0) {
+            submitData.region = data.region;
+          }
+        }
+
+        await handleSubmitProp(submitData);
+      }
     } catch (error) {
       // S3 업로드는 완료 but 프로필 등록/수정 실패 경우 롤백
       if (selectedFile && data.profileImage) {
@@ -217,12 +286,16 @@ export default function DriverProfileForm({
         } catch (rollbackError) {
           console.error("이미지 롤백 실패:", rollbackError);
         }
-        setUploadedFileKey(null);
-        setSelectedFile(null);
-        setPreviewImage(mode === "edit" && initialData?.profileImage ? initialData.profileImage : DEFAULT_PROFILE_IMAGE);
+        setUploadedFileKey(null); // fileKey 정리
+        setSelectedFile(null); // 파일 선택 정리
+        setPreviewImage(
+          mode === "edit" && initialData?.profileImage
+            ? initialData.profileImage
+            : DEFAULT_PROFILE_IMAGE
+        ); // 프로필 이미지 미리보기 정리
         if (previewObjectUrl) {
-          URL.revokeObjectURL(previewObjectUrl);
-          setPreviewObjectUrl(null);
+          URL.revokeObjectURL(previewObjectUrl); // previewObjectUrl 정리
+          setPreviewObjectUrl(null); // previewObjectUrl 정리
         }
       }
 
@@ -230,7 +303,11 @@ export default function DriverProfileForm({
       const parsed = parseServerError(error);
 
       if (!parsed) {
-        alert(mode === "create" ? "프로필 등록 중 오류가 발생했습니다." : "프로필 수정 중 오류가 발생했습니다.");
+        alert(
+          mode === "create"
+            ? "프로필 등록 중 오류가 발생했습니다."
+            : "프로필 수정 중 오류가 발생했습니다."
+        );
         return;
       }
 
@@ -244,7 +321,12 @@ export default function DriverProfileForm({
         return;
       }
 
-      alert(message || (mode === "create" ? "프로필 등록 중 알 수 없는 오류가 발생했습니다." : "프로필 수정 중 알 수 없는 오류가 발생했습니다."));
+      alert(
+        message ||
+          (mode === "create"
+            ? "프로필 등록 중 알 수 없는 오류가 발생했습니다."
+            : "프로필 수정 중 알 수 없는 오류가 발생했습니다.")
+      );
     }
   };
 
@@ -356,10 +438,7 @@ export default function DriverProfileForm({
             placeholder="지역"
             touched={!!touchedFields.region}
           >
-            <ProfileChips
-              chipList={regions}
-              register={register("region")}
-            />
+            <ProfileChips chipList={regions} register={register("region")} />
           </FormField>
           <div className="flex justify-center mt-6">
             <button
@@ -372,8 +451,8 @@ export default function DriverProfileForm({
                   ? "프로필 등록 중..."
                   : "프로필 수정 중..."
                 : mode === "create"
-                  ? "시작하기"
-                  : "수정하기"}
+                ? "시작하기"
+                : "수정하기"}
             </button>
           </div>
         </div>
@@ -381,4 +460,3 @@ export default function DriverProfileForm({
     </form>
   );
 }
-
