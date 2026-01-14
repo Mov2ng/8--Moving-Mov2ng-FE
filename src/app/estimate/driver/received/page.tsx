@@ -1,70 +1,88 @@
 // app/driver/received/page.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { Sidebar } from "../(components)/SideBar";
 import { SearchBar } from "../(components)/SearchBar";
 import { RequestList } from "../(components)/RequestList";
-import { getMe } from "@/types/api/auth";
-import { getDriverRequests } from "@/types/api/driverRequests";
-import type { DriverRequest } from "@/types/api/driverRequests";
-import { useRouter } from "next/navigation";
+import { useGetDriverRequests } from "@/hooks/useDriverRequest";
+import { useAuth } from "@/hooks/useAuth";
+import type { RequestItem } from "../(components)/RequestsCard";
 
 export default function ReceivedPage() {
-  const [items, setItems] = useState<DriverRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const { me, isLoading: authLoading, isDriver } = useAuth();
+  
+  // userId 추출
+  const userId = me?.id;
 
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        const meRes = await getMe();
-        if (!meRes?.data) {
-          router.push("/login"); // 인증이 필요한 경우
-          return;
-        }
+  // API 호출 파라미터 구성
+  const queryParams = useMemo(() => {
+    if (!userId) return null;
 
-        const res = await getDriverRequests(1);
-        if (!mounted) return;
-        setItems(res.items || []);
-      } catch (e: unknown) {
-        console.error(e);
-        setError(e instanceof Error ? e.message : "데이터 로드 실패");
-      } finally {
-        if (mounted) setLoading(false);
-      }
+    return {
+      userId,
+      page: 1,
+      pageSize: 20,
     };
+  }, [userId]);
 
-    load();
-    return () => {
-      mounted = false;
-    };
-  }, [router]);
+  console.log(`queryParams:`, queryParams);
+  // useGetDriverRequests 쿼리를 사용하여 driverRequests 데이터를 가져옴
+  const { data, isLoading, error } = useGetDriverRequests(
+    queryParams || { userId: "", page: 1, pageSize: 20 },
+    !!queryParams && !!userId && !authLoading && isDriver
+  );
 
-  if (loading) return <div className="p-6">로딩중...</div>;
-  if (error) return <div className="p-6 text-red-500">에러: {error}</div>;
+  // data?.items를 RequestItem[] 타입으로 타입 추론
+  const items: RequestItem[] = (data?.items || []) as RequestItem[];
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
+        <div>로딩 중...</div>
+      </div>
+    );
+  }
+
+  if (!me) {
+    return (
+      <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
+        <div>로그인이 필요합니다.</div>
+      </div>
+    );
+  }
+
+  if (!isDriver) {
+    return (
+      <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
+        <div>기사님만 접근 가능한 페이지입니다.</div>
+      </div>
+    );
+  }
+
+  // error가 Error 타입일 때 error.message 사용, 그 외에는 "데이터 로드 실패" 메시지 표시
+  if (error)
+    return (
+      <div className="p-6 text-red-500">
+        에러: {error instanceof Error ? error.message : "데이터 로드 실패"}
+      </div>
+    );
 
   return (
     <div className="w-full min-h-screen bg-gray-50">
-
       <div className="max-w-[1400px] mx-auto px-6 py-8">
         <div className="flex gap-6">
           <Sidebar />
           <main className="flex-1">
             <div className="bg-white rounded-lg shadow-sm">
               <SearchBar />
-              <RequestList items={items.map(it => ({
-                id: it.requestId,
-                name: "고객", // 실제 이름 API에 있다면 사용
-                moveType: it.movingType,
-                tags: it.isDesignated ? ["지정 견적 요청"] : undefined,
-                timeAgo: it.requestCreatedAt ? new Date(it.requestCreatedAt).toLocaleString() : "",
-                date: it.movingDate ? new Date(it.movingDate).toLocaleDateString() : "",
-                from: it.origin,
-                to: it.destination,
-              }))} />
+              {items.length === 0 ? (
+                <div className="p-5 text-center text-gray-500">
+                  요청이 없습니다.
+                </div>
+              ) : (
+                <RequestList items={items} />
+              )}
             </div>
           </main>
         </div>

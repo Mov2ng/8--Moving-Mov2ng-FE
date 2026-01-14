@@ -64,7 +64,7 @@ export default function QuoteRequestDatePage() {
         <BubbleLeft>이사 예정일을 선택해 주세요.</BubbleLeft>
 
         {/* ✅ 카드 안에는 DatePicker만 (버튼은 DatePicker 내부 파란 버튼 1개) */}
-        <div className="self-end mr-8 w-[544px] rounded-[24px] bg-white p-[40px] shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
+        <div className="self-center md:self-end mr-0 md:mr-8 w-full max-w-[544px] rounded-[24px] bg-white p-4 md:p-[40px] shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
           <DatePicker
             size="md"
             value={value}
