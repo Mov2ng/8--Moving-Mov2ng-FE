@@ -11,8 +11,8 @@ import z from "zod";
  * - driverContent: 기사 상세 내용
  * @param role - 사용자 role ("USER" | "DRIVER")
  */
-// 기본 스키마 (모든 필드 포함, 타입 안전성을 위해)
-const baseProfileSchema = z.object({
+// 공통 스키마 (USER와 DRIVER 모두 필요한 필드)
+const commonProfileSchema = z.object({
   profileImage: z.string(),
   serviceCategories: z
     .any()
@@ -28,18 +28,6 @@ const baseProfileSchema = z.object({
       "하나 이상의 지역을 선택해주세요"
     )
     .pipe(z.array(z.string())),
-  // DRIVER 전용 필드들 (USER일 때는 optional로 허용하되 validation에서는 무시)
-  nickname: z.string(),
-  driverYears: z
-    .any()
-    .refine(
-      (val) =>
-        val === undefined ||
-        (typeof val === "number" && Number.isInteger(val) && val >= 0),
-      "올바른 경력을 입력해주세요"
-    ),
-  driverIntro: z.string(),
-  driverContent: z.string(),
 });
 
 export const profileSchema = (role?: "USER" | "DRIVER") => {
@@ -47,15 +35,36 @@ export const profileSchema = (role?: "USER" | "DRIVER") => {
 
   if (isDriver) {
     // DRIVER: 모든 필드 검증, DRIVER 전용 필드는 필수/선택 사항으로 검증
-    return baseProfileSchema.extend({
+    return commonProfileSchema.extend({
       nickname: z.string().min(1, "닉네임을 입력해 주세요").max(50),
+      driverYears: z
+        .any()
+        .refine(
+          (val) =>
+            val === undefined ||
+            (typeof val === "number" && Number.isInteger(val) && val >= 0),
+          "올바른 경력을 입력해주세요"
+        ),
       driverIntro: z.string().min(1, "한 줄 소개를 입력해 주세요"),
       driverContent: z.string().min(1, "상세 설명을 입력해 주세요"),
     });
   } else {
     // USER: DRIVER 전용 필드들은 optional이지만 값이 없어야 함
-    // 각 필드에 refine을 적용하여 값이 있으면 에러 발생
-    return baseProfileSchema
+    return commonProfileSchema
+      .extend({
+        nickname: z.string().optional(),
+        driverYears: z
+          .any()
+          .refine(
+            (val) =>
+              val === undefined ||
+              (typeof val === "number" && Number.isInteger(val) && val >= 0),
+            "올바른 경력을 입력해주세요"
+          )
+          .optional(),
+        driverIntro: z.string().optional(),
+        driverContent: z.string().optional(),
+      })
       .refine((data) => !data.nickname, {
         message: "일반 회원은 닉네임을 사용할 수 없습니다",
         path: ["nickname"],
@@ -75,4 +84,5 @@ export const profileSchema = (role?: "USER" | "DRIVER") => {
   }
 };
 
-export type ProfileFormValues = z.infer<typeof baseProfileSchema>;
+// ProfileFormValues는 DRIVER 스키마를 기준으로 타입 추론 (기존 호환성 유지)
+export type ProfileFormValues = z.infer<ReturnType<typeof profileSchema>>;
