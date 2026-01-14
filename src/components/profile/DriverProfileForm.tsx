@@ -145,12 +145,18 @@ export default function DriverProfileForm({
     setPreviewObjectUrl(objectUrl);
     setSelectedFile(file);
     setUploadedFileKey(null);
-    setValue("profileImage", "");
+    // 파일이 선택되었음을 나타내는 임시 값 설정 (zod 검증 통과를 위해)
+    setValue("profileImage", "file-selected", { shouldValidate: true });
     clearErrors("profileImage");
   };
 
   // Image 클릭 핸들러
   const handleImageClick = () => {
+    // 등록 모드에서는 같은 파일도 재선택 가능하도록 input value 초기화
+    // (수정 모드에서는 같은 파일 재선택 시 변경사항 없음으로 처리하는 방어 로직 유지)
+    if (mode === "create" && fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     fileInputRef.current?.click();
   };
 
