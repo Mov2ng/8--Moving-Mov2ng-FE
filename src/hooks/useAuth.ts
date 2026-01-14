@@ -92,7 +92,13 @@ export function useLogin(redirectPath?: string) {
           return;
         }
         // 그 외 에러(500, 네트워크 에러 등)는 로그만 남기고 메인으로 이동
-        console.error("프로필 조회 중 오류 발생:", error);
+        const parsedError = parseServerError(error);
+        console.error("프로필 조회 중 오류 발생:", {
+          status: parsedError?.status,
+          message: parsedError?.message,
+          details: parsedError?.details,
+          fullError: error,
+        });
         // 서버 문제 등으로 프로필 조회 실패해도 로그인은 성공했으므로 메인으로 이동
       }
 

@@ -7,6 +7,7 @@ import { moverService } from "@/services/moverService";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { BasicInfoFormValues } from "@/libs/validation/basicInfoSchemas";
+import { parseServerError } from "@/utils/parseServerError";
 
 /**
  * 프로필 조회 query 생성 훅
@@ -55,7 +56,13 @@ export function usePostProfile() {
       router.push("/");
     },
     onError: (error) => {
-      console.error("프로필 등록 실패: ", error);
+      const parsedError = parseServerError(error);
+      console.error("프로필 등록 실패:", {
+        status: parsedError?.status,
+        message: parsedError?.message,
+        details: parsedError?.details,
+        fullError: error,
+      });
     },
   });
 }
@@ -79,7 +86,13 @@ export function usePutProfile() {
       router.push("/profile");
     },
     onError: (error) => {
-      console.error("프로필 수정 실패: ", error);
+      const parsedError = parseServerError(error);
+      console.error("프로필 수정 실패:", {
+        status: parsedError?.status,
+        message: parsedError?.message,
+        details: parsedError?.details,
+        fullError: error,
+      });
     },
   });
 }
@@ -102,13 +115,18 @@ export function useUpdateBasicInfo() {
       router.push("/profile");
     },
     onError: (error) => {
-      console.error("기본정보 수정 실패: ", error);
+      const parsedError = parseServerError(error);
+      console.error("기본정보 수정 실패:", {
+        status: parsedError?.status,
+        message: parsedError?.message,
+        details: parsedError?.details,
+        fullError: error,
+      });
     },
   });
 }
 
-
-/** 
+/**
  * 일반유저 프로필 수정 mutation 생성 훅
  * @returns useApiMutation 결과
  */
@@ -124,7 +142,13 @@ export function usePutUserProfile() {
       router.push("/profile/user");
     },
     onError: (error) => {
-      console.error("일반유저 프로필 수정 실패: ", error);
+      const parsedError = parseServerError(error);
+      console.error("일반유저 프로필 수정 실패:", {
+        status: parsedError?.status,
+        message: parsedError?.message,
+        details: parsedError?.details,
+        fullError: error,
+      });
     },
   });
 }

@@ -189,13 +189,20 @@ export default function UserProfileEditForm({
           fileKey = uploadedKey;
           setUploadedFileKey(fileKey);
         } catch (error) {
-          console.error("파일 업로드 실패:", error);
+          const parsedError = parseServerError(error);
+          console.error("파일 업로드 실패:", {
+            status: parsedError?.status,
+            message: parsedError?.message,
+            details: parsedError?.details,
+            fullError: error,
+          });
           setError("profileImage", {
             type: "upload",
             message:
-              error instanceof Error
+              parsedError?.message ||
+              (error instanceof Error
                 ? error.message
-                : "파일 업로드에 실패했습니다. 다시 시도해주세요.",
+                : "파일 업로드에 실패했습니다. 다시 시도해주세요."),
           });
           return;
         }
@@ -264,7 +271,13 @@ export default function UserProfileEditForm({
           await deleteFileMutation.mutateAsync(data.profileImage);
           console.log("프로필 수정 실패로 인한 이미지 롤백 완료");
         } catch (rollbackError) {
-          console.error("이미지 롤백 실패:", rollbackError);
+          const parsedRollbackError = parseServerError(rollbackError);
+          console.error("이미지 롤백 실패:", {
+            status: parsedRollbackError?.status,
+            message: parsedRollbackError?.message,
+            details: parsedRollbackError?.details,
+            fullError: rollbackError,
+          });
         }
         setUploadedFileKey(null);
         setSelectedFile(null);
