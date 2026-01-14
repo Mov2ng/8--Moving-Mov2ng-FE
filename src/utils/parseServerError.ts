@@ -26,10 +26,13 @@ export function parseServerError(error: unknown): {
   status?: number;
   details?: Record<string, unknown> | unknown[];
   message?: string;
-} | null {
+} {
   // 객체인지 확인
   if (!error || typeof error !== "object") {
-    return null;
+    // 원시 타입이면 최소한의 정보라도 반환
+    return {
+      message: String(error),
+    };
   }
 
   // error 안에 error 속성이 있는 경우 (ex: axios, fetch wrapper)
@@ -41,7 +44,10 @@ export function parseServerError(error: unknown): {
       : error;
 
   if (!base || typeof base !== "object") {
-    return null;
+    // base가 객체가 아니면 원본 에러에서 최소한의 정보 추출
+    return {
+      message: String(error),
+    };
   }
 
   // obj에서 key의 값을 확인해 가져오는 함수
