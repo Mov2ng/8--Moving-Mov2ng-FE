@@ -2,6 +2,7 @@ import MovingTypeChip from '@/components/chips/MovingTypeChip'
 import React from 'react'
 import FindDriverProfile from './FindDriverProfile'
 import { useRouter } from 'next/navigation';
+import { SERVICE_CATEGORY_INFO } from '@/constants/profile.constants';
 
 interface DriverListProps {
   size?: 'sm' | 'md';
@@ -17,26 +18,6 @@ interface DriverListProps {
   imageSrc?: string;
 }
 
-type MovingType = 'SMALL' | 'HOME' | 'OFFICE';
-
-const MOVING_TYPE: Record<
-  MovingType,
-  { label: string; imgUrl: string }
-> = {
-  SMALL: {
-    label: '소형이사',
-    imgUrl: '/assets/icon/ic-box.svg',
-  },
-  HOME: {
-    label: '가정이사',
-    imgUrl: '/assets/icon/ic-home-fill.svg',
-  },
-  OFFICE: {
-    label: '사무실이사',
-    imgUrl: '/assets/icon/ic-office-fill.svg',
-  },
-};
-
 export default function DriverList({ size = 'md', id, name, driverIntro, likeCount, rating, reviewCount, driverYears, confirmedCount, imageSrc, movingType }: DriverListProps) {
   
   const router = useRouter();
@@ -44,9 +25,9 @@ export default function DriverList({ size = 'md', id, name, driverIntro, likeCou
     router.push(`/movers/${id}`);
   };
 
-  const movingItems = movingType.map((type: string) => {
-    return MOVING_TYPE[type as MovingType];
-  });
+  const movingItems = movingType
+    .map((type: string) => SERVICE_CATEGORY_INFO[type])
+    .filter(Boolean);
 
 
   return (

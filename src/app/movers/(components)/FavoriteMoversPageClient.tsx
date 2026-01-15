@@ -9,17 +9,10 @@ import type {
   ApiFavoriteDriver,
   FavoriteDriverView,
 } from "@/types/view/favorite";
-
-const categoryLabelMap: Record<string, string> = {
-  SMALL: "소형이사",
-  HOME: "가정이사",
-  OFFICE: "사무실이사",
-};
+import { getServiceLabel } from "@/constants/profile.constants";
 
 const adaptFavorite = (item: ApiFavoriteDriver): FavoriteDriverView => {
-  const serviceType = item.category
-    ? categoryLabelMap[item.category] ?? item.category
-    : "";
+  const serviceType = item.category ? getServiceLabel(item.category) : "";
 
   return {
     id: item.id ?? 0,

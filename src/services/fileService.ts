@@ -1,4 +1,5 @@
 import { apiClient } from "@/libs/apiClient";
+import { parseServerError } from "@/utils/parseServerError";
 
 // Presigned URL 요청 파라미터 타입
 type GetPresignedUrlParams = {
@@ -70,6 +71,7 @@ export const fileService = {
         category,
         contentType,
       },
+      timeout: 5000, // 파일 업로드용 presigned URL 요청은 5초 타임아웃
     });
 
     // 백엔드 응답 구조에 맞춰 반환
@@ -223,7 +225,13 @@ export const fileService = {
       }
     } catch (error) {
       // 삭제 실패 시 에러 로깅 (프로필 등록 실패 시 롤백이므로 에러를 throw하지 않음)
-      console.error("파일 삭제 실패:", error);
+      const parsedError = parseServerError(error);
+      console.error("파일 삭제 실패:", {
+        status: parsedError?.status,
+        message: parsedError?.message,
+        details: parsedError?.details,
+        fullError: error,
+      });
       // 삭제 실패는 조용히 처리 (이미 프로필 등록이 실패한 상태이므로)
     }
   },

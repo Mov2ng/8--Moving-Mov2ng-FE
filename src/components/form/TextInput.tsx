@@ -7,6 +7,7 @@ interface TextInputProps {
   error?: FieldError;
   touched?: boolean;
   type?: "text" | "number" | "email" | "tel";
+  disabled?: boolean;
 }
 /**
  * TextInput: 일반 입력 (text, number, email, tel 지원)
@@ -17,6 +18,7 @@ export default function TextInput({
   error,
   touched = false,
   type = "text",
+  disabled = false,
 }: TextInputProps) {
   // 포커스 상태
   const [isFocused, setIsFocused] = useState(false);
@@ -44,7 +46,9 @@ export default function TextInput({
       }}
       className={`w-full h-12 px-4 py-3 rounded-xl transition-colors duration-200
          text-black-400 placeholder:text-gray-500 focus:outline-none bg-background-200
-        ${getBorderColor()}`}
+        ${getBorderColor()} ${
+        disabled ? "bg-gray-100 cursor-not-allowed" : ""
+      }`}
     />
   );
 }

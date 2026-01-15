@@ -1,14 +1,12 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import ReviewPointBox from "./ReviewPointBox";
-import ReviewList from "./ReviewList";
+import ReviewSection from "@/components/common/ReviewSection";
 import FindDriverProfile from "./FindDriverProfile";
 import RegionChip from "@/components/chips/RegionChip";
 import Image from "next/image";
 import Button from "@/components/common/button";
 import Modal from "@/components/common/Modal";
-import { Pagination } from "@/components/common/Pagination";
 import {
   useGetMoverExtra,
   useGetMoverFull,
@@ -379,24 +377,13 @@ export default function MoversDetailPage() {
 
         <div className="w-full h-px bg-line-100" />
 
-        <h2 className="pret-2xl-bold text-black-400">{t("review")}</h2>
-        <ReviewPointBox
+        <ReviewSection
           rating={driver?.rating}
           reviewCount={driver?.reviewCount}
-          reviewList={driver?.reviews}
+          reviewList={driver?.reviewList}
+          reviews={driver?.reviews}
+          page={1}
         />
-        <div>
-          {driver?.reviews?.map((review: ReviewType) => (
-            <ReviewList
-              key={review.id}
-              username={review.user.name}
-              date={review.createdAt}
-              rating={review.rating}
-              content={review.content}
-            />
-          ))}
-          <Pagination page={1} />
-        </div>
       </div>
 
       <div className="flex flex-col gap-10">

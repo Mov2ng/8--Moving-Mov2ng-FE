@@ -19,8 +19,9 @@ export default function ReviewPointBox({ rating, reviewCount, reviewList }: { ra
   };
   
 
+  // NOTE: max-w-[955px] 제거함
   return (
-  <div className="flex items-center justify-center gap-[83px] max-w-[955px] w-full h-[296px] bg-background-200 rounded-4xl
+  <div className="flex items-center justify-center gap-[83px] w-full h-[296px] bg-background-200 rounded-4xl
   max-md:bg-transparent max-md:gap-0 max-md:justify-between
   max-sm:flex-col max-sm:gap-10 max-sm:h-auto">
     <div className="flex items-center justify-center flex-col gap-[15px]">

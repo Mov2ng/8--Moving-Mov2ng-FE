@@ -10,14 +10,9 @@ import { useState, useEffect } from "react";
 import { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
 import { STALE_TIME } from "@/constants/query";
 import Image from "next/image";
+import { getServiceLabel } from "@/constants/profile.constants";
 import ReviewTabNav from "./ReviewTabNav";
 import { useRouter } from "next/navigation";
-
-const movingTypeMap: Record<string, string> = {
-  SMALL: "소형이사",
-  HOME: "가정이사",
-  OFFICE: "사무실이사",
-};
 
 const adaptWritten = (item: ApiWrittenReview): ReviewWrittenItem => {
   // driver.estimates[0]에도 request/price가 들어오는 백엔드 응답 대비
@@ -25,10 +20,7 @@ const adaptWritten = (item: ApiWrittenReview): ReviewWrittenItem => {
 
   const movingTypeSource =
     item.request?.moving_type ?? primaryEstimate?.request?.moving_type;
-  const serviceType =
-    movingTypeSource && movingTypeMap[movingTypeSource]
-      ? movingTypeMap[movingTypeSource]
-      : "";
+  const serviceType = movingTypeSource ? getServiceLabel(movingTypeSource) : "";
 
   const isDesignated = item.request?.isDesignatedRequest ?? false;
 
