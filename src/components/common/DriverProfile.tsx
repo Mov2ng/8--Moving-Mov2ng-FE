@@ -4,6 +4,7 @@ import {
   getServiceLabels,
   getRegionLabels,
 } from "@/constants/profile.constants";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 interface DriverProfileProps {
   name?: string;
@@ -29,7 +30,7 @@ export default function DriverProfile({
   profileImage,
   avatarSize = "md",
   avatarResponsive = true,
-  nameSuffix = "기사님",
+  nameSuffix,
   ratingDisplay = "numeric",
   ratingPlacement = "meta",
   rating,
@@ -42,6 +43,8 @@ export default function DriverProfile({
   movingDate,
   quotePrice,
 }: DriverProfileProps) {
+  const { t } = useI18n();
+  const suffix = nameSuffix ?? t("driver_suffix");
   const metaItems: React.ReactNode[] = [];
 
   const hasRating = rating !== undefined || reviewCount !== undefined;
@@ -91,7 +94,7 @@ export default function DriverProfile({
   if (experience !== undefined) {
     metaItems.push(
       <span key="experience">
-        <span className="text-gray-300">경력</span>{" "}
+        <span className="text-gray-300">{t("experience")}</span>{" "}
         <span className="text-black-300 pret-14-medium">{experience}년</span>
       </span>
     );
@@ -103,7 +106,7 @@ export default function DriverProfile({
         <span className="text-black-300 pret-14-medium">
           {confirmedCount}건
         </span>{" "}
-        <span className="text-gray-300">확정</span>
+        <span className="text-gray-300">{t("confirmed_count")}</span>
       </span>
     );
   }
@@ -119,7 +122,7 @@ export default function DriverProfile({
         {/* 프로필 아바타 */}
         <ProfileAvatar
           src={profileImage}
-          alt={`${name ?? "프로필"} 프로필`}
+          alt={name ? `${name} ${t("profile_alt")}` : t("profile_alt")}
           size={avatarSize}
           responsive={avatarResponsive}
         />
@@ -130,14 +133,14 @@ export default function DriverProfile({
             {name && (
               <span className="text-black-300 lg:text-black-300 pret-13-medium lg:pret-xl-medium">
                 {name}
-                {nameSuffix ? ` ${nameSuffix}` : ""}
+                {suffix ? ` ${suffix}` : ""}
               </span>
             )}
             {likeCount !== undefined && (
               <div className="flex items-center gap-1 shrink-0">
                 <Image
                   src="/assets/icon/ic-like-active.svg"
-                  alt="좋아요"
+                  alt={t("likes_label")}
                   width={24}
                   height={24}
                 />
@@ -163,7 +166,9 @@ export default function DriverProfile({
             <div className="flex flex-wrap items-center gap-3 max-md:gap-1">
               {movingDate && (
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-300 pret-14-medium">이사일</span>
+                  <span className="text-gray-300 pret-14-medium">
+                    {t("moving_date_label")}
+                  </span>
                   <span className="text-black-400 max-md:text-black-300 text-[20px] leading-[26px] max-md:text-[13px] max-md:leading-[22px]">
                     {movingDate}
                   </span>
@@ -174,9 +179,12 @@ export default function DriverProfile({
               )}
               {quotePrice !== undefined && (
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-300 pret-14-medium">견적가</span>
+                  <span className="text-gray-300 pret-14-medium">
+                    {t("quote_price")}
+                  </span>
                   <span className="text-black-400 max-md:text-black-300 text-[20px] leading-[26px] max-md:text-[13px] max-md:leading-[22px]">
-                    {quotePrice.toLocaleString()}원
+                    {quotePrice.toLocaleString()}
+                    {t("currency_won")}
                   </span>
                 </div>
               )}
@@ -192,7 +200,7 @@ export default function DriverProfile({
               {services?.length ? (
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-1 bg-background-400 text-gray-300 rounded">
-                    제공 서비스
+                    {t("services_label")}
                   </span>
                   <span className="text-black-400">
                     {getServiceLabels(services).join(", ")}
@@ -203,7 +211,7 @@ export default function DriverProfile({
               {regions?.length ? (
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-1 bg-background-400 text-gray-300 rounded">
-                    지역
+                    {t("regions_label")}
                   </span>
                   <span className="text-black-400">
                     {getRegionLabels(regions).join(", ")}

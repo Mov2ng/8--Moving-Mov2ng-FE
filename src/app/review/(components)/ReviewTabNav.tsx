@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 export default function ReviewTabNav() {
   const pathname = usePathname();
+  const { t } = useI18n();
   const isWritable = pathname?.startsWith("/review/writable");
   const isWritten = pathname?.startsWith("/review/written");
 
@@ -16,7 +18,7 @@ export default function ReviewTabNav() {
           isWritable ? "text-black-400" : "text-gray-300 hover:text-black-300"
         }`}
       >
-        작성 가능한 리뷰
+        {t("review_tab_writable")}
         {isWritable && (
           <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-black-400" />
         )}
@@ -27,7 +29,7 @@ export default function ReviewTabNav() {
           isWritten ? "text-black-400" : "text-gray-300 hover:text-black-300"
         }`}
       >
-        내가 작성한 리뷰
+        {t("review_tab_written")}
         {isWritten && (
           <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-black-400" />
         )}

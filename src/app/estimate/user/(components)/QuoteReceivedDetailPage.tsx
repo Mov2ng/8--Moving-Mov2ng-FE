@@ -21,32 +21,6 @@ const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   REJECTED: "rejected",
 };
 
-const adaptQuoteDetail = (item: ApiQuoteDetail): QuoteDetailView => {
-  const driverId = item.driver?.id ?? item.driver_id ?? undefined;
-  return {
-    id: item.id,
-    driverId,
-    status: statusMap[item.status],
-    serviceType: getServiceLabel(item.request.moving_type),
-    isDesignatedRequest: item.isRequest ?? false,
-    designatedLabel: "지정 견적 요청",
-    description: item.driver?.driver_intro ?? "",
-    name: item.driver.nickname ?? "-",
-    profileImage: "/assets/image/avatartion-1.png", // 임시 프로필 이미지
-    rating: item.driver.rating ?? 0,
-    reviewCount: item.driver.reviewCount ?? 0,
-    experience: item.driver.driver_years ?? 0,
-    confirmedCount: item.driver.confirmedCount ?? 0,
-    likeCount: item.driver.likeCount ?? 0,
-    isFavorite: item.driver.likes ? item.driver.likes.length > 0 : undefined,
-    price: item.price,
-    requestedAt: item.request?.createdAt ?? item.createdAt ?? "",
-    movingDateTime: item.request?.moving_data ?? "",
-    origin: item.request?.origin ?? "-",
-    destination: item.request?.destination ?? "-",
-  };
-};
-
 type QuoteReceivedDetailPageProps = {
   estimateId: number;
 };
@@ -74,7 +48,45 @@ export default function QuoteReceivedDetailPage({
   });
 
   const detail: QuoteDetailView | null = data?.data
-    ? adaptQuoteDetail(data.data)
+    ? (() => {
+        const adaptQuoteDetail = (item: ApiQuoteDetail): QuoteDetailView => {
+          const driverId = item.driver?.id ?? item.driver_id ?? undefined;
+          const movingTypeMap: Record<string, string> = {
+            SMALL: t("moving_type_small"),
+            HOME: t("moving_type_home"),
+            OFFICE: t("moving_type_office"),
+          };
+          const serviceType =
+            movingTypeMap[item.request.moving_type] ??
+            getServiceLabel(item.request.moving_type);
+
+          return {
+            id: item.id,
+            driverId,
+            status: statusMap[item.status],
+            serviceType,
+            isDesignatedRequest: item.isRequest ?? false,
+            designatedLabel: t("designated_quote_full"),
+            description: item.driver?.driver_intro ?? "",
+            name: item.driver.nickname ?? "-",
+            profileImage: "/assets/image/avatartion-1.png", // 임시 프로필 이미지
+            rating: item.driver.rating ?? 0,
+            reviewCount: item.driver.reviewCount ?? 0,
+            experience: item.driver.driver_years ?? 0,
+            confirmedCount: item.driver.confirmedCount ?? 0,
+            likeCount: item.driver.likeCount ?? 0,
+            isFavorite: item.driver.likes
+              ? item.driver.likes.length > 0
+              : undefined,
+            price: item.price,
+            requestedAt: item.request?.createdAt ?? item.createdAt ?? "",
+            movingDateTime: item.request?.moving_data ?? "",
+            origin: item.request?.origin ?? "-",
+            destination: item.request?.destination ?? "-",
+          };
+        };
+        return adaptQuoteDetail(data.data);
+      })()
     : null;
 
   const isFavorite = favoriteOverride ?? detail?.isFavorite ?? false;

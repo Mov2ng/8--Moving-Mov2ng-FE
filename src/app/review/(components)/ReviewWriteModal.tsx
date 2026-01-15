@@ -10,6 +10,7 @@ import {
   isServiceTypeKey,
 } from "@/constants/serviceType";
 import type { ReviewItem } from "@/types/view/review";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 interface ReviewWriteModalProps {
   open: boolean;
@@ -30,6 +31,7 @@ export default function ReviewWriteModal({
   onSubmit,
   isSubmitting = false,
 }: ReviewWriteModalProps) {
+  const { t } = useI18n();
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState("");
 
@@ -56,11 +58,11 @@ export default function ReviewWriteModal({
       <div className="inline-flex flex-col items-start gap-10 w-full max-w-[560px] bg-white rounded-[20px] shadow-lg border border-line-100 px-6 pt-8 pb-10 relative">
         <div className="flex items-start justify-between w-full">
           <div className="text-primary-black-400 pret-2xl-semibold">
-            리뷰 쓰기
+            {t("review_write_title")}
           </div>
           <button
             type="button"
-            aria-label="닫기"
+            aria-label={t("close")}
             onClick={onClose}
             className="text-gray-300 hover:text-black-300"
           >
@@ -92,7 +94,7 @@ export default function ReviewWriteModal({
           )}
           {item.isDesignatedRequest && (
             <MovingTypeChip
-              label={item.designatedLabel ?? "지정 견적 요청"}
+              label={item.designatedLabel ?? t("designated_quote_full")}
               iconSrc="/icons/redfile.svg"
               size="sm"
               variant="rd"
@@ -114,12 +116,12 @@ export default function ReviewWriteModal({
             </div>
             <div className="flex items-center gap-3 text-black-300 pret-15-medium flex-wrap">
               <div className="flex items-center gap-2">
-                <span className="text-gray-300">이사일</span>
+                <span className="text-gray-300">{t("moving_date_label")}</span>
                 <span className="text-black-400">{item.movingDate}</span>
               </div>
               <span className="text-line-200">|</span>
               <div className="flex items-center gap-2">
-                <span className="text-gray-300">견적가</span>
+                <span className="text-gray-300">{t("quote_price")}</span>
                 <span className="text-black-400">
                   {item.price.toLocaleString()}원
                 </span>
@@ -131,7 +133,7 @@ export default function ReviewWriteModal({
         {/* 평점 선택 */}
         <div className="w-full">
           <div className="text-primary-black-400 pret-16-semibold mb-3">
-            평점을 선택해 주세요
+            {t("select_rating")}
           </div>
           <div className="flex items-center gap-2">
             {[1, 2, 3, 4, 5].map((star) => {
@@ -142,7 +144,7 @@ export default function ReviewWriteModal({
                   type="button"
                   onClick={() => setRating(star)}
                   className="p-1"
-                  aria-label={`별 ${star}점`}
+                  aria-label={`${t("select_rating")} ${star}`}
                 >
                   <Image
                     src={
@@ -166,21 +168,22 @@ export default function ReviewWriteModal({
         {/* 후기 입력 */}
         <div className="w-full">
           <div className="text-primary-black-400 pret-16-semibold mb-3">
-            상세 후기를 작성해 주세요
+            {t("review_write_title")}
           </div>
           <textarea
             className="w-full min-h-[140px] rounded-xl border border-line-100 bg-background-100 px-4 py-3 text-black-300 pret-15-medium placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-blue-200"
-            placeholder="최소 10자 이상 입력해주세요"
+            placeholder={t("write_review_placeholder")}
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
           <div className="text-right text-gray-300 pret-13-medium mt-1">
-            {content.trim().length}자 / 최소 10자
+            {content.trim().length}
+            {t("write_review_counter")}
           </div>
         </div>
 
         <Button
-          text="리뷰 등록"
+          text={t("submit_review")}
           variant="solid"
           width="100%"
           disabled={disabled}
