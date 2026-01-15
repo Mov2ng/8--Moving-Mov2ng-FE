@@ -15,6 +15,7 @@ import {
   usePostRequestDriver,
 } from "@/hooks/useMover";
 import Toast from "@/components/common/Toast";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 import type { Estimate, DriverEstimate } from "@/types/estimateType";
 
@@ -64,6 +65,7 @@ interface MoversCache {
 }
 
 export default function MoversDetailPage() {
+  const { t } = useI18n(); // 언어 훅
   const { id } = useParams<{ id: string }>();
   const idNumber = parseInt(id);
   const { isGuest } = useAuth(); // 비회원 여부 확인
@@ -214,9 +216,9 @@ export default function MoversDetailPage() {
   const handlePostFavoriteMover = () => {
     if (isGuest) {
       setModalState({
-        title: "로그인 필요",
-        content: "로그인 후 이용해주세요.",
-        buttonText: "로그인하러 가기",
+        title: t("login_required"),
+        content: t("login_required_desc"),
+        buttonText: t("login_required_button"),
         isOpen: true,
         buttonClick: () => {router.push("/login");},
       });
@@ -245,9 +247,9 @@ export default function MoversDetailPage() {
   const handleRequestDriver = () => {
     if (isGuest) {
       setModalState({
-        title: "로그인 필요",
-        content: "로그인 후 이용해주세요.",
-        buttonText: "로그인하러 가기",
+        title: t("login_required"),
+        content: t("login_required_desc"),
+        buttonText: t("login_required_button"),
         isOpen: true,
         buttonClick: () => {router.push("/login");},
       });
@@ -258,7 +260,7 @@ export default function MoversDetailPage() {
     if (isEstimateRequested) {
       // 이미 지정 견적 요청한 상태
       setToastState({
-        content: "이미 지정 견적 요청한 상태입니다.",
+        content: t("already_requested_estimate"),
         isOpen: true,
       });
       setTimeout(() => {
@@ -273,9 +275,9 @@ export default function MoversDetailPage() {
     if (userEstimateData.data.length === 0) {
       // 지정 견적 요청 개수가 0개일때
       setModalState({
-        title: "지정 견적 요청하기",
-        content: "일반 견적 요청을 먼저 진행해주세요.",
-        buttonText: "일반 견적 요청 하기",
+        title: t("designated_quote_full"),
+        content: t("general_request_first"),
+        buttonText: t("general_request"),
         isOpen: true,
         buttonClick: () => {router.push("/quote/request/type");},
       });
@@ -288,7 +290,7 @@ export default function MoversDetailPage() {
         queryClient.invalidateQueries({ queryKey: ["movers"] });
         // 지정 견적 요청 완료 알림
         setToastState({
-          content: "지정 견적 요청이 완료되었습니다.",
+          content: t("designated_request_success"),
           isOpen: true,
         });
         setTimeout(() => {
@@ -339,7 +341,7 @@ export default function MoversDetailPage() {
 
         <div className="w-full h-px bg-line-100" />
         <div className="flex flex-col gap-8">
-          <h2 className="pret-2xl-bold text-black-400">상세설명</h2>
+          <h2 className="pret-2xl-bold text-black-400">{t("content_detail")}</h2>
           <p className="pret-2lg-regular text-black-400">
             {driver?.driverContent}
           </p>
@@ -348,7 +350,7 @@ export default function MoversDetailPage() {
         <div className="w-full h-px bg-line-100" />
 
         <div className="flex flex-col gap-8">
-          <h2 className="pret-2xl-bold text-black-400">제공 서비스</h2>
+          <h2 className="pret-2xl-bold text-black-400">{t("provided_service")}</h2>
           <div className="flex gap-3">
             <RegionChip key={1} label={"전체"} size="md" selected={true} />
             {serviceCategoryLabels?.map((category: string) => (
@@ -365,7 +367,7 @@ export default function MoversDetailPage() {
         <div className="w-full h-px bg-line-100" />
 
         <div className="flex flex-col gap-8">
-          <h2 className="pret-2xl-bold text-black-400">서비스 가능 지역</h2>
+          <h2 className="pret-2xl-bold text-black-400">{t("service_available_regions")}</h2>
           <div className="flex gap-3">
             {regionLabels?.map((region: string) => (
               <RegionChip key={region} label={region} size="md" />
@@ -387,7 +389,7 @@ export default function MoversDetailPage() {
       <div className="flex flex-col gap-10">
         <div className="flex flex-col gap-8 w-[354px] max-md:w-full max-md:h-[54px] max-md:gap-2 max-md:flex-row">
           <h2 className="pret-xl-semibold text-black-400 max-md:hidden">
-            김코드 기사님에게 지정 견적을 요청해보세요!
+            { driver.nickname + " " + t("request_designated_quote")}
           </h2>
           {/* 기사님 찜하기 버튼 */}
           <button
@@ -406,14 +408,14 @@ export default function MoversDetailPage() {
             />
             <span className="max-md:hidden">
               {isPostFavoriteMoverPending
-                ? "처리 중..."
+                ? t("processing")
                 : isFavorite
-                ? "찜 완료"
-                : "기사님 찜하기"}
+                ? t("favorite_completed")
+                : t("favorite_driver")}
             </span>
           </button>
           <Button
-            text="지정 견적 요청"
+            text={t("designated_quote_short")}
             onClick={handleRequestDriver}
             disabled={isGuest ? true : isEstimateRequested ? true : false}
             width="full"
@@ -423,7 +425,7 @@ export default function MoversDetailPage() {
         <div className="w-full h-px bg-line-100" />
         <div className="flex flex-col gap-[22px] max-md:hidden">
           <h2 className="pret-xl-semibold text-black-400">
-            나만 알기엔 아쉬운 기사님인가요?
+            {t("only_know_driver")}
           </h2>
           <div className="flex gap-4">
             <button className="size-16 bg-gray-50 border border-line-200 rounded-2xl flex items-center justify-center">
