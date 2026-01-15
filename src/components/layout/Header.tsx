@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 import Notice from "../Notice/Notice";
+import ProfileAvatar from "../common/ProfileAvatar";
 
 // 메뉴 링크 타입
 type MenuItem = {
@@ -37,8 +38,8 @@ export default function Header() {
         { href: "/estimate/user", label: t("my_quotes") },
       ],
       DRIVER: [
-        { href: "/estimate/user/received", label: t("received_requests") },
-        { href: "/estimate/user", label: t("my_quotes") },
+        { href: "/estimate/driver/received", label: t("received_requests") },
+        { href: "/estimate/driver/pending", label: t("my_quotes") },
       ],
     }),
     [t]
@@ -294,13 +295,12 @@ export default function Header() {
             onClick={() => setIsDropdownOpen((prev) => !prev)}
             className="flex items-center gap-4 cursor-pointer"
           >
-            <Image
-              src={profileImage || "/assets/image/avatartion-3.png"}
+            <ProfileAvatar
+              src={profileImage || "/assets/image/avatar-3.png"}
               alt="profile"
-              width={36}
-              height={36}
-              unoptimized={!!profileImage} // presigned URL은 unoptimized로 처리
-              className="rounded-full"
+              size="xs"
+              className="w-9 h-9 max-md:w-7 max-md:h-7"
+              responsive={false}
             />
             {displayName && (
               <span className="pret-lg-medium text-black-400 max-md:hidden">
@@ -318,7 +318,7 @@ export default function Header() {
                   </div>
                   <div className="py-3.5">
                     <Link
-                      href="/profile/edit"
+                      href="/profile/user/edit"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       {t("profile_edit")}
@@ -415,7 +415,7 @@ export default function Header() {
   return (
     <>
       <header className="border-b border-line-100 max-md:border-b-0">
-        <div className="max-w-[1400px] mx-auto px-[24px] py-[15px] md:px-[120px] md:py-[26px] flex justify-between items-center">
+        <div className="max-w-[1400px] mx-auto px-[24px] py-[10px] md:px-[120px] md:py-[26px] flex justify-between items-center">
           <div className="flex items-center gap-20">
             <Link href="/" aria-label="홈으로 이동">
               <Image

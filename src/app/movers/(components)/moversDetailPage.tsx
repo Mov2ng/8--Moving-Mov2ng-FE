@@ -1,24 +1,48 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import ReviewPointBox from "./ReviewPointBox";
-import ReviewList from "./ReviewList";
+import ReviewSection from "@/components/common/ReviewSection";
 import FindDriverProfile from "./FindDriverProfile";
 import RegionChip from "@/components/chips/RegionChip";
 import Image from "next/image";
 import Button from "@/components/common/button";
 import Modal from "@/components/common/Modal";
-import { Pagination } from "@/components/common/Pagination";
 import {
   useGetMoverExtra,
   useGetMoverFull,
   usePostFavoriteMover,
+  useDeleteFavoriteMover,
+  usePostRequestDriver,
 } from "@/hooks/useMover";
+import Toast from "@/components/common/Toast";
+import { useI18n } from "@/libs/i18n/I18nProvider";
+
+import type { Estimate, DriverEstimate } from "@/types/estimateType";
+
+// 무한 스크롤 캐시 데이터 타입
+interface MoversPageData {
+  list: Mover[];
+  nextCursor: number | null;
+  hasNext: boolean;
+}
+
+interface MoversInfiniteCache {
+  pages: MoversPageData[];
+  pageParams: (number | undefined)[];
+}
+
+interface MoversNormalCache {
+  data: {
+    list: Mover[];
+  };
+}
+
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { SERVICE_CATEGORIES, REGIONS } from "@/constants/profile.constants";
 
 import type { ReviewType } from "@/types/driverProfileType";
+import { useGetUserEstimate } from "@/hooks/useUserEstimate";
 
 interface Mover {
   id: number;
@@ -41,12 +65,22 @@ interface MoversCache {
 }
 
 export default function MoversDetailPage() {
+  const { t } = useI18n(); // 언어 훅
   const { id } = useParams<{ id: string }>();
   const idNumber = parseInt(id);
   const { isGuest } = useAuth(); // 비회원 여부 확인
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false); // 찜 상태 관리
+  const [modalState, setModalState] = useState({
+    title: "",
+    content: "",
+    buttonText: "",
+    isOpen: false,
+    buttonClick: () => {},
+  }); // 모달 열기
+  const [toastState, setToastState] = useState({
+    content: "",
+    isOpen: false,
+  }); // 토스트 열기
 
   // 서비스 카테고리 라벨 매핑
   const SERVICE_CATEGORY_LABEL_MAP: Record<string, string> = Object.fromEntries(
@@ -57,22 +91,35 @@ export default function MoversDetailPage() {
   const REGION_LABEL_MAP: Record<string, string> = Object.fromEntries(
     REGIONS.map((region) => [region.value, region.label])
   );
-  
 
   const queryClient = useQueryClient();
 
   // 캐시된 movers 목록에서 해당 id의 mover 찾기
   const cachedMover = useMemo(() => {
-    // 모든 movers 쿼리 캐시 검색 query Client가 달라서 못 가져옴.+key값도 다름
-    const queries = queryClient.getQueriesData<MoversCache>({
+    // 모든 movers 쿼리 캐시 검색
+    const queries = queryClient.getQueriesData<
+      MoversInfiniteCache | MoversNormalCache
+    >({
       queryKey: ["movers"],
     });
 
     for (const [, data] of queries) {
-      const found = data?.data?.list?.find(
-        (mover: Mover) => mover.id === idNumber
-      );
-      if (found) return found;
+      // useInfiniteQuery의 pages 구조 처리 (무한 스크롤 데이터)
+      if (data && "pages" in data) {
+        for (const page of data.pages) {
+          const found = page?.list?.find(
+            (mover: Mover) => mover.id === idNumber
+          );
+          if (found) return found;
+        }
+      }
+      // 일반 useQuery의 data.list 구조 처리 (fallback)
+      else if (data && "data" in data) {
+        const found = data.data.list.find(
+          (mover: Mover) => mover.id === idNumber
+        );
+        if (found) return found;
+      }
     }
     return null;
   }, [queryClient, idNumber]);
@@ -100,8 +147,6 @@ export default function MoversDetailPage() {
     ? { ...cachedMover, ...extraData?.data }
     : fullData?.data;
 
-  console.log("driver:", driver);
-
   const regionLabels = driver?.regions?.map(
     (region: string) => REGION_LABEL_MAP[region]
   );
@@ -109,40 +154,155 @@ export default function MoversDetailPage() {
   const serviceCategoryLabels = driver?.serviceCategories?.map(
     (category: string) => SERVICE_CATEGORY_LABEL_MAP[category]
   );
-  
+
   // 로딩 상태
   const isLoading = hasExistingData ? isExtraLoading : isFullLoading;
 
   // ⚠️ 모든 hooks는 조건부 return 이전에 호출해야 함
+  // ===== 모든 hooks 시작 =====
+  // 찜하기
   const { mutate: postFavoriteMover, isPending: isPostFavoriteMoverPending } =
     usePostFavoriteMover(idNumber);
+  // 찜 취소
+  const {
+    mutate: deleteFavoriteMover,
+    isPending: isDeleteFavoriteMoverPending,
+  } = useDeleteFavoriteMover(idNumber);
+  // 지정 견적 요청 조회
+  const { data: userEstimateData, isLoading: isUserEstimateLoading } =
+    useGetUserEstimate();
+  // 지정 견적 요청
+  const { mutate: postRequestDriver, isPending: isPostRequestDriverPending } =
+    usePostRequestDriver(idNumber);
+  // ===== 모든 hooks 끝 =====
+
+  // 찜 상태 관리
+  const [isFavorite, setIsFavorite] = useState(false);
+  // 지정 견적 요청 조회 상태 관리
+  const [isEstimateRequested, setIsEstimateRequested] = useState(false);
+
+  // 기사님 정보 로딩 후 찜 상태 설정
+  useEffect(() => {
+    if (driver?.isFavorite !== undefined) {
+      setIsFavorite(driver.isFavorite);
+    }
+  }, [driver?.isFavorite]);
+
+  // 지정 견적 요청 조회 후 조회 상태 설정
+  useEffect(() => {
+    console.log("isEstimateRequested before", isEstimateRequested);
+
+    // 지정 견적 요청 조회 데이터에서 기사님 목록 추출
+    const driverList = userEstimateData?.data.map(
+      (estimate: Estimate) => estimate.driver
+    );
+
+    // 지정 견적 요청 조회 데이터가 있고, 지정 견적 요청 개수가 5개 이상일때
+    if (userEstimateData && userEstimateData.data.length >= 5) {
+      // 지정 견적 요청 조회 데이터에 해당 기사님의 id가 있는지 확인
+      if (
+        driverList?.find((driver: DriverEstimate) => driver.id === idNumber)
+      ) {
+        setIsEstimateRequested(true);
+      } else {
+        // 전부 아닌 경우만 가능하도록
+        setIsEstimateRequested(false);
+      }
+    }
+    console.log("isEstimateRequested after", isEstimateRequested);
+  }, [userEstimateData, idNumber]);
 
   // 기사님 찜하기 핸들러
   const handlePostFavoriteMover = () => {
     if (isGuest) {
-      setIsModalOpen(true);
+      setModalState({
+        title: t("login_required"),
+        content: t("login_required_desc"),
+        buttonText: t("login_required_button"),
+        isOpen: true,
+        buttonClick: () => {router.push("/login");},
+      });
       return;
     }
 
-    postFavoriteMover(idNumber, {
-      onSuccess: () => {
-        setIsFavorite(true); // 찜 상태 변경 -> 해당 기사님의 경우에만 변경되어야함
-        queryClient.invalidateQueries({ queryKey: ["movers"] });
-      },
-    });
+    // 이미 찜한 상태면 삭제, 아니면 추가
+    if (isFavorite) {
+      deleteFavoriteMover(idNumber, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(false); // 찜 취소
+        },
+      });
+    } else {
+      postFavoriteMover(idNumber, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(true); // 찜 추가
+        },
+      });
+    }
   };
 
+  // 지정 견적 요청 핸들러
   const handleRequestDriver = () => {
     if (isGuest) {
-      setIsModalOpen(true);
+      setModalState({
+        title: t("login_required"),
+        content: t("login_required_desc"),
+        buttonText: t("login_required_button"),
+        isOpen: true,
+        buttonClick: () => {router.push("/login");},
+      });
+      return;
+    }
+
+    // 이미 지정 견적 요청한 상태면 알림, 아니면 요청
+    if (isEstimateRequested) {
+      // 이미 지정 견적 요청한 상태
+      setToastState({
+        content: t("already_requested_estimate"),
+        isOpen: true,
+      });
+      setTimeout(() => {
+        setToastState({
+          content: "",
+          isOpen: false,
+        });
+      }, 3000);
+      return;
+    }
+
+    if (userEstimateData.data.length === 0) {
+      // 지정 견적 요청 개수가 0개일때
+      setModalState({
+        title: t("designated_quote_full"),
+        content: t("general_request_first"),
+        buttonText: t("general_request"),
+        isOpen: true,
+        buttonClick: () => {router.push("/quote/request/type");},
+      });
       return;
     }
 
     // 지정 견적 요청 로직 추가
-  };
-
-  const modalButtonClick = () => {
-    router.push("/login");
+    postRequestDriver(idNumber, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["movers"] });
+        // 지정 견적 요청 완료 알림
+        setToastState({
+          content: t("designated_request_success"),
+          isOpen: true,
+        });
+        setTimeout(() => {
+          setToastState({
+            content: "",
+            isOpen: false,
+          });
+        }, 3000);
+        // 지정 견적 요청 조회 상태 초기화
+        setIsEstimateRequested(false);
+      },
+    });
   };
 
   // 로딩 UI 표시
@@ -164,16 +324,13 @@ export default function MoversDetailPage() {
   return (
     <section className="flex gap-[117px] w-full pt-[56px] max-md:flex-col max-md:gap-[50px] max-md:px-18 max-sm:px-6 bg-gray-50">
       <Modal
-        title="로그인 필요"
-        content="로그인 후 이용해주세요."
-        buttonText="확인"
-        isOpen={isModalOpen}
-        setIsOpen={setIsModalOpen}
-        buttonClick={modalButtonClick}
+        ModalState={modalState}
+        setIsOpen={setModalState}
       />
+      {toastState.isOpen && <Toast content={toastState.content} info={false} />}
       <div className="flex flex-col gap-10 max-w-[955px] w-full">
         <FindDriverProfile
-          name={driver.name}
+          name={driver.nickname}
           likeCount={driver.favoriteCount}
           rating={driver.rating}
           reviewCount={driver.reviewCount}
@@ -184,7 +341,7 @@ export default function MoversDetailPage() {
 
         <div className="w-full h-px bg-line-100" />
         <div className="flex flex-col gap-8">
-          <h2 className="pret-2xl-bold text-black-400">상세설명</h2>
+          <h2 className="pret-2xl-bold text-black-400">{t("content_detail")}</h2>
           <p className="pret-2lg-regular text-black-400">
             {driver?.driverContent}
           </p>
@@ -193,13 +350,15 @@ export default function MoversDetailPage() {
         <div className="w-full h-px bg-line-100" />
 
         <div className="flex flex-col gap-8">
-          <h2 className="pret-2xl-bold text-black-400">제공 서비스</h2>
+          <h2 className="pret-2xl-bold text-black-400">{t("provided_service")}</h2>
           <div className="flex gap-3">
+            <RegionChip key={1} label={"전체"} size="md" selected={true} />
             {serviceCategoryLabels?.map((category: string) => (
               <RegionChip
                 key={category}
                 label={category}
                 size="md"
+                selected={true}
               />
             ))}
           </div>
@@ -208,44 +367,29 @@ export default function MoversDetailPage() {
         <div className="w-full h-px bg-line-100" />
 
         <div className="flex flex-col gap-8">
-          <h2 className="pret-2xl-bold text-black-400">서비스 가능 지역</h2>
+          <h2 className="pret-2xl-bold text-black-400">{t("service_available_regions")}</h2>
           <div className="flex gap-3">
             {regionLabels?.map((region: string) => (
-              <RegionChip
-                key={region}
-                label={region}
-                size="md"
-              />
+              <RegionChip key={region} label={region} size="md" />
             ))}
           </div>
         </div>
 
         <div className="w-full h-px bg-line-100" />
 
-        <h2 className="pret-2xl-bold text-black-400">리뷰</h2>
-        <ReviewPointBox
+        <ReviewSection
           rating={driver?.rating}
           reviewCount={driver?.reviewCount}
           reviewList={driver?.reviewList}
+          reviews={driver?.reviews}
+          page={1}
         />
-        <div>
-          {driver?.reviews?.map((review: ReviewType) => (
-            <ReviewList
-              key={review.id}
-              username={review.user.name}
-              date={review.createdAt}
-              rating={review.rating}
-              content={review.content}
-            />
-          ))}
-          <Pagination page={1} />
-        </div>
       </div>
 
       <div className="flex flex-col gap-10">
         <div className="flex flex-col gap-8 w-[354px] max-md:w-full max-md:h-[54px] max-md:gap-2 max-md:flex-row">
           <h2 className="pret-xl-semibold text-black-400 max-md:hidden">
-            김코드 기사님에게 지정 견적을 요청해보세요!
+            { driver.nickname + " " + t("request_designated_quote")}
           </h2>
           {/* 기사님 찜하기 버튼 */}
           <button
@@ -264,16 +408,16 @@ export default function MoversDetailPage() {
             />
             <span className="max-md:hidden">
               {isPostFavoriteMoverPending
-                ? "처리 중..."
+                ? t("processing")
                 : isFavorite
-                ? "찜 완료"
-                : "기사님 찜하기"}
+                ? t("favorite_completed")
+                : t("favorite_driver")}
             </span>
           </button>
           <Button
-            text="지정 견적 요청"
+            text={t("designated_quote_short")}
             onClick={handleRequestDriver}
-            disabled={isGuest ? false : true}
+            disabled={isGuest ? true : isEstimateRequested ? true : false}
             width="full"
             className="flex items-center justify-center max-md:w-full max-md:h-full"
           />
@@ -281,7 +425,7 @@ export default function MoversDetailPage() {
         <div className="w-full h-px bg-line-100" />
         <div className="flex flex-col gap-[22px] max-md:hidden">
           <h2 className="pret-xl-semibold text-black-400">
-            나만 알기엔 아쉬운 기사님인가요?
+            {t("only_know_driver")}
           </h2>
           <div className="flex gap-4">
             <button className="size-16 bg-gray-50 border border-line-200 rounded-2xl flex items-center justify-center">

@@ -26,6 +26,7 @@ interface FormFieldProps {
   type?: FormFieldType;
   placeholder?: string;
   children?: React.ReactNode;
+  disabled?: boolean;
 }
 
 /**
@@ -36,6 +37,7 @@ interface FormFieldProps {
  * - type: input 타입
  * - placeholder: placeholder 텍스트
  * - children: 커스텀 컴포넌트 지원
+ * - disabled: 비활성화 상태
  */
 export default function FormField({
   label,
@@ -45,6 +47,7 @@ export default function FormField({
   type = "text",
   placeholder,
   children,
+  disabled = false,
 }: FormFieldProps) {
   const renderInput = () => {
     // 타입 가드로 FieldError인지 확인 (text, textarea, password 타입일 때 FieldError 사용)
@@ -78,6 +81,7 @@ export default function FormField({
             placeholder={placeholder}
             error={fieldError}
             touched={touched}
+            disabled={disabled}
           />
         );
     }

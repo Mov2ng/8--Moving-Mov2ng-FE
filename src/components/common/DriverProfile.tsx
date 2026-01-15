@@ -1,5 +1,9 @@
 import Image from "next/image";
 import ProfileAvatar from "@/components/common/ProfileAvatar";
+import {
+  getServiceLabels,
+  getRegionLabels,
+} from "@/constants/profile.constants";
 
 interface DriverProfileProps {
   name?: string;
@@ -190,7 +194,9 @@ export default function DriverProfile({
                   <span className="px-2 py-1 bg-background-400 text-gray-300 rounded">
                     제공 서비스
                   </span>
-                  <span className="text-black-400">{services.join(", ")}</span>
+                  <span className="text-black-400">
+                    {getServiceLabels(services).join(", ")}
+                  </span>
                 </div>
               ) : null}
 
@@ -199,7 +205,9 @@ export default function DriverProfile({
                   <span className="px-2 py-1 bg-background-400 text-gray-300 rounded">
                     지역
                   </span>
-                  <span className="text-black-400">{regions.join(", ")}</span>
+                  <span className="text-black-400">
+                    {getRegionLabels(regions).join(", ")}
+                  </span>
                 </div>
               ) : null}
             </div>

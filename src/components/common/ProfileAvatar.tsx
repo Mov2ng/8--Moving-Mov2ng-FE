@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-type AvatarSize = "sm" | "md" | "lg";
+type AvatarSize = "xs" | "sm" | "md" | "lg";
 
 interface ProfileAvatarProps {
   src?: string;
@@ -11,6 +11,7 @@ interface ProfileAvatarProps {
 }
 
 const sizeMap: Record<AvatarSize, { container: string; image: number }> = {
+  xs: { container: "w-[36px] h-[36px]", image: 36 },
   sm: { container: "w-[64px] h-[64px]", image: 64 },
   md: { container: "w-[70px] h-[70px]", image: 70 },
   lg: { container: "w-[100px] h-[100px]", image: 100 },

@@ -10,12 +10,9 @@ import { useState, useEffect } from "react";
 import { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
 import { STALE_TIME } from "@/constants/query";
 import Image from "next/image";
-
-const movingTypeMap: Record<string, string> = {
-  SMALL: "소형이사",
-  HOME: "가정이사",
-  OFFICE: "사무실이사",
-};
+import { getServiceLabel } from "@/constants/profile.constants";
+import ReviewTabNav from "./ReviewTabNav";
+import { useRouter } from "next/navigation";
 
 const adaptWritten = (item: ApiWrittenReview): ReviewWrittenItem => {
   // driver.estimates[0]에도 request/price가 들어오는 백엔드 응답 대비
@@ -23,10 +20,7 @@ const adaptWritten = (item: ApiWrittenReview): ReviewWrittenItem => {
 
   const movingTypeSource =
     item.request?.moving_type ?? primaryEstimate?.request?.moving_type;
-  const serviceType =
-    movingTypeSource && movingTypeMap[movingTypeSource]
-      ? movingTypeMap[movingTypeSource]
-      : "";
+  const serviceType = movingTypeSource ? getServiceLabel(movingTypeSource) : "";
 
   const isDesignated = item.request?.isDesignatedRequest ?? false;
 
@@ -56,6 +50,7 @@ const adaptWritten = (item: ApiWrittenReview): ReviewWrittenItem => {
 export default function ReviewWrittenPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
+  const router = useRouter();
 
   useEffect(() => {
     const calc = () => {
@@ -86,24 +81,30 @@ export default function ReviewWrittenPage() {
   const paged = list.slice((page - 1) * pageSize, page * pageSize);
   const emptyText = "작성한 리뷰가 없습니다.";
 
+  useEffect(() => {
+    if (!error) return;
+
+    const status =
+      typeof error === "object" && "status" in error
+        ? (error as { status?: number }).status
+        : undefined;
+    const code =
+      typeof error === "object" && "code" in error
+        ? (error as { code?: string }).code
+        : undefined;
+    const isForbidden = status === 403 || code === "FORBIDDEN";
+
+    if (isForbidden) {
+      alert("일반 회원만 접근가능합니다.");
+      setTimeout(() => router.replace("/profile"), 0);
+    }
+  }, [error, router]);
+
   return (
     <div className="min-h-screen bg-background-200">
       <header className="bg-white border-b border-line-100">
-        <div className="mx-auto max-w-6xl px-5 py-5 flex items-center gap-6">
-          <Link href="/" className="text-primary-blue-300 pret-xl-semibold">
-            무빙
-          </Link>
-          <nav className="flex items-center gap-6 pret-15-semibold">
-            <Link
-              href="/review/writable"
-              className="text-black-200 hover:text-primary-black-400"
-            >
-              작성 가능한 리뷰
-            </Link>
-            <Link href="/review/written" className="text-primary-black-400">
-              내가 작성한 리뷰
-            </Link>
-          </nav>
+        <div className="mx-auto max-w-6xl flex items-center gap-6">
+          <ReviewTabNav />
         </div>
       </header>
 
