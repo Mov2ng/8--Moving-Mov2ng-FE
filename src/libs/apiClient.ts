@@ -14,7 +14,7 @@ export type ApiRequestOptions = {
   // useMe 쿼리 호출(skipAuthRefresh: true)에 401 발생 시 재발급 시도X
   // refreshToken 재발급 API 호출 시 사용 (무한루프 방지)
   skipAutoRefresh?: boolean; // 기본값(false: 자동 재발급 시도)
-  timeout?: number; // 요청 타임아웃 (밀리초, 기본값: 2000ms)
+  timeout?: number; // 요청 타임아웃 (밀리초, 기본값: 3000ms)
 };
 
 /**
@@ -39,7 +39,7 @@ export async function apiClient(
     query,
     headers,
     skipAutoRefresh = false,
-    timeout = 2000, // 기본 타임아웃 2초
+    timeout = 3000, // 기본 타임아웃 3초
   } = options;
 
   // 1. body가 FormData인지 확인 (FormData일 때는 Content-Type을 제거해야 함)
@@ -193,7 +193,7 @@ export async function apiClient(
     if (error instanceof Error && error.name === "AbortError") {
       throw {
         status: 408,
-        message: "요청 시간이 초과되었습니다",
+        message: "요청 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.",
         error: error,
       };
     }

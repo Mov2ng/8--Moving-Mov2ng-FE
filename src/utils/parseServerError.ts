@@ -35,13 +35,21 @@ export function parseServerError(error: unknown): {
     };
   }
 
-  // error 안에 error 속성이 있는 경우 (ex: axios, fetch wrapper)
-  // 타입 단언 없이 안전하게 접근
-  const base =
-    "error" in error &&
-    typeof (error as Record<string, unknown>).error === "object"
-      ? (error as Record<string, unknown>).error
-      : error;
+  // apiClient가 던진 에러 구조: { status, message, error: {...} }
+  // 최상위 error 객체에서 status와 message를 먼저 확인
+  const errorObj = error as Record<string, unknown>;
+
+  // error 안에 error 속성이 있는 경우 서버 응답이 error.error에 있음
+  const nestedError =
+    "error" in errorObj &&
+    typeof errorObj.error === "object" &&
+    errorObj.error !== null
+      ? errorObj.error
+      : null;
+
+  // base 결정: nestedError가 있으면 그것을 우선 사용 (서버 응답이 여기 있음)
+  // 없으면 최상위 error 사용
+  const base = nestedError || error;
 
   if (!base || typeof base !== "object") {
     // base가 객체가 아니면 원본 에러에서 최소한의 정보 추출
@@ -95,11 +103,22 @@ export function parseServerError(error: unknown): {
     return Array.isArray(value) ? value : undefined;
   };
 
+  // status는 최상위 error 객체에서 가져오기 (apiClient가 추가한 것)
+  // message는 최상위가 있으면 그것을 사용, 없으면 base(서버 응답)에서 가져오기
+  // code와 details는 base(서버 응답)에서 가져오기
+  const topLevelStatus = getNumber(errorObj, "status");
+  const topLevelMessage = getString(errorObj, "message");
+  const baseMessage = getString(base, "message");
+  const baseCode = getString(base, "code");
+  const baseDetails = getObject(base, "details") || getArray(base, "details");
+
   return {
     name: getString(base, "name"),
-    code: getString(base, "code"),
-    status: getNumber(base, "status"),
-    details: getObject(base, "details") || getArray(base, "details"),
-    message: getString(base, "message"),
+    code: baseCode,
+    status: topLevelStatus || getNumber(base, "status"),
+    details: baseDetails,
+    // 최상위 메시지가 있으면 그것을 사용 (apiClient가 추가한 기본 메시지)
+    // 없으면 서버 응답의 메시지 사용
+    message: topLevelMessage || baseMessage || "알 수 없는 오류가 발생했습니다",
   };
 }
