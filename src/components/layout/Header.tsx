@@ -348,7 +348,7 @@ export default function Header() {
                   </div>
                   <div className="py-3.5">
                     <Link
-                      href="/estimate/user/received"
+                      href="/estimate/driver/received"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       {t("received_quotes")}

@@ -44,8 +44,8 @@ export default function TextInput({
         registerOnBlur(e);
         setIsFocused(false);
       }}
-      className={`w-full h-12 px-4 py-3 rounded-xl transition-colors duration-200
-         text-black-400 placeholder:text-gray-500 focus:outline-none bg-background-200
+      className={`w-full h-12 px-4 py-3 rounded-xl duration-200 text-black-400
+          placeholder:text-gray-500 focus:outline-none border border-gray-200
         ${getBorderColor()} ${
         disabled ? "bg-gray-100 cursor-not-allowed" : ""
       }`}
