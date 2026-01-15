@@ -10,6 +10,7 @@ import type { NoticeListResponse, ReadAllResponse } from "@/types/api/notice";
  */
 export const noticeService = {
   getUserNotices: (params?: {
+    userId?: string;
     page?: number;
     pageSize?: number;
     isDelete?: boolean;
@@ -20,6 +21,7 @@ export const noticeService = {
     }) as Promise<{ data: NoticeListResponse }>;
   },
   getDriverNotices: (params?: {
+    userId?: string;
     page?: number;
     pageSize?: number;
     isDelete?: boolean;
@@ -38,6 +40,11 @@ export const noticeService = {
     return apiClient(`/notice/read/all/${userId}`, {
       method: "POST",
     }) as Promise<{ data: ReadAllResponse }>;
+  },
+  deleteNotice: (noticeId: number) => {
+    return apiClient(`/notice/${noticeId}`, {
+      method: "DELETE",
+    });
   },
 };
 
