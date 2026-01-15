@@ -15,7 +15,7 @@ import type {
  * - deleteRequest: 요청 삭제
  */
 export const driverRequestService = {
-  getDriverRequests: (params: {
+  getDriverRequests: async (params: {
     userId: string;
     page?: number;
     pageSize?: number;
@@ -25,7 +25,7 @@ export const driverRequestService = {
     isDesignated?: boolean;
     sort?: "soonest" | "recent";
   }) => {
-    return apiClient(`/api/requests/driver/list`, {
+    const response = await apiClient(`/request/driver/list`, {
       method: "GET",
       query: {
         userId: params.userId,
@@ -40,8 +40,10 @@ export const driverRequestService = {
         ...(params.sort && { sort: params.sort }),
       },
     });
+    // API 응답이 { success, message, data: {...} } 형태이므로 data 부분만 반환
+    return response.data || response;
   },
-  getDriverDesignatedRequests: (params: {
+  getDriverDesignatedRequests: async (params: {
     userId: string;
     page?: number;
     pageSize?: number;
@@ -50,7 +52,7 @@ export const driverRequestService = {
     requestId?: number;
     sort?: "soonest" | "recent";
   }) => {
-    return apiClient(`/api/requests/driver/estimate/list`, {
+    const response = await apiClient(`/request/driver/estimate/list`, {
       method: "GET",
       query: {
         userId: params.userId,
@@ -62,13 +64,15 @@ export const driverRequestService = {
         ...(params.sort && { sort: params.sort }),
       },
     });
+    // API 응답이 { success, message, data: {...} } 형태이므로 data 부분만 반환
+    return response.data || response;
   },
   getDriverRequestById: async (params: {
     userId: string;
     requestId: number;
   }) => {
-    const res: DriverRequestListResponse = await apiClient(
-      `/api/requests/driver/list`,
+    const response = await apiClient(
+      `/request/driver/list`,
       {
         method: "GET",
         query: {
@@ -77,6 +81,9 @@ export const driverRequestService = {
         },
       }
     );
+    
+    // API 응답이 { success, message, data: {...} } 형태이므로 data 부분만 추출
+    const res: DriverRequestListResponse = (response.data || response) as DriverRequestListResponse;
 
     if (!res?.items || res.items.length === 0) return null;
 
@@ -89,7 +96,9 @@ export const driverRequestService = {
       origin: item.origin ?? "",
       destination: item.destination ?? "",
       userId: item.userId ?? "고객",
-    } as DriverRequestDetail;
+      userName: item.userName ?? undefined,
+      isDesignated: item.isDesignated ?? false,
+    } as DriverRequestDetail & { isDesignated?: boolean };
   },
   acceptEstimate: (payload: {
     userId?: string;
@@ -97,7 +106,7 @@ export const driverRequestService = {
     requestReason?: string;
     price: number;
   }) => {
-    return apiClient(`/api/requests/driver/estimate/accept`, {
+    return apiClient(`/request/driver/estimate/accept`, {
       method: "POST",
       body: payload,
     });
@@ -107,7 +116,7 @@ export const driverRequestService = {
     requestId: number;
     requestReason?: string;
   }) => {
-    return apiClient(`/api/requests/driver/estimate/reject`, {
+    return apiClient(`/request/driver/estimate/reject`, {
       method: "POST",
       body: payload,
     });
@@ -119,7 +128,7 @@ export const driverRequestService = {
     requestReason?: string;
     price?: number;
   }) => {
-    return apiClient(`/api/requests/driver/estimate/update`, {
+    return apiClient(`/request/driver/estimate/update`, {
       method: "POST",
       body: payload,
     });
@@ -128,7 +137,7 @@ export const driverRequestService = {
     userId?: string;
     requestId: number;
   }) => {
-    return apiClient(`/api/requests/driver/request`, {
+    return apiClient(`/request/driver/request`, {
       method: "DELETE",
       body: payload,
     });

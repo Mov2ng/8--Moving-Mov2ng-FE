@@ -1,28 +1,17 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Sidebar } from "../(components)/SideBar";
-import { SearchBar } from "../(components)/SearchBar";
-import { RequestList } from "../(components)/RequestList";
-import { useGetDriverRequests, useRejectEstimate } from "@/hooks/useDriverRequest";
+import { useGetDriverDesignatedRequests } from "@/hooks/useDriverRequest";
 import { useAuth } from "@/hooks/useAuth";
-import type { RequestItem } from "../(components)/RequestsCard";
-import { useQueryClient } from "@tanstack/react-query";
+import PendingEstimateCard, {
+  type PendingEstimateItem,
+} from "../(components)/PendingEstimateCard";
 
 export default function PendingPage() {
   const { me, isLoading: authLoading, isDriver } = useAuth();
-  const queryClient = useQueryClient();
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
-  const [movingTypeFilter, setMovingTypeFilter] = useState<string[]>([]);
-  const [isDesignatedFilter, setIsDesignatedFilter] = useState<
-    boolean | undefined
-  >(undefined);
-  const [sort, setSort] = useState<"soonest" | "recent">("soonest");
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // useRejectEstimate 쿼리를 사용하여 견적 반려 데이터를 가져옴
-  const rejectEstimateMutation = useRejectEstimate();
+  const [activeTab, setActiveTab] = useState<"sent" | "rejected">("sent");
+  const [page] = useState(1);
+  const [pageSize] = useState(20);
 
   // userId 추출
   const userId = me?.id;
@@ -35,59 +24,53 @@ export default function PendingPage() {
       userId,
       page,
       pageSize,
-      ...(movingTypeFilter.length > 0 && {
-        movingType: movingTypeFilter[0], // API는 단일 값만 받음
-      }),
-      ...(isDesignatedFilter !== undefined && {
-        isDesignated: isDesignatedFilter,
-      }),
-      sort,
+      sort: "recent" as const,
     };
-  }, [userId, page, pageSize, movingTypeFilter, isDesignatedFilter, sort]);
-   console.log(queryParams);
-  // useGetDriverRequests 쿼리를 사용하여 driverRequests 데이터를 가져옴
-  const { data, isLoading, error } = useGetDriverRequests(
-    queryParams || { userId: "", page: 1, pageSize: 10 },
-    !!queryParams && !!userId && !authLoading && isDriver
-  );
+  }, [userId, page, pageSize]);
 
-  const handleReject = async (requestId: number) => {
-    if (!confirm("정말 반려하시겠습니까?")) return;
-
-    try {
-      await rejectEstimateMutation.mutateAsync({
-        userId: me?.id,
-        requestId,
-        requestReason: "반려합니다.",
-      });
-      // 쿼리 무효화하여 목록 새로고침
-      queryClient.invalidateQueries({ queryKey: ["driverRequests"] });
-      alert("반려되었습니다.");
-    } catch (error) {
-      console.error("반려 실패:", error);
-      alert("반려 처리 중 오류가 발생했습니다.");
-    }
-  };
+  // 보낸 견적 조회 (지정 견적 요청 리스트 사용)
+  const { data: sentData, isLoading: sentLoading } =
+    useGetDriverDesignatedRequests(
+      queryParams || { userId: "", page: 1, pageSize: 20 },
+      !!queryParams && !!userId && !authLoading && isDriver && activeTab === "sent"
+    );
 
   // 필터링된 데이터
-  const filteredItems: RequestItem[] = useMemo(() => {
-    if (!data?.items) return [];
+  const sentItems: PendingEstimateItem[] = useMemo(() => {
+    if (!sentData?.items) return [];
 
-    let items = data.items as RequestItem[];
+    return sentData.items
+      .filter((item) => {
+        // estimateId가 있고 REJECTED가 아닌 것만 (보낸 견적)
+        return (
+          item.estimateId !== null &&
+          item.estimateId !== undefined &&
+          item.estimateStatus !== "REJECTED"
+        );
+      })
+      .map((item) => ({
+        ...item,
+        isCompleted: false, // TODO: 완료 여부 판단 로직 추가 필요
+      })) as PendingEstimateItem[];
+  }, [sentData]);
 
-    // 검색어 필터링 (userId나 주소로 검색)
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      items = items.filter(
-        (item) =>
-          item.userId?.toLowerCase().includes(query) ||
-          item.origin?.toLowerCase().includes(query) ||
-          item.destination?.toLowerCase().includes(query)
-      );
-    }
+  const rejectedItems: PendingEstimateItem[] = useMemo(() => {
+    if (!sentData?.items) return [];
 
-    return items;
-  }, [data?.items, searchQuery]);
+    return sentData.items
+      .filter((item) => {
+        // estimateStatus가 REJECTED인 것만
+        return item.estimateStatus === "REJECTED";
+      })
+      .map((item) => ({
+        ...item,
+        isCompleted: false,
+      })) as PendingEstimateItem[];
+  }, [sentData]);
+
+  const displayItems =
+    activeTab === "sent" ? sentItems : rejectedItems;
+  const isLoading = sentLoading;
 
   if (authLoading) {
     return (
@@ -114,41 +97,58 @@ export default function PendingPage() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen bg-white">
       <div className="max-w-[1400px] mx-auto px-6 py-8">
-        <div className="flex gap-6">
-          <Sidebar
-            movingTypeFilter={movingTypeFilter}
-            onMovingTypeFilterChange={setMovingTypeFilter}
-            isDesignatedFilter={isDesignatedFilter}
-            onIsDesignatedFilterChange={setIsDesignatedFilter}
-          />
-          <main className="flex-1">
-            <div className="bg-white rounded-lg shadow-sm">
-              <SearchBar
-                searchQuery={searchQuery}
-                onSearchQueryChange={setSearchQuery}
-                sort={sort}
-                onSortChange={setSort}
-              />
-              {isLoading ? (
-                <div className="p-5 text-center text-gray-500">
-                  로딩 중...
-                </div>
-              ) : error ? (
-                <div className="p-5 text-center text-red-500">
-                  오류가 발생했습니다.
-                </div>
-              ) : filteredItems.length === 0 ? (
-                <div className="p-5 text-center text-gray-500">
-                  요청이 없습니다.
-                </div>
-              ) : (
-                <RequestList items={filteredItems} onReject={handleReject} />
-              )}
-            </div>
-          </main>
+        {/* 탭 */}
+        <div className="flex items-center gap-6 border-b border-line-100 mb-8">
+          <button
+            onClick={() => setActiveTab("sent")}
+            className={`relative pb-2 pret-lg-semibold transition-colors ${
+              activeTab === "sent"
+                ? "text-black-400"
+                : "text-gray-300 hover:text-black-300"
+            }`}
+          >
+            보낸 견적 조회
+            {activeTab === "sent" && (
+              <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-black-400" />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("rejected")}
+            className={`relative pb-2 pret-lg-semibold transition-colors ${
+              activeTab === "rejected"
+                ? "text-black-400"
+                : "text-gray-300 hover:text-black-300"
+            }`}
+          >
+            반려 요청
+            {activeTab === "rejected" && (
+              <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-black-400" />
+            )}
+          </button>
         </div>
+
+        {/* 카드 그리드 */}
+        {isLoading ? (
+          <div className="text-center text-gray-400 pret-14-medium py-12">
+            로딩 중...
+          </div>
+        ) : displayItems.length === 0 ? (
+          <div className="text-center text-gray-400 pret-14-medium py-12">
+            {activeTab === "sent" ? "보낸 견적이 없습니다." : "반려된 요청이 없습니다."}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {displayItems.map((item) => (
+              <PendingEstimateCard
+                key={item.requestId}
+                item={item}
+                isRejected={activeTab === "rejected"}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

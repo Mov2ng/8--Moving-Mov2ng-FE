@@ -14,6 +14,7 @@ export type DriverRequest = {
   estimateStatus?: string | null;
   estimatePrice?: number | null;
   userId?: string | null;
+  userName?: string | null;
   requestCreatedAt?: string | null;
   requestUpdatedAt?: string | null;
 };
@@ -37,4 +38,5 @@ export type DriverRequestDetail = {
   origin: string;
   destination: string;
   userId: string;
+  userName?: string;
 };
