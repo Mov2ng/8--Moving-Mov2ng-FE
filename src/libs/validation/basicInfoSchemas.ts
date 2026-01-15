@@ -28,12 +28,12 @@ export const basicInfoSchema = z
   )
   .refine(
     (data) => {
-      // name이 submitData에 포함된 경우(변경된 경우)에만 검증
-      // 키가 없으면 undefined → 변경되지 않은 필드로 간주하여 검증 통과
-      if (data.name !== undefined) {
+      // name이 submitData에 포함되고 빈 문자열이 아닌 경우(변경된 경우)에만 검증
+      // undefined이거나 빈 문자열이면 변경되지 않은 필드로 간주하여 검증 통과
+      if (data.name !== undefined && data.name !== "") {
         return data.name.length >= 1 && data.name.length <= 50;
       }
-      // undefined면 변경되지 않은 필드이므로 검증 통과
+      // undefined이거나 빈 문자열이면 변경되지 않은 필드이므로 검증 통과
       return true;
     },
     {
@@ -43,9 +43,9 @@ export const basicInfoSchema = z
   )
   .refine(
     (data) => {
-      // phoneNum이 submitData에 포함된 경우(변경된 경우)에만 검증
-      // 키가 없으면 undefined → 변경되지 않은 필드로 간주하여 검증 통과
-      if (data.phoneNum !== undefined) {
+      // phoneNum이 submitData에 포함되고 빈 문자열이 아닌 경우(변경된 경우)에만 검증
+      // undefined이거나 빈 문자열이면 변경되지 않은 필드로 간주하여 검증 통과
+      if (data.phoneNum !== undefined && data.phoneNum !== "") {
         // 숫자만 입력 검증
         if (!/^[0-9]+$/.test(data.phoneNum)) {
           return false;
@@ -53,7 +53,7 @@ export const basicInfoSchema = z
         // 길이 검증
         return data.phoneNum.length >= 10 && data.phoneNum.length <= 11;
       }
-      // undefined면 변경되지 않은 필드이므로 검증 통과
+      // undefined이거나 빈 문자열이면 변경되지 않은 필드로 간주하여 검증 통과
       return true;
     },
     {
@@ -63,9 +63,9 @@ export const basicInfoSchema = z
   )
   .refine(
     (data) => {
-      // newPassword가 submitData에 포함된 경우(변경된 경우)에만 검증
-      // 키가 없으면 undefined → 변경되지 않은 필드로 간주하여 검증 통과
-      if (data.newPassword !== undefined) {
+      // newPassword가 submitData에 포함되고 빈 문자열이 아닌 경우(변경된 경우)에만 검증
+      // undefined이거나 빈 문자열이면 변경되지 않은 필드로 간주하여 검증 통과
+      if (data.newPassword !== undefined && data.newPassword !== "") {
         // 길이 검증
         if (data.newPassword.length < 8 || data.newPassword.length > 128) {
           return false;
@@ -84,7 +84,7 @@ export const basicInfoSchema = z
         }
         return true;
       }
-      // undefined면 변경되지 않은 필드이므로 검증 통과
+      // undefined이거나 빈 문자열이면 변경되지 않은 필드이므로 검증 통과
       return true;
     },
     {
@@ -95,16 +95,17 @@ export const basicInfoSchema = z
   )
   .refine(
     (data) => {
-      // 비밀번호 변경을 시도하는 경우에만 검증
-      if (
-        data.newPassword !== undefined ||
-        data.newPasswordConfirm !== undefined
-      ) {
-        return (
-          data.currentPassword !== undefined &&
-          data.newPassword !== undefined &&
-          data.newPasswordConfirm !== undefined
-        );
+      // 비밀번호 변경을 시도하는 경우에만 검증 (빈 문자열이 아닌 경우)
+      const hasNewPassword =
+        data.newPassword !== undefined && data.newPassword !== "";
+      const hasNewPasswordConfirm =
+        data.newPasswordConfirm !== undefined &&
+        data.newPasswordConfirm !== "";
+      const hasCurrentPassword =
+        data.currentPassword !== undefined && data.currentPassword !== "";
+
+      if (hasNewPassword || hasNewPasswordConfirm) {
+        return hasCurrentPassword && hasNewPassword && hasNewPasswordConfirm;
       }
       return true;
     },
@@ -115,11 +116,14 @@ export const basicInfoSchema = z
   )
   .refine(
     (data) => {
-      // 새 비밀번호와 확인이 일치하는지 검증
-      if (
-        data.newPassword !== undefined &&
-        data.newPasswordConfirm !== undefined
-      ) {
+      // 새 비밀번호와 확인이 일치하는지 검증 (빈 문자열이 아닌 경우에만)
+      const hasNewPassword =
+        data.newPassword !== undefined && data.newPassword !== "";
+      const hasNewPasswordConfirm =
+        data.newPasswordConfirm !== undefined &&
+        data.newPasswordConfirm !== "";
+
+      if (hasNewPassword && hasNewPasswordConfirm) {
         return data.newPassword === data.newPasswordConfirm;
       }
       return true;

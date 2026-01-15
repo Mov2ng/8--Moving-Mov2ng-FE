@@ -39,32 +39,44 @@ function checkProfileMissing(
 ): boolean {
   const profile = (profileData as { data?: unknown })?.data;
 
-  // 프로필 조회 에러 체크 (404 등)
-  const isProfileError = Boolean(
-    profileError &&
-      ((typeof profileError === "object" &&
-        "status" in profileError &&
-        profileError.status === 404) ||
-        profileError !== null)
-  );
+  // 프로필 데이터가 있으면 데이터 기반으로 판단
+  if (profile) {
+    // 프로필이 있거나 필수 정보가 없는 경우
+    const hasServiceCategories =
+      (profile as { serviceCategories?: unknown[] })?.serviceCategories &&
+      Array.isArray(
+        (profile as { serviceCategories?: unknown[] }).serviceCategories
+      ) &&
+      ((profile as { serviceCategories?: unknown[] }).serviceCategories
+        ?.length ?? 0) > 0;
 
-  // 프로필이 없거나 필수 정보가 없는 경우
-  const hasServiceCategories =
-    (profile as { serviceCategories?: unknown[] })?.serviceCategories &&
-    Array.isArray(
-      (profile as { serviceCategories?: unknown[] }).serviceCategories
-    ) &&
-    ((profile as { serviceCategories?: unknown[] }).serviceCategories?.length ??
-      0) > 0;
+    const hasRegion =
+      (profile as { regions?: unknown[] })?.regions &&
+      Array.isArray((profile as { regions?: unknown[] }).regions) &&
+      ((profile as { regions?: unknown[] }).regions?.length ?? 0) > 0;
 
-  const hasRegion =
-    (profile as { regions?: unknown[] })?.regions &&
-    Array.isArray((profile as { regions?: unknown[] }).regions) &&
-    ((profile as { regions?: unknown[] }).regions?.length ?? 0) > 0;
+    // 필수 정보가 없으면 프로필 미등록으로 판단
+    return !hasServiceCategories || !hasRegion;
+  }
 
-  // FIXME: 종종 프로필 등록했음에도 미등록 판단 오류가 있음. 해결할 것
-  // 프로필 조회 실패 (404 등) 또는 필수 정보가 없으면 프로필 미등록으로 판단
-  return isProfileError || !profile || !hasServiceCategories || !hasRegion;
+  // 프로필 데이터가 없을 때만 에러 체크
+  // 404 에러만 프로필 미등록으로 판단 (401, 500 등은 네트워크/인증 문제이므로 프로필 미등록으로 판단하지 않음)
+  if (profileError) {
+    if (
+      typeof profileError === "object" &&
+      "status" in profileError &&
+      profileError.status === 404
+    ) {
+      // 404 에러는 프로필이 실제로 없는 경우
+      return true;
+    }
+    // 404가 아닌 에러(401 토큰 만료, 500 서버 에러, 네트워크 에러 등)는
+    // 프로필 미등록이 아닌 다른 문제이므로 false 반환 (프로필 체크 건너뜀)
+    return false;
+  }
+
+  // 프로필 데이터도 없고 에러도 없으면 프로필 미등록으로 판단
+  return true;
 }
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
@@ -101,6 +113,8 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     data: profileData,
     isLoading: isProfileLoading,
     error: profileError,
+    isError,
+    isFetching,
   } = useGetMyMoverDetail(isDriver && !isLoading && isDriverOnlyRoute);
 
   useEffect(() => {
@@ -138,14 +152,34 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
       isDriverOnlyRoute &&
       isDriver &&
       !isProfileLoading &&
+      !isFetching && // 재시도 중이 아닐 때만 체크
       pathname !== "/profile/register" // 프로필 등록 페이지이므로 예외 처리
     ) {
-      const isProfileMissing = checkProfileMissing(profileData, profileError);
-
-      if (isProfileMissing) {
-        alert("프로필 등록 후 이용 부탁드립니다.");
-        router.push("/profile/register");
+      // 프로필 데이터가 있으면 캐시된 데이터로 판단 (가장 안전)
+      if (profileData) {
+        const isProfileMissing = checkProfileMissing(profileData, profileError);
+        if (isProfileMissing) {
+          alert("프로필 등록 후 이용 부탁드립니다.");
+          router.push("/profile/register");
+          return;
+        }
+        // 프로필 데이터가 있고 유효하면 통과
         return;
+      }
+
+      // 프로필 데이터가 없을 때만 에러 체크
+      if (isError && profileError) {
+        const is404Error =
+          typeof profileError === "object" &&
+          "status" in profileError &&
+          profileError.status === 404;
+
+        // 404 에러만 프로필 미등록으로 판단
+        if (is404Error) {
+          alert("프로필 등록 후 이용 부탁드립니다.");
+          router.push("/profile/register");
+          return;
+        }
       }
     }
   }, [
@@ -153,8 +187,10 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     isDriver,
     isLoading,
     isProfileLoading,
+    isFetching,
     profileData,
     profileError,
+    isError,
     pathname,
     router,
     isProtectedRoute,
@@ -166,7 +202,10 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
 
   // 로딩 중일 때는 로딩 UI 표시
   // TODO: 추후 로딩중 텍스트 애니메이션으로 변경
-  if (isLoading || (isDriverOnlyRoute && isDriver && isProfileLoading)) {
+  if (
+    isLoading ||
+    (isDriverOnlyRoute && isDriver && (isProfileLoading || isFetching))
+  ) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div>로딩 중...</div>
@@ -189,10 +228,30 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     isDriverOnlyRoute &&
     isDriver &&
     !isProfileLoading &&
+    !isFetching && // 재시도 중이 아닐 때만 체크
     pathname !== "/profile/register" // 프로필 등록 페이지이므로 예외 처리
   ) {
-    if (checkProfileMissing(profileData, profileError)) {
-      return null;
+    // 프로필 데이터가 있으면 캐시된 데이터로 판단
+    if (profileData) {
+      if (checkProfileMissing(profileData, profileError)) {
+        return null;
+      }
+      // 프로필 데이터가 있고 유효하면 통과
+      return <>{children}</>;
+    }
+
+    // 프로필 데이터가 없을 때만 에러 체크
+    if (isError && profileError) {
+      const is404Error =
+        typeof profileError === "object" &&
+        "status" in profileError &&
+        profileError.status === 404;
+
+      // 404 에러만 프로필 미등록으로 판단
+      if (is404Error) {
+        return null;
+      }
+      // 404가 아닌 에러는 프로필 체크를 건너뛰고 페이지 렌더링 허용
     }
   }
 

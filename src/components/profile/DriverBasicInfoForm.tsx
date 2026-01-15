@@ -9,7 +9,6 @@ import {
   basicInfoSchema,
 } from "@/libs/validation/basicInfoSchemas";
 import { useUpdateBasicInfo } from "@/hooks/useProfile";
-import { useRouter } from "next/navigation";
 
 /**
  * DriverBasicInfoForm: 기사님 기본 정보 수정 폼
@@ -27,10 +26,10 @@ interface DriverBasicInfoFormProps {
 export default function DriverBasicInfoForm({
   initialData,
 }: DriverBasicInfoFormProps) {
-  const router = useRouter();
   const {
     register,
     handleSubmit,
+    watch,
     formState: { isSubmitting, errors, touchedFields, isValid },
   } = useForm<BasicInfoFormValues>({
     resolver: zodResolver(basicInfoSchema),
@@ -46,6 +45,52 @@ export default function DriverBasicInfoForm({
         }
       : undefined,
   });
+
+  // 현재 폼 값 감시
+  const currentValues = watch();
+
+  // 변경된 필드만 검증하여 버튼 활성화 여부 결정
+  const isFormValid = () => {
+    // 이름이 변경되었는지 확인
+    const hasChangedName =
+      currentValues.name !== undefined &&
+      currentValues.name !== (initialData?.name || "");
+
+    // 전화번호가 변경되었는지 확인
+    const hasChangedPhoneNum =
+      currentValues.phoneNum !== undefined &&
+      currentValues.phoneNum !== (initialData?.phoneNum || "");
+
+    // 비밀번호 필드가 하나라도 입력되었는지 확인
+    const hasAnyPasswordField =
+      currentValues.currentPassword ||
+      currentValues.newPassword ||
+      currentValues.newPasswordConfirm;
+
+    // 이름이 변경되었고 에러가 있으면 false
+    if (hasChangedName && errors.name) {
+      return false;
+    }
+
+    // 전화번호가 변경되었고 에러가 있으면 false
+    if (hasChangedPhoneNum && errors.phoneNum) {
+      return false;
+    }
+
+    // 비밀번호 필드가 하나라도 입력되었으면 모든 비밀번호 필드 검증
+    if (hasAnyPasswordField) {
+      if (
+        errors.currentPassword ||
+        errors.newPassword ||
+        errors.newPasswordConfirm
+      ) {
+        return false;
+      }
+    }
+
+    // 변경된 필드가 하나라도 있고 에러가 없으면 true
+    return hasChangedName || hasChangedPhoneNum || !!hasAnyPasswordField;
+  };
 
   const updateBasicInfoMutation = useUpdateBasicInfo();
 
@@ -71,8 +116,7 @@ export default function DriverBasicInfoForm({
     }
 
     await updateBasicInfoMutation.mutateAsync(submitData);
-    alert("기본 정보 수정이 완료 되었습니다.");
-    router.push("/profile");
+    // alert와 router.push는 useUpdateBasicInfo의 onSuccess에서 처리됨
   };
 
   return (
@@ -153,7 +197,7 @@ export default function DriverBasicInfoForm({
             <button
               type="submit"
               className="mt-4 w-full h-12 rounded-xl bg-primary-blue-300 text-white pret-lg-semibold disabled:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isSubmitting || !isValid}
+              disabled={isSubmitting || !isFormValid()}
             >
               {isSubmitting ? "수정 중..." : "수정하기"}
             </button>
@@ -163,4 +207,3 @@ export default function DriverBasicInfoForm({
     </form>
   );
 }
-
