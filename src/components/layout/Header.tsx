@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 import { useI18n } from "@/libs/i18n/I18nProvider";
+import Notice from "../Notice/Notice";
 import ProfileAvatar from "../common/ProfileAvatar";
 
 // 메뉴 링크 타입
@@ -64,6 +65,11 @@ export default function Header() {
   // 언어 드롭다운 영역 참조
   const languageDropdownRef = useRef<HTMLDivElement>(null);
 
+  // 알림 드롭다운 상태 관리
+  const [isNoticeOpen, setIsNoticeOpen] = useState(false);
+  // 알림 드롭다운 영역 참조
+  const noticeRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!isDropdownOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -91,6 +97,20 @@ export default function Header() {
     // 컴포넌트 언마운트 시 이벤트 정리
     return () => document.removeEventListener("click", handleClick);
   }, [isLanguageDropdownOpen]);
+
+  useEffect(() => {
+    if (!isNoticeOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      // 알림 드롭다운 영역 외부 클릭 시 닫기
+      if (!noticeRef.current?.contains(e.target as Node)) {
+        setIsNoticeOpen(false);
+      }
+    };
+    // 외부 클릭 이벤트 등록
+    document.addEventListener("click", handleClick);
+    // 컴포넌트 언마운트 시 이벤트 정리
+    return () => document.removeEventListener("click", handleClick);
+  }, [isNoticeOpen]);
 
   // 언어 목록
   const languages = [
@@ -251,14 +271,24 @@ export default function Header() {
     return (
       <div className="flex items-center gap-8">
         {renderLanguageSelector()}
-        <button aria-label="알림" onClick={() => {}}>
-          <Image
-            src="/assets/icon/ic-alarm.svg"
-            alt="alarm"
-            width={36}
-            height={36}
+        <div ref={noticeRef} className="relative">
+          <button
+            aria-label="알림"
+            onClick={() => setIsNoticeOpen((prev) => !prev)}
+            className="hover:opacity-70 transition-opacity"
+          >
+            <Image
+              src="/assets/icon/ic-alarm.svg"
+              alt="alarm"
+              width={36}
+              height={36}
+            />
+          </button>
+          <Notice
+            isOpen={isNoticeOpen}
+            onClose={() => setIsNoticeOpen(false)}
           />
-        </button>
+        </div>
         <div ref={dropdownRef} className="relative">
           <div
             aria-label="프로필"
