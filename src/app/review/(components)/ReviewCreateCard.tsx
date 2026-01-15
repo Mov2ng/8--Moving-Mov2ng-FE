@@ -1,6 +1,7 @@
 import DriverProfile from "@/components/common/DriverProfile";
 import MovingTypeChip from "@/components/chips/MovingTypeChip";
 import Button from "@/components/common/button";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 interface ReviewCreateCardProps {
   // 태그
@@ -47,6 +48,7 @@ export default function ReviewCreateCard({
   reviewEnabled = true,
   reviewButtonText = "리뷰 작성하기",
 }: ReviewCreateCardProps) {
+  const { t } = useI18n();
   const iconSrc =
     serviceType && serviceIconMap[serviceType]
       ? serviceIconMap[serviceType]
@@ -84,7 +86,7 @@ export default function ReviewCreateCard({
           <>
             <div className="lg:hidden">
               <MovingTypeChip
-                label="지정 견적"
+                label={t("designated_quote_short")}
                 iconSrc="/icons/redfile.svg"
                 size="sm"
                 variant="rd"
@@ -92,7 +94,7 @@ export default function ReviewCreateCard({
             </div>
             <div className="hidden lg:inline-flex">
               <MovingTypeChip
-                label={designatedLabel}
+                label={designatedLabel ?? t("designated_quote_full")}
                 iconSrc="/icons/redfile.svg"
                 size="sm"
                 variant="rd"
@@ -116,7 +118,7 @@ export default function ReviewCreateCard({
 
       {/* 리뷰 버튼 */}
       <Button
-        text={reviewButtonText}
+        text={reviewButtonText ?? t("review_write")}
         variant="solid"
         width="100%"
         onClick={onWriteReview}
