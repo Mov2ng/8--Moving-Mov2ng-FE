@@ -5,6 +5,7 @@ export interface Notice {
   title: string;
   content: string;
   noticeDate: string;
+  isRead?: boolean;
   requestId?: number;
   estimateId?: number;
   movingDate?: string;
