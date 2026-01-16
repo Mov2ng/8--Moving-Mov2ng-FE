@@ -107,9 +107,12 @@ export async function apiClient(
       // skipAutoRefresh 옵션이 true면 자동 재발급 시도하지 않음 (무한루프 방지)
       if (skipAutoRefresh) {
         removeToken();
+        // 원래 응답의 에러 메시지를 그대로 사용
+        const errorData = await response.json().catch(() => null);
         throw {
           status: 401,
-          message: "회원 인증 실패",
+          message: errorData?.message ?? "회원 인증 실패",
+          error: errorData,
         };
       }
 
@@ -117,6 +120,9 @@ export async function apiClient(
       if (accessToken) {
         removeToken();
       }
+
+      // 원래 응답의 에러 데이터 저장 (refresh 실패 시 원래 에러를 throw하기 위해)
+      const originalErrorData = await response.json().catch(() => null);
 
       // accessToken이 없거나 만료된 경우 refreshToken으로 재발급 시도
       const newAccessToken = await refreshAccessToken();
@@ -127,9 +133,17 @@ export async function apiClient(
         if (endpoint === "/auth/me") {
           return { data: null };
         }
+        // refresh 실패는 개발 환경에서만 로그 남기고 원래 에러를 throw
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[apiClient] 토큰 재발급 실패:", {
+            endpoint,
+            originalError: originalErrorData,
+          });
+        }
         throw {
           status: 401,
-          message: "토큰 재발급 실패",
+          message: originalErrorData?.message ?? "회원 인증 실패",
+          error: originalErrorData,
         };
       }
 
