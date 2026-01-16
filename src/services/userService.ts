@@ -32,6 +32,7 @@ export const userService = {
     return apiClient("/auth/login", {
       method: "POST",
       body: data,
+      skipAutoRefresh: true, // 로그인은 accessToken 발급 요청이므로 401 시 refresh 시도 불필요
     });
   },
   refresh: async () => {
