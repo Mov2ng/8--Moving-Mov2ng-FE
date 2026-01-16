@@ -89,23 +89,25 @@ function highlightKeywords(text: string): React.ReactNode {
 }
 
 export default function Notice({ isOpen, onClose }: NoticeProps) {
-  const { isUser, isDriver } = useAuth();
+  const { me, role } = useAuth();
   const [page] = useState(1);
   const pageSize = 10;
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [readNoticeIds, setReadNoticeIds] = useState<Set<string>>(new Set());
+  const [deletedNoticeIds, setDeletedNoticeIds] = useState<Set<string>>(new Set());
 
-  // 사용자/기사 구분하여 알림 조회
+  // role에 따라 알림 조회 (USER면 유저 알림, DRIVER면 기사 알림)
   const { data: noticesData, refetch } = useApiQuery({
-    queryKey: ["notices", isUser ? "user" : "driver", page, pageSize],
+    queryKey: ["notices", role, me?.id, page, pageSize],
     queryFn: () => {
-      if (isUser) {
-        return noticeService.getUserNotices({ page, pageSize });
-      } else if (isDriver) {
-        return noticeService.getDriverNotices({ page, pageSize });
+      if (role === "USER" && me?.id) {
+        return noticeService.getUserNotices({ userId: me.id, page, pageSize });
+      } else if (role === "DRIVER" && me?.id) {
+        return noticeService.getDriverNotices({ userId: me.id, page, pageSize });
       }
       return Promise.resolve({ data: { items: [], page: 0, pageSize: 0, totalItems: 0, totalPages: 0 } });
     },
-    enabled: isOpen && (isUser || isDriver),
+    enabled: isOpen && (role === "USER" || role === "DRIVER") && !!me?.id,
   });
 
   // 알림 읽음 처리 mutation
@@ -116,18 +118,56 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
     },
   });
 
+  // 알림 삭제 mutation
+  const deleteNoticeMutation = useApiMutation({
+    mutationFn: (noticeId: number) => noticeService.deleteNotice(noticeId),
+    onSuccess: () => {
+      // API 성공 후 refetch (로컬 상태는 이미 업데이트됨)
+      refetch();
+    },
+  });
+
   // 알림 클릭 시 읽음 처리
   const handleNoticeClick = (notice: Notice) => {
     const noticeId = parseInt(notice.noticeId, 10);
-    if (!isNaN(noticeId)) {
+    if (!isNaN(noticeId) && !notice.isRead && !readNoticeIds.has(notice.noticeId)) {
+      // 즉시 UI에 반영 (낙관적 업데이트)
+      setReadNoticeIds((prev) => new Set(prev).add(notice.noticeId));
+      // API 호출
       readNoticeMutation.mutate(noticeId);
+    }
+  };
+
+  // 알림 삭제 처리
+  const handleDeleteNotice = (
+    e: React.MouseEvent,
+    notice: Notice
+  ) => {
+    e.stopPropagation(); // 클릭 이벤트 전파 방지
+    e.preventDefault(); // 기본 동작 방지
+    const noticeId = parseInt(notice.noticeId, 10);
+    if (!isNaN(noticeId)) {
+      // 즉시 UI에서 제거 (낙관적 업데이트)
+      setDeletedNoticeIds((prev) => new Set(prev).add(notice.noticeId));
+      // API 호출
+      deleteNoticeMutation.mutate(noticeId);
     }
   };
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      // 삭제 버튼 클릭은 무시
+      if (
+        target instanceof Element &&
+        (target.closest('button[aria-label="알림 삭제"]') ||
+          target.closest('img[alt="삭제"]'))
+      ) {
+        return;
+      }
+      
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         onClose();
       }
     };
@@ -142,6 +182,11 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
   }, [isOpen, onClose]);
 
   const notices = noticesData?.data?.items || [];
+  
+  // 삭제된 알림 필터링
+  const visibleNotices = notices.filter(
+    (notice) => !deletedNoticeIds.has(notice.noticeId)
+  );
 
   if (!isOpen) return null;
 
@@ -169,32 +214,59 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
 
       {/* 알림 목록 */}
       <div className="max-h-[500px] overflow-y-auto">
-        {notices.length === 0 ? (
+        {visibleNotices.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <p className="pret-lg-regular text-gray-400">알림이 없습니다</p>
           </div>
         ) : (
           <ul className="flex flex-col">
-            {notices.map((notice: Notice, index: number) => (
-              <li
-                key={notice.noticeId}
-                className={`px-6 py-4 cursor-pointer hover:bg-primary-blue-50 transition-colors ${
-                  index !== notices.length - 1 ? "border-b border-line-100" : ""
-                }`}
-                onClick={() => handleNoticeClick(notice)}
-              >
-                <div className="flex flex-col gap-2">
-                  {/* 알림 내용 */}
-                  <p className="pret-lg-regular text-black-400">
-                    {highlightKeywords(notice.content)}
-                  </p>
-                  {/* 시간 */}
-                  <p className="pret-14-medium text-gray-400">
-                    {formatRelativeTime(notice.noticeDate)}
-                  </p>
-                </div>
-              </li>
-            ))}
+            {visibleNotices.map((notice: Notice, index: number) => {
+              const isRead = notice.isRead || readNoticeIds.has(notice.noticeId);
+              return (
+                <li
+                  key={notice.noticeId}
+                  className={`px-6 py-4 cursor-pointer hover:bg-primary-blue-50 transition-colors relative ${
+                    index !== visibleNotices.length - 1 ? "border-b border-line-100" : ""
+                  }`}
+                  onClick={() => handleNoticeClick(notice)}
+                >
+                  <div className="flex flex-col gap-2">
+                    {/* 알림 내용 */}
+                    <div className="flex items-start justify-between gap-2">
+                      <p
+                        className={`pret-lg-regular flex-1 ${
+                          isRead ? "text-gray-400" : "text-black-400"
+                        }`}
+                      >
+                        {highlightKeywords(notice.content)}
+                      </p>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {isRead && (
+                          <span className="text-[12px] text-gray-400">읽음</span>
+                        )}
+                        <button
+                          onClick={(e) => handleDeleteNotice(e, notice)}
+                          className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                          aria-label="알림 삭제"
+                          title="알림 삭제"
+                        >
+                          <Image
+                            src="/assets/icon/ic-cancel.svg"
+                            alt="삭제"
+                            width={16}
+                            height={16}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                    {/* 시간 */}
+                    <p className="pret-14-medium text-gray-400">
+                      {formatRelativeTime(notice.noticeDate)}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

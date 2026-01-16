@@ -10,6 +10,9 @@ import {
 } from "@/hooks/useDriverRequest";
 import { useAuth } from "@/hooks/useAuth";
 import type { DriverRequestDetail } from "@/types/api/driverRequest";
+import SendEstimateModal from "@/app/estimate/driver/(components)/SendEstimateModal";
+import RejectEstimateModal from "@/app/estimate/driver/(components)/RejectEstimateModal";
+import { parseServerError } from "@/utils/parseServerError";
 
 export default function ReceivedDetailPage({
   params,
@@ -19,11 +22,14 @@ export default function ReceivedDetailPage({
   const requestId = Number(params.id);
   const { me, isLoading: authLoading, isDriver } = useAuth();
   const [data, setData] = useState<DriverRequestDetail | null>(null);
+  const [isDesignated, setIsDesignated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const acceptEstimateMutation = useAcceptEstimate();
   const rejectEstimateMutation = useRejectEstimate();
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -43,7 +49,10 @@ export default function ReceivedDetailPage({
         if (!mounted) return;
 
         if (!res) setError("요청을 찾을 수 없습니다.");
-        else setData(res);
+        else {
+          setData(res);
+          setIsDesignated((res as DriverRequestDetail & { isDesignated?: boolean }).isDesignated ?? false);
+        }
       } catch (e) {
         console.error(e);
         setError("데이터 로드 실패");
@@ -64,30 +73,69 @@ export default function ReceivedDetailPage({
     };
   }, [requestId, me, authLoading, isDriver]);
 
-  const handleSendEstimate = async () => {
+  const handleSendEstimate = () => {
+    setIsSendModalOpen(true);
+  };
+
+  const handleReject = () => {
+    setIsRejectModalOpen(true);
+  };
+
+  const handleSendEstimateSubmit = async (payload: {
+    price: number;
+    requestReason: string;
+  }) => {
     try {
       await acceptEstimateMutation.mutateAsync({
         userId: me?.id,
         requestId,
-        price: 100000,
-        requestReason: "견적 제출합니다.",
+        price: payload.price,
+        requestReason: payload.requestReason,
       });
+      setIsSendModalOpen(false);
       router.push("/estimate/driver/received");
     } catch (error) {
       console.error("견적 수락 실패:", error);
+      
+      // 에러 메시지 추출
+      const parsedError = parseServerError(error);
+      let errorMessage = parsedError?.message || "견적 보내기에 실패했습니다. 다시 시도해주세요.";
+      
+      // 한국어 메시지로 변환
+      if (errorMessage.includes("Estimate already decided")) {
+        errorMessage = "이미 처리된 견적 요청입니다.";
+      } else if (errorMessage.includes("already decided")) {
+        errorMessage = "이미 결정된 견적입니다.";
+      }
+      
+      alert(errorMessage);
     }
   };
 
-  const handleReject = async () => {
+  const handleRejectSubmit = async (payload: { requestReason: string }) => {
     try {
       await rejectEstimateMutation.mutateAsync({
         userId: me?.id,
         requestId,
-        requestReason: "반려합니다.",
+        requestReason: payload.requestReason,
       });
+      setIsRejectModalOpen(false);
       router.push("/estimate/driver/received");
     } catch (error) {
       console.error("견적 반려 실패:", error);
+      
+      // 에러 메시지 추출
+      const parsedError = parseServerError(error);
+      let errorMessage = parsedError?.message || "반려 처리에 실패했습니다. 다시 시도해주세요.";
+      
+      // 한국어 메시지로 변환
+      if (errorMessage.includes("Estimate already decided")) {
+        errorMessage = "이미 처리된 견적 요청입니다.";
+      } else if (errorMessage.includes("already decided")) {
+        errorMessage = "이미 결정된 견적입니다.";
+      }
+      
+      alert(errorMessage);
     }
   };
 
@@ -127,7 +175,7 @@ export default function ReceivedDetailPage({
               견적 요청 상세 — #{data.requestId}
             </h3>
             <Link
-              href="/driver/received"
+              href="/estimate/driver/received"
               className="text-sm text-blue-500"
             >
               목록으로
@@ -135,7 +183,7 @@ export default function ReceivedDetailPage({
           </div>
 
           <div className="space-y-3 text-[14px] text-gray-700">
-            <div>고객명: {data.userId}</div>
+            <div>고객명: {data.userName}</div>
             <div>
               이사일: {new Date(data.movingDate).toLocaleString()}
             </div>
@@ -159,6 +207,26 @@ export default function ReceivedDetailPage({
           </div>
         </div>
       </div>
+
+      {/* 견적 보내기 모달 */}
+      <SendEstimateModal
+        open={isSendModalOpen}
+        onClose={() => setIsSendModalOpen(false)}
+        data={data}
+        onSubmit={handleSendEstimateSubmit}
+        isSubmitting={acceptEstimateMutation.isPending}
+        isDesignated={isDesignated}
+      />
+
+      {/* 반려 모달 */}
+      <RejectEstimateModal
+        open={isRejectModalOpen}
+        onClose={() => setIsRejectModalOpen(false)}
+        data={data}
+        onSubmit={handleRejectSubmit}
+        isSubmitting={rejectEstimateMutation.isPending}
+        isDesignated={isDesignated}
+      />
     </div>
   );
 }
