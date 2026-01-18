@@ -19,6 +19,7 @@ import { getServiceLabel } from "@/constants/profile.constants";
 const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   PENDING: "waiting",
   ACCEPTED: "confirmed",
+  COMPLETED: "confirmed",
   REJECTED: "rejected",
 };
 
@@ -90,7 +91,7 @@ export default function QuoteReceivedPage() {
     queryFn: async () => {
       return apiClient(ENDPOINT, {
         method: "GET",
-        query: { completedOnly: true },
+        query: { status: "COMPLETED" },
       });
     },
     staleTime: STALE_TIME.ESTIMATE,

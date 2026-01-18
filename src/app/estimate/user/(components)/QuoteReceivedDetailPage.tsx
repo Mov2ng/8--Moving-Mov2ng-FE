@@ -2,14 +2,15 @@
 
 import Image from "next/image";
 import { useApiQuery } from "@/hooks/useApiQuery";
-import { useApiMutation } from "@/hooks/useApiMutation";
 import { apiClient } from "@/libs/apiClient";
 import QuoteDetailCard from "./QuoteDetailCard";
 import QuoteTabNav from "./QuoteTabNav";
 import { formatDate, formatDateTime } from "@/utils/date";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { STALE_TIME } from "@/constants/query";
 import { useI18n } from "@/libs/i18n/I18nProvider";
+import { useQueryClient } from "@tanstack/react-query";
+import { usePostFavoriteMover, useDeleteFavoriteMover } from "@/hooks/useMover";
 
 import type { QuoteDetailView } from "@/types/view/quote";
 import type { ApiQuoteDetail, QuoteStatus } from "@/types/api/quotes";
@@ -18,6 +19,7 @@ import { getServiceLabel } from "@/constants/profile.constants";
 const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   PENDING: "waiting",
   ACCEPTED: "confirmed",
+  COMPLETED: "confirmed",
   REJECTED: "rejected",
 };
 
@@ -31,9 +33,7 @@ export default function QuoteReceivedDetailPage({
   estimateId,
 }: QuoteReceivedDetailPageProps) {
   const { t } = useI18n();
-  const [favoriteOverride, setFavoriteOverride] = useState<boolean | undefined>(
-    undefined
-  );
+  const queryClient = useQueryClient();
   const id = estimateId;
   const invalidId = Number.isNaN(id);
 
@@ -89,7 +89,27 @@ export default function QuoteReceivedDetailPage({
       })()
     : null;
 
-  const isFavorite = favoriteOverride ?? detail?.isFavorite ?? false;
+  // driver 객체
+  const driver = data?.data?.driver;
+
+  // driver.isFavorite 직접 확인 (백엔드에서 보내주는 데이터)
+  const driverIsFavorite = (driver as typeof driver & { isFavorite?: boolean })
+    ?.isFavorite;
+
+  // 찜 상태 관리
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // 기사님 정보 로딩 후 찜 상태 설정
+  useEffect(() => {
+    // API 응답에서 isFavorite 확인
+    if (driverIsFavorite !== undefined) {
+      setIsFavorite(driverIsFavorite);
+    }
+    // fallback: likes 배열 확인 (백엔드에서 isFavorite를 보내주지 않는 경우)
+    else if (driver?.likes && Array.isArray(driver.likes)) {
+      setIsFavorite(driver.likes.length > 0);
+    }
+  }, [driverIsFavorite, driver?.likes]);
 
   const shareUrl =
     typeof window !== "undefined"
@@ -189,29 +209,39 @@ export default function QuoteReceivedDetailPage({
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const { mutate: toggleFavorite, isPending: isTogglingFavorite } =
-    useApiMutation<
-      { success: boolean; message?: string; data?: { isFavorite?: boolean } },
-      void,
-      Error
-    >({
-      mutationFn: async () => {
-        if (!detail?.driverId) throw new Error("driverId를 찾을 수 없습니다.");
-        const method = isFavorite ? "DELETE" : "POST";
-        return apiClient(`/movers/${detail.driverId}/favorite`, {
-          method,
-        });
-      },
-      onSuccess: (res) => {
-        setFavoriteOverride((prev) =>
-          res.data?.isFavorite !== undefined ? res.data.isFavorite : !prev
-        );
-        if (res.message) alert(res.message);
-      },
-      onError: (err) => {
-        alert(err.message ?? t("favorite_error"));
-      },
-    });
+  // 찜하기
+  const { mutate: postFavoriteMover, isPending: isPostFavoriteMoverPending } =
+    usePostFavoriteMover(detail?.driverId ?? 0);
+  // 찜 취소
+  const {
+    mutate: deleteFavoriteMover,
+    isPending: isDeleteFavoriteMoverPending,
+  } = useDeleteFavoriteMover(detail?.driverId ?? 0);
+
+  // 기사님 찜하기 핸들러
+  const handleToggleFavorite = () => {
+    if (!detail?.driverId) return;
+
+    // 이미 찜한 상태면 삭제, 아니면 추가
+    if (isFavorite) {
+      deleteFavoriteMover(detail.driverId, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(false); // 찜 취소
+        },
+      });
+    } else {
+      postFavoriteMover(detail.driverId, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(true); // 찜 추가
+        },
+      });
+    }
+  };
+
+  const isFavoritePending =
+    isPostFavoriteMoverPending || isDeleteFavoriteMoverPending;
 
   return (
     <div className="min-h-screen bg-white">
@@ -301,14 +331,14 @@ export default function QuoteReceivedDetailPage({
             <aside className="hidden lg:flex flex-col gap-4 mt-6 lg:mt-0">
               <button
                 type="button"
-                onClick={() => toggleFavorite()}
-                disabled={isTogglingFavorite || !detail?.driverId}
+                onClick={handleToggleFavorite}
+                disabled={isFavoritePending || !detail?.driverId}
                 className="inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-2xl border border-line-200 bg-white text-black-400 hover:bg-background-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Image
                   src={
                     isFavorite
-                      ? "/assets/icon/ic-like-active.svg"
+                      ? "/assets/icon/ic-like-fill.svg"
                       : "/assets/icon/ic-like-default.svg"
                   }
                   alt="찜하기"
@@ -316,7 +346,11 @@ export default function QuoteReceivedDetailPage({
                   height={20}
                 />
                 <span className="pret-xl-semibold leading-8">
-                  {t("favorite_driver")}
+                  {isFavoritePending
+                    ? t("processing")
+                    : isFavorite
+                    ? t("favorite_completed")
+                    : t("favorite_driver")}
                 </span>
               </button>
               <div className="flex flex-col gap-3">
@@ -375,15 +409,21 @@ export default function QuoteReceivedDetailPage({
         <div className="mx-auto max-w-6xl flex items-center gap-3">
           <button
             type="button"
-            onClick={() => toggleFavorite()}
-            disabled={isTogglingFavorite || !detail?.driverId}
+            onClick={handleToggleFavorite}
+            disabled={isFavoritePending || !detail?.driverId}
             className="size-12 rounded-2xl border border-line-200 bg-white flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
-            aria-label={t("favorite_driver")}
+            aria-label={
+              isFavoritePending
+                ? t("processing")
+                : isFavorite
+                ? t("favorite_completed")
+                : t("favorite_driver")
+            }
           >
             <Image
               src={
                 isFavorite
-                  ? "/assets/icon/ic-like-active.svg"
+                  ? "/assets/icon/ic-like-fill.svg"
                   : "/assets/icon/ic-like-default.svg"
               }
               alt="찜하기"
