@@ -1,4 +1,4 @@
-export type QuoteStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+export type QuoteStatus = "PENDING" | "ACCEPTED" | "COMPLETED" | "REJECTED";
 
 export type ApiQuote = {
   id: number;
