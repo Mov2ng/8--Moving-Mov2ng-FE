@@ -20,6 +20,7 @@ import {
   useGetPresignedUrl,
   useUploadToS3,
 } from "@/hooks/useFileService";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 const DEFAULT_PROFILE_IMAGE = "/assets/image/upload-default.png";
 
@@ -50,6 +51,7 @@ export default function DriverProfileForm({
   initialData,
   onSubmit: handleSubmitProp,
 }: DriverProfileFormProps) {
+  const { t } = useI18n();
   const router = useRouter();
 
   // 프로필 폼 상태 관리
@@ -166,7 +168,7 @@ export default function DriverProfileForm({
     if (!selectedFile && !uploadedFileKey) {
       setError("profileImage", {
         type: "required",
-        message: "프로필 이미지를 업로드해주세요.",
+        message: t("profile_image_upload_error"),
       });
       return;
     }
@@ -210,7 +212,7 @@ export default function DriverProfileForm({
               parsedError?.message ||
               (error instanceof Error
                 ? error.message
-                : "파일 업로드에 실패했습니다. 다시 시도해주세요."),
+                : t("profile_image_upload_fail")),
           });
           return;
         }
@@ -324,8 +326,8 @@ export default function DriverProfileForm({
       if (!parsed) {
         alert(
           mode === "create"
-            ? "프로필 등록 중 오류가 발생했습니다."
-            : "프로필 수정 중 오류가 발생했습니다."
+            ? t("profile_register_error")
+            : t("profile_edit_error")
         );
         return;
       }
@@ -333,7 +335,7 @@ export default function DriverProfileForm({
       const { code, status, message } = parsed;
 
       if (status === 409 || code === "PROFILE_ALREADY_EXISTS") {
-        alert(message || "프로필이 이미 등록되어 있습니다.");
+        alert(message || t("profile_register_already_exists"));
         if (mode === "create") {
           router.push("/");
         }
@@ -343,8 +345,8 @@ export default function DriverProfileForm({
       alert(
         message ||
           (mode === "create"
-            ? "프로필 등록 중 알 수 없는 오류가 발생했습니다."
-            : "프로필 수정 중 알 수 없는 오류가 발생했습니다.")
+            ? t("profile_register_error_unknown")
+            : t("profile_edit_error_unknown"))
       );
     }
   };
@@ -356,12 +358,12 @@ export default function DriverProfileForm({
         {/* 왼쪽 열: 프로필 이미지, 별명, 경력, 한줄 소개 */}
         <div className="flex flex-col gap-6">
           <FormField
-            label="프로필 이미지"
+            label={t("profile_image")}
             type="file"
             register={register("profileImage")}
             error={errors.profileImage}
             touched={!!touchedFields.profileImage}
-            placeholder="프로필 이미지"
+            placeholder={t("profile_image_placeholder")}
           >
             <div className="relative">
               <Image
@@ -390,15 +392,15 @@ export default function DriverProfileForm({
             </div>
           </FormField>
           <FormField
-            label="별명"
+            label={t("profile_nickname")}
             type="text"
             register={register("nickname")}
             error={errors.nickname}
-            placeholder="별명"
+            placeholder={t("profile_nickname_placeholder")}
             touched={!!touchedFields.nickname}
           />
           <FormField
-            label="경력"
+            label={t("profile_experience")}
             register={register("driverYears", { valueAsNumber: true })}
             error={errors.driverYears}
             touched={!!touchedFields.driverYears || !!errors.driverYears}
@@ -406,7 +408,7 @@ export default function DriverProfileForm({
             <div className="flex items-center gap-2">
               <TextInput
                 register={register("driverYears", { valueAsNumber: true })}
-                placeholder="경력"
+                placeholder={t("profile_experience_placeholder")}
                 error={
                   isFieldError(errors.driverYears)
                     ? errors.driverYears
@@ -415,15 +417,15 @@ export default function DriverProfileForm({
                 touched={!!touchedFields.driverYears}
                 type="number"
               />
-              <span>년</span>
+              <span>{t("profile_experience_year")}</span>
             </div>
           </FormField>
           <FormField
-            label="한 줄 소개"
+            label={t("profile_intro")}
             type="textarea"
             register={register("driverIntro")}
             error={errors.driverIntro}
-            placeholder="한 줄 소개"
+            placeholder={t("profile_intro_placeholder")}
             touched={!!touchedFields.driverIntro}
           />
         </div>
@@ -431,18 +433,18 @@ export default function DriverProfileForm({
         {/* 오른쪽 열: 상세 설명, 제공 서비스, 서비스 가능 지역 */}
         <div className="flex flex-col gap-6">
           <FormField
-            label="상세 설명"
+            label={t("profile_content")}
             type="textarea"
             register={register("driverContent")}
             error={errors.driverContent}
-            placeholder="상세 설명"
+            placeholder={t("profile_content_placeholder")}
             touched={!!touchedFields.driverContent}
           />
           <FormField
-            label="제공 서비스"
+            label={t("profile_driver_service_label")}
             register={register("serviceCategories")}
             error={errors.serviceCategories}
-            placeholder="서비스"
+            placeholder={t("service")}
             touched={!!touchedFields.serviceCategories}
           >
             <ProfileChips
@@ -451,10 +453,10 @@ export default function DriverProfileForm({
             />
           </FormField>
           <FormField
-            label="서비스 가능 지역"
+            label={t("profile_driver_region_label")}
             register={register("region")}
             error={errors.region}
-            placeholder="지역"
+            placeholder={t("region")}
             touched={!!touchedFields.region}
           >
             <ProfileChips chipList={regions} register={register("region")} />
@@ -467,11 +469,11 @@ export default function DriverProfileForm({
             >
               {isSubmitting
                 ? mode === "create"
-                  ? "프로필 등록 중..."
-                  : "프로필 수정 중..."
+                  ? t("profile_register_submitting")
+                  : t("profile_edit_submitting")
                 : mode === "create"
-                ? "시작하기"
-                : "수정하기"}
+                ? t("profile_register_submit")
+                : t("profile_edit_submit")}
             </button>
           </div>
         </div>
