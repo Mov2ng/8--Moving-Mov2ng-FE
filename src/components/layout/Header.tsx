@@ -10,6 +10,7 @@ import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 import Notice from "../Notice/Notice";
 import ProfileAvatar from "../common/ProfileAvatar";
+import { getToken } from "@/libs/auth/tokenStorage";
 
 // 메뉴 링크 타입
 type MenuItem = {
@@ -21,7 +22,13 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const { me, isGuest, isLoading, isUser, isDriver } = useAuth();
+  
+  // 랜딩 페이지에서 토큰이 없으면 API 호출을 건너뛰어 초기 로딩 속도 개선
+  const isLandingPage = pathname === "/";
+  const hasToken = typeof window !== "undefined" && getToken() !== null;
+  const shouldFetchMe = !isLandingPage || hasToken;
+  
+  const { me, isGuest, isLoading, isUser, isDriver } = useAuth(shouldFetchMe);
   const logoutMutation = useLogout();
   const { t, locale, setLocale } = useI18n();
 
