@@ -5,7 +5,8 @@ import { useApiMutation } from "./useApiMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "./useApiQuery";
 import { useRouter } from "next/navigation";
-import { setToken } from "@/libs/auth/tokenStorage";
+import { setToken, getToken, isTokenExpired } from "@/libs/auth/tokenStorage";
+import { refreshAccessToken } from "@/libs/auth/tokenManager";
 import { handleAuthError } from "@/utils/authError";
 import { parseServerError } from "@/utils/parseServerError";
 
@@ -125,12 +126,23 @@ export function useLogin(redirectPath?: string) {
 
 /**
  * 사용자 정보 조회 query 생성 훅
+ * 토큰 만료 여부를 미리 체크하여 만료된 경우 자동으로 refresh 후 사용자 정보 조회
+ * @param enabled - 쿼리 활성화 여부 (기본값: true)
  * @returns useApiQuery 결과
  */
-export function useMe() {
+export function useMe(enabled: boolean = true) {
   return useApiQuery({
     queryKey: ["me"],
-    queryFn: userService.me,
+    queryFn: async () => {
+      // 토큰이 있고 만료되었으면 먼저 refresh
+      const token = getToken();
+      if (token && isTokenExpired(token)) {
+        await refreshAccessToken();
+      }
+      // 사용자 정보 조회
+      return userService.me();
+    },
+    enabled,
     staleTime: 1000 * 60 * 5, // 5분 동안 fresh 상태 유지
     gcTime: 1000 * 60 * 5, // 미사용 시 캐시 메모리 정리 시간
     refetchOnMount: false, // /auth/me는 무한 호출 방지를 위해 마운트 시 리패치 안 함
@@ -141,11 +153,12 @@ export function useMe() {
 /**
  * 사용자 권한(role) 조회 훅
  * 데이터 접근은 useMe에 맡기고, 판단 로직만 공통화
+ * @param enabled - 쿼리 활성화 여부 (기본값: true)
  * @returns 사용자 권한 판단 결과
  */
-export function useAuth() {
+export function useAuth(enabled: boolean = true) {
   // 사용자 정보 조회
-  const { data: meData, isLoading } = useMe();
+  const { data: meData, isLoading } = useMe(enabled);
   const me = meData?.data;
 
   // 비회원은 me = null로 정상 처리
