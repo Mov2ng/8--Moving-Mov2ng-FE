@@ -4,5 +4,16 @@
       "source": "/__proxy__/:path*",
       "destination": "http://13.124.250.86:3000/:path*"
     }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "upgrade-insecure-requests"
+        }
+      ]
+    }
   ]
 }
