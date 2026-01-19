@@ -5,38 +5,18 @@ import { useApiQuery } from "@/hooks/useApiQuery";
 import { useApiMutation } from "@/hooks/useApiMutation";
 import { apiClient } from "@/libs/apiClient";
 import { formatDate } from "@/utils/date";
-import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Pagination } from "@/components/common/Pagination";
 import ReviewWriteModal from "./ReviewWriteModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { STALE_TIME } from "@/constants/query";
+import ReviewTabNav from "./ReviewTabNav";
+import { useRouter } from "next/navigation";
+import { useI18n } from "@/libs/i18n/I18nProvider";
+import { getServiceLabel } from "@/constants/profile.constants";
 
 import type { ApiWritableReview, ReviewItem } from "@/types/view/review";
-
-const movingTypeMap: Record<string, string> = {
-  SMALL: "소형이사",
-  HOME: "가정이사",
-  OFFICE: "사무실이사",
-};
-
-const adaptWritable = (item: ApiWritableReview): ReviewItem => ({
-  id: item.id,
-  driverId: item.driver.id,
-  serviceType:
-    movingTypeMap[item.request.moving_type ?? ""] ??
-    item.request.moving_type ??
-    "",
-  isDesignatedRequest: false,
-  designatedLabel: "지정 견적 요청",
-  name: item.driver.user?.name ?? item.driver.nickname ?? "기사님",
-  profileImage: item.driver.profileImage ?? "/assets/image/avatartion-1.png",
-  movingDate: formatDate(item.request.moving_data),
-  price: item.price ?? 0,
-  reviewEnabled: true,
-  reviewButtonText: "리뷰 작성하기",
-});
 
 export default function ReviewWritablePage() {
   const [page, setPage] = useState(1);
@@ -44,6 +24,37 @@ export default function ReviewWritablePage() {
   const [selectedReview, setSelectedReview] = useState<ReviewItem | null>(null);
   const [pageSize, setPageSize] = useState(6);
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const { t } = useI18n();
+
+  const adaptWritable = (item: ApiWritableReview): ReviewItem => {
+    const rawType = item.request.moving_type ?? "";
+    const localizedType = rawType
+      ? rawType === "SMALL"
+        ? t("moving_type_small")
+        : rawType === "HOME"
+        ? t("moving_type_home")
+        : rawType === "OFFICE"
+        ? t("moving_type_office")
+        : getServiceLabel(rawType)
+      : "";
+
+    return {
+      id: item.id,
+      driverId: item.driver.id,
+      serviceType: localizedType,
+      isDesignatedRequest: false,
+      designatedLabel: t("designated_quote_full"),
+      name:
+        item.driver.user?.name ?? item.driver.nickname ?? t("driver_suffix"),
+      profileImage:
+        item.driver.profileImage ?? "/assets/image/avatartion-1.png",
+      movingDate: formatDate(item.request.moving_data),
+      price: item.price ?? 0,
+      reviewEnabled: true,
+      reviewButtonText: t("review_write"),
+    };
+  };
 
   useEffect(() => {
     const calc = () => {
@@ -86,40 +97,46 @@ export default function ReviewWritablePage() {
         body: payload,
       }),
     onSuccess: (res) => {
-      alert(res.message ?? "리뷰가 등록되었습니다.");
+      alert(res.message ?? t("review_create_success"));
       queryClient.invalidateQueries({ queryKey: ["reviews", "writable"] });
       queryClient.invalidateQueries({ queryKey: ["reviews", "written"] });
       setIsModalOpen(false);
       setSelectedReview(null);
     },
     onError: (err) => {
-      alert(err.message);
+      alert(err.message ?? t("review_create_fail"));
     },
   });
 
   const list = writableReviews;
   const totalCount = list.length;
   const paged = list.slice((page - 1) * pageSize, page * pageSize);
-  const emptyText = "작성 가능한 리뷰가 없습니다.";
+  const emptyText = t("empty_writable_reviews");
+
+  useEffect(() => {
+    if (!error) return;
+
+    const status =
+      typeof error === "object" && "status" in error
+        ? (error as { status?: number }).status
+        : undefined;
+    const code =
+      typeof error === "object" && "code" in error
+        ? (error as { code?: string }).code
+        : undefined;
+    const isForbidden = status === 403 || code === "FORBIDDEN";
+
+    if (isForbidden) {
+      alert("일반 회원만 접근가능합니다.");
+      setTimeout(() => router.replace("/profile"), 0);
+    }
+  }, [error, router]);
 
   return (
     <div className="min-h-screen bg-background-200">
       <header className="bg-white border-b border-line-100">
-        <div className="mx-auto max-w-6xl px-5 py-5 flex items-center gap-6">
-          <Link href="/" className="text-primary-blue-300 pret-xl-semibold">
-            무빙
-          </Link>
-          <nav className="flex items-center gap-6 pret-15-semibold">
-            <Link href="/review/writable" className="text-primary-black-400">
-              작성 가능한 리뷰
-            </Link>
-            <Link
-              href="/review/written"
-              className="text-black-200 hover:text-primary-black-400"
-            >
-              내가 작성한 리뷰
-            </Link>
-          </nav>
+        <div className="mx-auto max-w-6xl flex items-center gap-6">
+          <ReviewTabNav />
         </div>
       </header>
 
@@ -127,7 +144,7 @@ export default function ReviewWritablePage() {
         {/* 카드 리스트 */}
         {isLoading && (
           <div className="text-center text-gray-400 pret-15-medium py-10">
-            불러오는 중...
+            {t("loading")}
           </div>
         )}
         {error && (
@@ -187,7 +204,7 @@ export default function ReviewWritablePage() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={({ rating, content, item }) => {
           if (!item?.driverId) {
-            alert("driverId가 없어 리뷰를 등록할 수 없습니다.");
+            alert(t("review_missing_driver"));
             return;
           }
           createReview({

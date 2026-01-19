@@ -17,17 +17,20 @@ import {
 } from "@/types/queryType";
 import { DriverResponseType } from "@/types/driverProfileType";
 import { useAuth } from "@/hooks/useAuth";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 export default function MoversPage() {
+  // 언어 훅
+  const { t } = useI18n();
   // 지역, 서비스 label / value로 분리해서 선택
   const [selectedRegion, setSelectedRegion] = useState<QuerySelectType>(
-    regionTypeOption[0]
+    regionTypeOption(t)[0]
   );
   const [selectedService, setSelectedService] = useState<QuerySelectType>(
-    serviceTypeOption[0]
+    serviceTypeOption(t)[0]
   );
   const [keyword, setKeyword] = useState<string>("");
-  const [sort, setSort] = useState<QuerySelectType>(moverSortOption[0]);
+  const [sort, setSort] = useState<QuerySelectType>(moverSortOption(t)[0]);
   const { isGuest } = useAuth(); // 비회원 여부 확인
 
   // 무한 스크롤을 위한 ref
@@ -82,48 +85,48 @@ export default function MoversPage() {
   }, [handleObserver]);
 
   const onClickReset = () => {
-    setSelectedRegion(regionTypeOption[0]);
-    setSelectedService(serviceTypeOption[0]);
+    setSelectedRegion(regionTypeOption(t)[0]);
+    setSelectedService(serviceTypeOption(t)[0]);
   };
 
   return (
     <section className="max-md:px-18 max-sm:px-6 bg-gray-50">
       <div className="max-md:hidden">
-        <p className="pret-2xl-semibold py-8">기사님 찾기</p>
+        <p className="pret-2xl-semibold py-8">{t("driver_search")}</p>
       </div>
       <div className="flex gap-4 justify-between max-md:flex-col max-md:gap-0 max-md:relative max-md:pt-4">
         <div className="max-w-[328px] w-full flex flex-col gap-8 max-md:flex-row max-md:gap-3 max-md:absolute max-sm:gap-0.5">
           <div className="flex items-center justify-between border-b border-line-200 px-[10px] py-4 max-md:hidden">
-            <p className="pret-xl-medium text-black">필터</p>
+            <p className="pret-xl-medium text-black">{t("filter")}</p>
             <button
               className="pret-lg-medium text-gray-300 cursor-pointer"
               onClick={onClickReset}
             >
-              초기화
+              {t("reset")}
             </button>
           </div>
           <div>
             <p className="pret-2lg-medium text-black-400 mb-4 max-md:hidden">
-              지역을 선택해주세요
+              {t("select_region")}
             </p>
             <RegionDropdown
-              regionList={regionTypeOption}
+              regionList={regionTypeOption(t)}
               selectedRegion={selectedRegion}
               setSelectedRegion={setSelectedRegion}
             />
           </div>
           <div>
             <p className="pret-2lg-medium text-black-400 mb-4 max-md:hidden">
-              어떤 서비스가 필요하세요?
+              {t("select_service")}
             </p>
             <ServiceDropdown
-              serviceList={serviceTypeOption}
+              serviceList={serviceTypeOption(t)}
               selectedService={selectedService}
               setSelectedService={setSelectedService}
             />
           </div>
           <div className="flex flex-col gap-4 mt-3.5 max-md:hidden">
-            <p className="pret-xl-semibold text-black-400">찜한 기사님</p>
+            <p className="pret-xl-semibold text-black-400">{t("favorite_drivers")}</p>
             {isGuest ? (
               <></>
             ) : (
@@ -147,7 +150,7 @@ export default function MoversPage() {
         <div className="max-w-[955px] w-full flex flex-col gap-8 max-md:gap-6">
           <div className="flex flex-col gap-6 items-end">
             <SortDropdown
-              sortList={moverSortOption}
+              sortList={moverSortOption(t)}
               sort={sort}
               setSort={setSort}
             />
@@ -185,7 +188,7 @@ export default function MoversPage() {
             )}
             {!hasNextPage && allMovers.length > 0 && (
               <p className="text-center text-gray-400 pret-md-regular py-4">
-                모든 기사님을 불러왔습니다
+                {t("all_drivers_loaded")}
               </p>
             )}
           </div>

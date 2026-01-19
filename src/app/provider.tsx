@@ -18,9 +18,8 @@ export function Provider({ children }: ProviderProps) {
         // 쿼리 옵션 설정
         defaultOptions: {
           queries: {
-            retry: 1, // 실패 시 1번 재시도
-            refetchOnWindowFocus: false, // 창 포커스 시 자동 리패치 방지
-            staleTime: 1000 * 60, // 1분 동안 fresh 상태 유지
+            retry: false, // 재시도 안 함
+            staleTime: 1000 * 60, // 1분 동안 fresh 상태 유지 (1분 이내에는 리패치 안 함)
           },
         },
       })

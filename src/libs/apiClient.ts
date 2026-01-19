@@ -14,6 +14,7 @@ export type ApiRequestOptions = {
   // useMe 쿼리 호출(skipAuthRefresh: true)에 401 발생 시 재발급 시도X
   // refreshToken 재발급 API 호출 시 사용 (무한루프 방지)
   skipAutoRefresh?: boolean; // 기본값(false: 자동 재발급 시도)
+  timeout?: number; // 요청 타임아웃 (밀리초, 기본값: 3000ms)
 };
 
 /**
@@ -38,6 +39,7 @@ export async function apiClient(
     query,
     headers,
     skipAutoRefresh = false,
+    timeout = 3000, // 기본 타임아웃 3초
   } = options;
 
   // 1. body가 FormData인지 확인 (FormData일 때는 Content-Type을 제거해야 함)
@@ -88,7 +90,7 @@ export async function apiClient(
   try {
     // AbortController를 사용하여 타임아웃 구현
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2초 타임아웃
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     const response = await fetch(url, {
       method,
@@ -105,9 +107,12 @@ export async function apiClient(
       // skipAutoRefresh 옵션이 true면 자동 재발급 시도하지 않음 (무한루프 방지)
       if (skipAutoRefresh) {
         removeToken();
+        // 원래 응답의 에러 메시지를 그대로 사용
+        const errorData = await response.json().catch(() => null);
         throw {
           status: 401,
-          message: "회원 인증 실패",
+          message: errorData?.message ?? "회원 인증 실패",
+          error: errorData,
         };
       }
 
@@ -115,6 +120,9 @@ export async function apiClient(
       if (accessToken) {
         removeToken();
       }
+
+      // 원래 응답의 에러 데이터 저장 (refresh 실패 시 원래 에러를 throw하기 위해)
+      const originalErrorData = await response.json().catch(() => null);
 
       // accessToken이 없거나 만료된 경우 refreshToken으로 재발급 시도
       const newAccessToken = await refreshAccessToken();
@@ -125,9 +133,17 @@ export async function apiClient(
         if (endpoint === "/auth/me") {
           return { data: null };
         }
+        // refresh 실패는 개발 환경에서만 로그 남기고 원래 에러를 throw
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[apiClient] 토큰 재발급 실패:", {
+            endpoint,
+            originalError: originalErrorData,
+          });
+        }
         throw {
           status: 401,
-          message: "토큰 재발급 실패",
+          message: originalErrorData?.message ?? "회원 인증 실패",
+          error: originalErrorData,
         };
       }
 
@@ -136,7 +152,7 @@ export async function apiClient(
 
       // 원래 요청 재시도 (타임아웃 재설정)
       const retryController = new AbortController();
-      const retryTimeoutId = setTimeout(() => retryController.abort(), 2000); // 2초 타임아웃
+      const retryTimeoutId = setTimeout(() => retryController.abort(), timeout);
 
       const retryResponse = await fetch(url, {
         method,
@@ -191,7 +207,7 @@ export async function apiClient(
     if (error instanceof Error && error.name === "AbortError") {
       throw {
         status: 408,
-        message: "요청 시간이 초과되었습니다",
+        message: "요청 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.",
         error: error,
       };
     }

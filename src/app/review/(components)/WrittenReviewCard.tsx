@@ -1,6 +1,7 @@
 // 내가 작성한 리뷰 카드
 import MovingTypeChip from "@/components/chips/MovingTypeChip";
 import DriverProfile from "@/components/common/DriverProfile";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 interface WrittenReviewCardProps {
   // 태그
@@ -50,6 +51,7 @@ export default function WrittenReviewCard({
   rating = 0,
   reviewText,
 }: WrittenReviewCardProps) {
+  const { t } = useI18n();
   const iconSrc =
     serviceType && serviceIconMap[serviceType]
       ? serviceIconMap[serviceType]
@@ -88,7 +90,7 @@ export default function WrittenReviewCard({
             <>
               <div className="lg:hidden">
                 <MovingTypeChip
-                  label="지정 견적"
+                  label={t("designated_quote_short")}
                   iconSrc="/icons/redfile.svg"
                   size="sm"
                   variant="rd"
@@ -96,7 +98,7 @@ export default function WrittenReviewCard({
               </div>
               <div className="hidden lg:inline-flex">
                 <MovingTypeChip
-                  label={designatedLabel}
+                  label={designatedLabel ?? t("designated_quote_full")}
                   iconSrc="/icons/redfile.svg"
                   size="sm"
                   variant="rd"
@@ -106,7 +108,9 @@ export default function WrittenReviewCard({
           )}
         </div>
         {createdAt && (
-          <span className="text-gray-300 pret-14-medium">{`작성일 ${createdAt}`}</span>
+          <span className="text-gray-300 pret-14-medium">{`${t(
+            "review_date_prefix"
+          )}${createdAt}`}</span>
         )}
       </div>
 

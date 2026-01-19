@@ -34,7 +34,6 @@ export default function QuoteRequestTypePage() {
           <div className="h-[6px] w-[28%] rounded-full bg-[#2E7BFF]" />
         </div>
       </section>
-np
       {/* 채팅 플로우 */}
       <section className="flex flex-col gap-6">
         {/* 왼쪽 말풍선 */}

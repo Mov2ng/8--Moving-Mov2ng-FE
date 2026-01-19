@@ -1,78 +1,234 @@
 import z from "zod";
+import { SERVICE_CATEGORIES, REGIONS } from "@/constants/profile.constants";
 
 /**
- * 프로필 폼 검증 스키마
- * - profileImage: 프로필 이미지
- * - serviceCategories: 이용 서비스 / 제공 서비스
- * - region: 내가 사는 지역 / 서비스 가능 지역
- * - nickname: 닉네임
- * - driverYears: 운전 경력
- * - driverIntro: 기사 소개
- * - driverContent: 기사 상세 내용
- * @param role - 사용자 role ("USER" | "DRIVER")
+ * 프로필 요청 검증 스키마
+ * - USER와 DRIVER 공통 필드: profileImage, serviceCategories, region
+ * - DRIVER 전용 필드: nickname, driverYears, driverIntro, driverContent
  */
-// 기본 스키마 (모든 필드 포함, 타입 안전성을 위해)
-const baseProfileSchema = z.object({
-  profileImage: z.string(),
-  serviceCategories: z
-    .any()
-    .refine(
-      (val) => Array.isArray(val) && val.length > 0,
-      "하나 이상의 서비스를 선택해주세요"
-    )
-    .pipe(z.array(z.string())),
-  region: z
-    .any()
-    .refine(
-      (val) => Array.isArray(val) && val.length > 0,
-      "하나 이상의 지역을 선택해주세요"
-    )
-    .pipe(z.array(z.string())),
-  // DRIVER 전용 필드들 (USER일 때는 optional로 허용하되 validation에서는 무시)
-  nickname: z.string(),
-  driverYears: z
-    .any()
-    .refine(
-      (val) =>
-        val === undefined ||
-        (typeof val === "number" && Number.isInteger(val) && val >= 0),
-      "올바른 경력을 입력해주세요"
-    ),
-  driverIntro: z.string(),
-  driverContent: z.string(),
+
+// Category enum 값 추출
+const categoryValues = SERVICE_CATEGORIES.map((item) => item.value) as [
+  string,
+  ...string[]
+];
+
+// RegionType enum 값 추출
+const regionTypeValues = REGIONS.map((item) => item.value) as [
+  string,
+  ...string[]
+];
+
+// Category enum 값 검증
+const categoryEnum = z.enum(categoryValues as [string, ...string[]], {
+  message: "유효하지 않은 서비스 카테고리입니다. (SMALL, HOME, OFFICE 중 하나)",
 });
 
-export const profileSchema = (role?: "USER" | "DRIVER") => {
-  const isDriver = role === "DRIVER";
+// RegionType enum 값 검증
+const regionTypeEnum = z.enum(regionTypeValues as [string, ...string[]], {
+  message: "유효하지 않은 지역입니다.",
+});
 
-  if (isDriver) {
-    // DRIVER: 모든 필드 검증, DRIVER 전용 필드는 필수/선택 사항으로 검증
-    return baseProfileSchema.extend({
-      nickname: z.string().min(1, "닉네임을 입력해 주세요").max(50),
-      driverIntro: z.string().min(1, "한 줄 소개를 입력해 주세요"),
-      driverContent: z.string().min(1, "상세 설명을 입력해 주세요"),
-    });
-  } else {
-    // USER: DRIVER 전용 필드들은 optional이지만 값이 없어야 함
-    // 각 필드에 refine을 적용하여 값이 있으면 에러 발생
-    return baseProfileSchema
-      .refine((data) => !data.nickname, {
-        message: "일반 회원은 닉네임을 사용할 수 없습니다",
-        path: ["nickname"],
-      })
-      .refine((data) => data.driverYears === undefined, {
-        message: "일반 회원은 운전 경력을 입력할 수 없습니다",
-        path: ["driverYears"],
-      })
-      .refine((data) => !data.driverIntro, {
-        message: "일반 회원은 기사 소개를 입력할 수 없습니다",
-        path: ["driverIntro"],
-      })
-      .refine((data) => !data.driverContent, {
-        message: "일반 회원은 기사 상세 내용을 입력할 수 없습니다",
-        path: ["driverContent"],
-      });
-  }
+/**
+ * 기본 프로필 스키마 (공통 필드) - 프로필 생성용
+ * - 프로필 이미지 (필수)
+ * - 서비스 카테고리 (필수)
+ * - 지역 (필수)
+ */
+export const baseProfileCreateSchema = z.object({
+  // 프로필 이미지: /upload/presigned-url에서 받은 fileKey 값을 profileImage로 전달
+  profileImage: z.string().min(1, "프로필 이미지를 업로드해주세요"),
+  serviceCategories: z
+    .array(categoryEnum)
+    .min(1, "서비스 카테고리는 최소 1개 이상이어야 합니다"),
+  region: z.array(regionTypeEnum).min(1, "지역은 최소 1개 이상이어야 합니다"),
+});
+
+/**
+ * 기본 프로필 스키마 (공통 필드) - 프로필 수정용
+ * - 모든 필드 optional (변경된 필드만 전송)
+ * - 폼 컴포넌트에서 변경된 필드만 submitData 객체에 포함시킴
+ * - 변경되지 않은 필드는 submitData에 키 자체가 없음 → zod 스키마에 전달 시 undefined
+ * - undefined가 아니면 변경된 필드로 간주하여 검증 수행
+ */
+export const baseProfileUpdateSchema = z
+  .object({
+    // 프로필 이미지: /upload/presigned-url에서 받은 fileKey 값을 profileImage로 전달
+    profileImage: z.string().optional(),
+    serviceCategories: z.array(categoryEnum).optional(),
+    region: z.array(regionTypeEnum).optional(),
+  })
+  .refine(
+    (data) => {
+      // serviceCategories가 submitData에 포함된 경우(변경된 경우)에만 검증
+      // 키가 없으면 undefined → 변경되지 않은 필드로 간주하여 검증 통과
+      if (data.serviceCategories !== undefined) {
+        return (
+          Array.isArray(data.serviceCategories) &&
+          data.serviceCategories.length > 0
+        );
+      }
+      // undefined면 변경되지 않은 필드이므로 검증 통과
+      return true;
+    },
+    {
+      message: "서비스 카테고리는 최소 1개 이상이어야 합니다",
+      path: ["serviceCategories"],
+    }
+  )
+  .refine(
+    (data) => {
+      // region이 submitData에 포함된 경우(변경된 경우)에만 검증
+      // 키가 없으면 undefined → 변경되지 않은 필드로 간주하여 검증 통과
+      if (data.region !== undefined) {
+        return Array.isArray(data.region) && data.region.length > 0;
+      }
+      // undefined면 변경되지 않은 필드이므로 검증 통과
+      return true;
+    },
+    {
+      message: "지역은 최소 1개 이상이어야 합니다",
+      path: ["region"],
+    }
+  );
+
+/**
+ * DRIVER용 프로필 스키마 - 프로필 생성용
+ * - 기본 프로필 필드 + DRIVER 전용 필드
+ * - nickname 필수
+ */
+export const driverProfileCreateSchema = baseProfileCreateSchema.extend({
+  nickname: z.string().min(1, "닉네임을 입력해 주세요").max(50),
+  driverYears: z.number().min(0, "운전 경력은 0 이상이어야 합니다"),
+  driverIntro: z
+    .string()
+    .min(1, "기사 소개를 입력해 주세요")
+    .max(1000, "기사 소개는 최대 1000자 이하이어야 합니다"),
+  driverContent: z
+    .string()
+    .min(1, "기사 상세 내용을 입력해 주세요")
+    .max(1000, "기사 상세 내용은 최대 1000자 이하이어야 합니다"),
+});
+
+/**
+ * USER용 프로필 스키마 - 프로필 생성용
+ * - 기본 프로필 필드만 (DRIVER 전용 필드 없음)
+ */
+export const userProfileCreateSchema = baseProfileCreateSchema;
+
+/**
+ * DRIVER용 프로필 스키마 - 프로필 수정용
+ * - 기본 프로필 필드 + DRIVER 전용 필드
+ * - 모든 필드 optional (변경된 필드만 전송)
+ * - 폼 컴포넌트에서 변경된 필드만 submitData 객체에 포함시킴
+ * - 변경되지 않은 필드는 submitData에 키 자체가 없음 → zod 스키마에 전달 시 undefined
+ * - undefined가 아니면 변경된 필드로 간주하여 검증 수행
+ */
+export const driverProfileSchema = baseProfileUpdateSchema
+  .safeExtend({
+    nickname: z.string().optional(),
+    driverYears: z.number().optional(),
+    driverIntro: z.string().optional(),
+    driverContent: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // nickname이 submitData에 포함된 경우(변경된 경우)에만 검증
+      // 키가 없으면 undefined → 변경되지 않은 필드로 간주하여 검증 통과
+      if (data.nickname !== undefined) {
+        return data.nickname.length >= 1 && data.nickname.length <= 50;
+      }
+      // undefined면 변경되지 않은 필드이므로 검증 통과
+      return true;
+    },
+    {
+      message: "닉네임을 입력해 주세요 (최대 50자)",
+      path: ["nickname"],
+    }
+  )
+  .refine(
+    (data) => {
+      // driverYears가 submitData에 포함된 경우(변경된 경우)에만 검증
+      // 키가 없으면 undefined → 변경되지 않은 필드로 간주하여 검증 통과
+      if (data.driverYears !== undefined) {
+        return (
+          typeof data.driverYears === "number" &&
+          Number.isInteger(data.driverYears) &&
+          data.driverYears >= 0
+        );
+      }
+      // undefined면 변경되지 않은 필드이므로 검증 통과
+      return true;
+    },
+    {
+      message: "운전 경력은 0 이상의 정수여야 합니다",
+      path: ["driverYears"],
+    }
+  )
+  .refine(
+    (data) => {
+      // driverIntro가 submitData에 포함된 경우(변경된 경우)에만 검증
+      // 키가 없으면 undefined → 변경되지 않은 필드로 간주하여 검증 통과
+      if (data.driverIntro !== undefined) {
+        return data.driverIntro.length >= 1 && data.driverIntro.length <= 1000;
+      }
+      // undefined면 변경되지 않은 필드이므로 검증 통과
+      return true;
+    },
+    {
+      message: "기사 소개를 입력해 주세요 (최대 1000자)",
+      path: ["driverIntro"],
+    }
+  )
+  .refine(
+    (data) => {
+      // driverContent가 submitData에 포함된 경우(변경된 경우)에만 검증
+      // 키가 없으면 undefined → 변경되지 않은 필드로 간주하여 검증 통과
+      if (data.driverContent !== undefined) {
+        return (
+          data.driverContent.length >= 1 && data.driverContent.length <= 1000
+        );
+      }
+      // undefined면 변경되지 않은 필드이므로 검증 통과
+      return true;
+    },
+    {
+      message: "기사 상세 내용을 입력해 주세요 (최대 1000자)",
+      path: ["driverContent"],
+    }
+  );
+
+/**
+ * USER용 프로필 스키마 - 프로필 수정용
+ * - 기본 프로필 필드만 (DRIVER 전용 필드 없음)
+ */
+export const userProfileSchema = baseProfileUpdateSchema;
+
+// baseProfileSchema는 baseProfileUpdateSchema의 별칭 (하위 호환성 및 명확성을 위해)
+export const baseProfileSchema = baseProfileUpdateSchema;
+
+/**
+ * 프로필 스키마 생성 함수 (프로필 생성용)
+ * @param role - 사용자 role ("USER" | "DRIVER")
+ * @returns 프로필 스키마
+ */
+export const profileCreateSchema = (role?: "USER" | "DRIVER") => {
+  const isDriver = role === "DRIVER";
+  return isDriver ? driverProfileCreateSchema : userProfileCreateSchema;
 };
 
-export type ProfileFormValues = z.infer<typeof baseProfileSchema>;
+/**
+ * 프로필 스키마 생성 함수 (프로필 수정용)
+ * @param role - 사용자 role ("USER" | "DRIVER")
+ * @returns 프로필 스키마
+ */
+export const profileSchema = (role?: "USER" | "DRIVER") => {
+  const isDriver = role === "DRIVER";
+  return isDriver ? driverProfileSchema : userProfileSchema;
+};
+
+// ProfileFormValues는 DRIVER 스키마를 기준으로 타입 추론 (기존 호환성 유지)
+export type ProfileFormValues = z.infer<typeof driverProfileSchema>;
+
+// baseProfileSchema 타입도 export (필요시 사용)
+export type BaseProfileFormValues = z.infer<typeof baseProfileSchema>;

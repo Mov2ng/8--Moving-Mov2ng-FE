@@ -34,4 +34,14 @@ export const moverService = {
       method: "DELETE",
     });
   },
+  getMyMoverDetail: () => {
+    return apiClient("/movers/me", {
+      method: "GET",
+    });
+  },
+  postRequestDriver: (id: number) => {
+    return apiClient(`/requests/${id}/estimate`, {
+      method: "POST",
+    });
+  },
 };

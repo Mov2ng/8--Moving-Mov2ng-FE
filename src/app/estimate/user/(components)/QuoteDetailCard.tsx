@@ -8,6 +8,7 @@ import {
   SERVICE_LABEL_SHORT_MAP,
 } from "@/constants/serviceType";
 import { QuoteDetailCardProps } from "@/types/view/quote";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 export default function QuoteDetailCard({
   status,
@@ -27,6 +28,16 @@ export default function QuoteDetailCard({
   price,
 }: QuoteDetailCardProps) {
   const statusInfo = status ? quoteStatusChip[status] : null;
+  const { t } = useI18n();
+  const statusLabelMap: Record<NonNullable<typeof status>, string> = {
+    waiting: t("quote_status_waiting"),
+    confirmed: t("quote_status_confirmed"),
+    rejected: t("quote_status_rejected"),
+  };
+  const statusLabel =
+    status && statusLabelMap[status]
+      ? statusLabelMap[status]
+      : statusInfo?.label;
   const iconSrc =
     serviceType && isServiceTypeKey(serviceType)
       ? SERVICE_ICON_MAP[serviceType]
@@ -44,7 +55,7 @@ export default function QuoteDetailCard({
           <span
             className={`px-2 py-1 pret-xs-semibold rounded ${statusInfo.className}`}
           >
-            {statusInfo.label}
+            {statusLabel ?? statusInfo.label}
           </span>
         )}
         {serviceType && (
@@ -71,7 +82,7 @@ export default function QuoteDetailCard({
           <>
             <div className="lg:hidden">
               <MovingTypeChip
-                label="지정 견적"
+                label={t("designated_quote_short")}
                 iconSrc="/icons/redfile.svg"
                 size="sm"
                 variant="rd"
@@ -79,7 +90,7 @@ export default function QuoteDetailCard({
             </div>
             <div className="hidden lg:inline-flex">
               <MovingTypeChip
-                label={designatedLabel}
+                label={designatedLabel ?? t("designated_quote_full")}
                 iconSrc="/icons/redfile.svg"
                 size="sm"
                 variant="rd"
@@ -109,7 +120,9 @@ export default function QuoteDetailCard({
 
       {price !== undefined && (
         <div className="flex justify-end items-center gap-2">
-          <span className="text-black-100 pret-14-medium">견적 금액</span>
+          <span className="text-black-100 pret-14-medium">
+            {t("quote_price")}
+          </span>
           <span className="text-black-400 pret-xl-bold">
             {price.toLocaleString()}원
           </span>

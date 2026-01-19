@@ -2,6 +2,7 @@
 "use client";
 
 import { create, type StateCreator } from "zustand";
+import { getServiceValue } from "@/constants/profile.constants";
 
 export type MovingType = "소형이사" | "가정이사" | "사무실이사";
 
@@ -28,11 +29,11 @@ export interface QuoteRequestState {
   reset: () => void;
 }
 
-// UI -> API enum 매핑 테이블
+// UI -> API enum 매핑 테이블 (getServiceValue 사용)
 export const MOVING_TYPE_MAP: Record<MovingType, string> = {
-  "소형이사": "SMALL",
-  "가정이사": "HOME",
-  "사무실이사": "OFFICE",
+  "소형이사": getServiceValue("소형이사"),
+  "가정이사": getServiceValue("가정이사"),
+  "사무실이사": getServiceValue("사무실이사"),
 };
 
 const creator: StateCreator<QuoteRequestState> = (set) => ({

@@ -1,6 +1,7 @@
 // 찜한 기사님 카드
 import DriverProfile from "@/components/common/DriverProfile";
 import MovingTypeChip from "@/components/chips/MovingTypeChip";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 interface FavoriteDriverCardProps {
   // 이사 유형
@@ -41,6 +42,7 @@ export default function FavoriteDriverCard({
   confirmedCount,
   likeCount,
 }: FavoriteDriverCardProps) {
+  const { t } = useI18n();
   const iconSrc =
     serviceType && serviceIconMap[serviceType]
       ? serviceIconMap[serviceType]
@@ -78,6 +80,7 @@ export default function FavoriteDriverCard({
         profileImage={profileImage}
         avatarSize={avatarSize}
         avatarResponsive={avatarResponsive}
+        nameSuffix={t("driver_suffix")}
         rating={rating}
         reviewCount={reviewCount}
         experience={experience}

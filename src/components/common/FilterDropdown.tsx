@@ -36,7 +36,7 @@ export default function FilterDropdown({
         {menuName}
         {isOpen ? (
           <Image
-            src="assets/icon/ic-chevron-down-blue.svg"
+            src="/assets/icon/ic-chevron-down-blue.svg"
             alt="arrow-blue"
             width={36}
             height={36}
@@ -44,7 +44,7 @@ export default function FilterDropdown({
           />
         ) : (
           <Image
-            src="assets/icon/ic-chevron-down-black.svg"
+            src="/assets/icon/ic-chevron-down-black.svg"
             alt="arrow-black"
             width={36}
             height={36}

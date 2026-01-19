@@ -2,10 +2,11 @@ import Image from "next/image";
 import React from "react";
 
 export default function StarRating({ rating, size = 20 }: { rating: number, size?: number }) {
+  const starRating = Math.round(rating);
   return (
     <div className="flex items-center">
       {Array.from({ length: 5 }).map((_, index) => (
-        <StarIcon key={index} size={size} filled={index < rating} />
+        <StarIcon key={index} size={size} filled={index < starRating} />
       ))}
     </div>
   );

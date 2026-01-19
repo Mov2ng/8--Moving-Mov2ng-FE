@@ -2,54 +2,25 @@
 
 import Image from "next/image";
 import { useApiQuery } from "@/hooks/useApiQuery";
-import { useApiMutation } from "@/hooks/useApiMutation";
 import { apiClient } from "@/libs/apiClient";
 import QuoteDetailCard from "./QuoteDetailCard";
 import QuoteTabNav from "./QuoteTabNav";
 import { formatDate, formatDateTime } from "@/utils/date";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { STALE_TIME } from "@/constants/query";
+import { useI18n } from "@/libs/i18n/I18nProvider";
+import { useQueryClient } from "@tanstack/react-query";
+import { usePostFavoriteMover, useDeleteFavoriteMover } from "@/hooks/useMover";
 
 import type { QuoteDetailView } from "@/types/view/quote";
 import type { ApiQuoteDetail, QuoteStatus } from "@/types/api/quotes";
+import { getServiceLabel } from "@/constants/profile.constants";
 
 const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   PENDING: "waiting",
   ACCEPTED: "confirmed",
+  COMPLETED: "confirmed",
   REJECTED: "rejected",
-};
-
-const movingTypeMap: Record<string, string> = {
-  SMALL: "소형이사",
-  HOME: "가정이사",
-  OFFICE: "사무실이사",
-};
-
-const adaptQuoteDetail = (item: ApiQuoteDetail): QuoteDetailView => {
-  const driverId = item.driver?.id ?? item.driver_id ?? undefined;
-  return {
-    id: item.id,
-    driverId,
-    status: statusMap[item.status],
-    serviceType:
-      movingTypeMap[item.request.moving_type] ?? item.request.moving_type,
-    isDesignatedRequest: item.isRequest ?? false,
-    designatedLabel: "지정 견적 요청",
-    description: item.driver?.driver_intro ?? "",
-    name: item.driver.nickname ?? "-",
-    profileImage: "/assets/image/avatartion-1.png", // 임시 프로필 이미지
-    rating: item.driver.rating ?? 0,
-    reviewCount: item.driver.reviewCount ?? 0,
-    experience: item.driver.driver_years ?? 0,
-    confirmedCount: item.driver.confirmedCount ?? 0,
-    likeCount: item.driver.likeCount ?? 0,
-    isFavorite: item.driver.likes ? item.driver.likes.length > 0 : undefined,
-    price: item.price,
-    requestedAt: item.request?.createdAt ?? item.createdAt ?? "",
-    movingDateTime: item.request?.moving_data ?? "",
-    origin: item.request?.origin ?? "-",
-    destination: item.request?.destination ?? "-",
-  };
 };
 
 type QuoteReceivedDetailPageProps = {
@@ -61,9 +32,8 @@ const ENDPOINT = "/request/user/estimates";
 export default function QuoteReceivedDetailPage({
   estimateId,
 }: QuoteReceivedDetailPageProps) {
-  const [favoriteOverride, setFavoriteOverride] = useState<boolean | undefined>(
-    undefined
-  );
+  const { t } = useI18n();
+  const queryClient = useQueryClient();
   const id = estimateId;
   const invalidId = Number.isNaN(id);
 
@@ -78,10 +48,68 @@ export default function QuoteReceivedDetailPage({
   });
 
   const detail: QuoteDetailView | null = data?.data
-    ? adaptQuoteDetail(data.data)
+    ? (() => {
+        const adaptQuoteDetail = (item: ApiQuoteDetail): QuoteDetailView => {
+          const driverId = item.driver?.id ?? item.driver_id ?? undefined;
+          const movingTypeMap: Record<string, string> = {
+            SMALL: t("moving_type_small"),
+            HOME: t("moving_type_home"),
+            OFFICE: t("moving_type_office"),
+          };
+          const serviceType =
+            movingTypeMap[item.request.moving_type] ??
+            getServiceLabel(item.request.moving_type);
+
+          return {
+            id: item.id,
+            driverId,
+            status: statusMap[item.status],
+            serviceType,
+            isDesignatedRequest: item.isRequest ?? false,
+            designatedLabel: t("designated_quote_full"),
+            description: item.driver?.driver_intro ?? "",
+            name: item.driver.nickname ?? "-",
+            profileImage: "/assets/image/avatartion-1.png", // 임시 프로필 이미지
+            rating: item.driver.rating ?? 0,
+            reviewCount: item.driver.reviewCount ?? 0,
+            experience: item.driver.driver_years ?? 0,
+            confirmedCount: item.driver.confirmedCount ?? 0,
+            likeCount: item.driver.likeCount ?? 0,
+            isFavorite: item.driver.likes
+              ? item.driver.likes.length > 0
+              : undefined,
+            price: item.price,
+            requestedAt: item.request?.createdAt ?? item.createdAt ?? "",
+            movingDateTime: item.request?.moving_data ?? "",
+            origin: item.request?.origin ?? "-",
+            destination: item.request?.destination ?? "-",
+          };
+        };
+        return adaptQuoteDetail(data.data);
+      })()
     : null;
 
-  const isFavorite = favoriteOverride ?? detail?.isFavorite ?? false;
+  // driver 객체
+  const driver = data?.data?.driver;
+
+  // driver.isFavorite 직접 확인 (백엔드에서 보내주는 데이터)
+  const driverIsFavorite = (driver as typeof driver & { isFavorite?: boolean })
+    ?.isFavorite;
+
+  // 찜 상태 관리
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // 기사님 정보 로딩 후 찜 상태 설정
+  useEffect(() => {
+    // API 응답에서 isFavorite 확인
+    if (driverIsFavorite !== undefined) {
+      setIsFavorite(driverIsFavorite);
+    }
+    // fallback: likes 배열 확인 (백엔드에서 isFavorite를 보내주지 않는 경우)
+    else if (driver?.likes && Array.isArray(driver.likes)) {
+      setIsFavorite(driver.likes.length > 0);
+    }
+  }, [driverIsFavorite, driver?.likes]);
 
   const shareUrl =
     typeof window !== "undefined"
@@ -91,9 +119,9 @@ export default function QuoteReceivedDetailPage({
   const getCopyText = () => {
     if (!shareUrl) return "";
     return detail
-      ? `이사일: ${formatDateTime(
-          detail.movingDateTime
-        )}\n견적가: ${detail.price.toLocaleString()}원\n${shareUrl}`
+      ? `${t("moving_date")}: ${formatDateTime(detail.movingDateTime)}\n${t(
+          "quote_price_title"
+        )}: ${detail.price.toLocaleString()}원\n${shareUrl}`
       : shareUrl;
   };
 
@@ -105,14 +133,14 @@ export default function QuoteReceivedDetailPage({
       navigator.clipboard
         .writeText(copyText)
         .then(() => {
-          alert("견적 요약을 복사했어요. 메신저에 붙여넣기 하세요.");
+          alert(t("share_copy_success"));
         })
         .catch(() => {
-          alert("클립보드 복사에 실패했어요.");
+          alert(t("share_copy_fail"));
         });
       return;
     }
-    alert("공유를 지원하지 않는 브라우저입니다.");
+    alert(t("share_not_supported"));
   };
 
   const handleShareKakao = () => {
@@ -131,14 +159,12 @@ export default function QuoteReceivedDetailPage({
         : null;
 
     if (!kakaoAppKey) {
-      alert("NEXT_PUBLIC_KAKAO_APP_KEY가 설정되지 않았습니다.");
+      alert(t("kakao_app_key_missing"));
       return;
     }
 
     if (!kakao) {
-      alert(
-        "카카오 SDK가 아직 로드되지 않았어요. 새로고침 후 다시 시도해 주세요."
-      );
+      alert(t("share_kakao_not_ready"));
       return;
     }
 
@@ -149,8 +175,8 @@ export default function QuoteReceivedDetailPage({
     kakao.Share.sendDefault({
       objectType: "feed",
       content: {
-        title: "견적서 공유",
-        description: "받았던 견적서를 확인해 주세요.",
+        title: t("share_title"),
+        description: t("share_received_desc"),
         imageUrl: `${window.location.origin}/assets/image/share-kakao-thumb.png`,
         link: {
           mobileWebUrl: shareUrl,
@@ -159,7 +185,7 @@ export default function QuoteReceivedDetailPage({
       },
       buttons: [
         {
-          title: "견적서 보기",
+          title: t("share_view_quote"),
           link: {
             mobileWebUrl: shareUrl,
             webUrl: shareUrl,
@@ -183,29 +209,39 @@ export default function QuoteReceivedDetailPage({
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const { mutate: toggleFavorite, isPending: isTogglingFavorite } =
-    useApiMutation<
-      { success: boolean; message?: string; data?: { isFavorite?: boolean } },
-      void,
-      Error
-    >({
-      mutationFn: async () => {
-        if (!detail?.driverId) throw new Error("driverId를 찾을 수 없습니다.");
-        const method = isFavorite ? "DELETE" : "POST";
-        return apiClient(`/movers/${detail.driverId}/favorite`, {
-          method,
-        });
-      },
-      onSuccess: (res) => {
-        setFavoriteOverride((prev) =>
-          res.data?.isFavorite !== undefined ? res.data.isFavorite : !prev
-        );
-        if (res.message) alert(res.message);
-      },
-      onError: (err) => {
-        alert(err.message ?? "찜하기 처리중 오류 발생.");
-      },
-    });
+  // 찜하기
+  const { mutate: postFavoriteMover, isPending: isPostFavoriteMoverPending } =
+    usePostFavoriteMover(detail?.driverId ?? 0);
+  // 찜 취소
+  const {
+    mutate: deleteFavoriteMover,
+    isPending: isDeleteFavoriteMoverPending,
+  } = useDeleteFavoriteMover(detail?.driverId ?? 0);
+
+  // 기사님 찜하기 핸들러
+  const handleToggleFavorite = () => {
+    if (!detail?.driverId) return;
+
+    // 이미 찜한 상태면 삭제, 아니면 추가
+    if (isFavorite) {
+      deleteFavoriteMover(detail.driverId, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(false); // 찜 취소
+        },
+      });
+    } else {
+      postFavoriteMover(detail.driverId, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(true); // 찜 추가
+        },
+      });
+    }
+  };
+
+  const isFavoritePending =
+    isPostFavoriteMoverPending || isDeleteFavoriteMoverPending;
 
   return (
     <div className="min-h-screen bg-white">
@@ -218,12 +254,12 @@ export default function QuoteReceivedDetailPage({
       <main className="max-w-6xl mx-auto px-5 py-8 pb-32 lg:pb-8">
         {invalidId && (
           <div className="text-center text-secondary-red-200 pret-14-medium">
-            잘못된 견적 ID입니다.
+            {t("invalid_estimate")}
           </div>
         )}
         {isLoading && (
           <div className="text-center text-gray-400 pret-14-medium">
-            불러오는 중...
+            {t("loading")}
           </div>
         )}
         {error && (
@@ -234,7 +270,9 @@ export default function QuoteReceivedDetailPage({
         {!isLoading && !error && detail && (
           <div className="flex flex-col lg:grid lg:grid-cols-[2fr_1fr] lg:gap-10">
             <div className="flex flex-col gap-6">
-              <h1 className="text-black-400 pret-2xl-semibold">견적 상세</h1>
+              <h1 className="text-black-400 pret-2xl-semibold">
+                {t("quote_detail_title")}
+              </h1>
 
               <QuoteDetailCard
                 status={detail.status}
@@ -257,7 +295,7 @@ export default function QuoteReceivedDetailPage({
               <div className="h-[1px] bg-line-100" />
               <div className="text-black-400 pret-2xl-semibold">
                 <div className="text-black-300 pret-xl-semibold mb-3">
-                  견적가
+                  {t("quote_price_title")}
                 </div>
                 {detail.price.toLocaleString()}원
               </div>
@@ -267,21 +305,24 @@ export default function QuoteReceivedDetailPage({
               {/* 견적 정보 */}
               <div>
                 <h2 className="text-black-400 pret-2xl-semibold mb-4">
-                  견적 정보
+                  {t("estimate_info")}
                 </h2>
                 <div className="rounded-2xl bg-background-100 border border-line-100 px-6 py-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-10">
                     <InfoRow
-                      label="견적 요청일"
+                      label={t("quote_request_date")}
                       value={formatDate(detail.requestedAt)}
                     />
-                    <InfoRow label="서비스" value={detail.serviceType ?? "-"} />
                     <InfoRow
-                      label="이용일"
+                      label={t("service")}
+                      value={detail.serviceType ?? "-"}
+                    />
+                    <InfoRow
+                      label={t("moving_date")}
                       value={formatDateTime(detail.movingDateTime)}
                     />
-                    <InfoRow label="출발지" value={detail.origin} />
-                    <InfoRow label="도착지" value={detail.destination} />
+                    <InfoRow label={t("departure")} value={detail.origin} />
+                    <InfoRow label={t("arrival")} value={detail.destination} />
                   </div>
                 </div>
               </div>
@@ -290,14 +331,14 @@ export default function QuoteReceivedDetailPage({
             <aside className="hidden lg:flex flex-col gap-4 mt-6 lg:mt-0">
               <button
                 type="button"
-                onClick={() => toggleFavorite()}
-                disabled={isTogglingFavorite || !detail?.driverId}
+                onClick={handleToggleFavorite}
+                disabled={isFavoritePending || !detail?.driverId}
                 className="inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-2xl border border-line-200 bg-white text-black-400 hover:bg-background-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Image
                   src={
                     isFavorite
-                      ? "/assets/icon/ic-like-active.svg"
+                      ? "/assets/icon/ic-like-fill.svg"
                       : "/assets/icon/ic-like-default.svg"
                   }
                   alt="찜하기"
@@ -305,12 +346,16 @@ export default function QuoteReceivedDetailPage({
                   height={20}
                 />
                 <span className="pret-xl-semibold leading-8">
-                  기사님 찜하기
+                  {isFavoritePending
+                    ? t("processing")
+                    : isFavorite
+                    ? t("favorite_completed")
+                    : t("favorite_driver")}
                 </span>
               </button>
               <div className="flex flex-col gap-3">
                 <span className="pret-lg-semibold text-black-300">
-                  견적서 공유하기
+                  {t("share_quote")}
                 </span>
                 <div className="flex gap-3">
                   <button
@@ -364,15 +409,21 @@ export default function QuoteReceivedDetailPage({
         <div className="mx-auto max-w-6xl flex items-center gap-3">
           <button
             type="button"
-            onClick={() => toggleFavorite()}
-            disabled={isTogglingFavorite || !detail?.driverId}
+            onClick={handleToggleFavorite}
+            disabled={isFavoritePending || !detail?.driverId}
             className="size-12 rounded-2xl border border-line-200 bg-white flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
-            aria-label="찜하기"
+            aria-label={
+              isFavoritePending
+                ? t("processing")
+                : isFavorite
+                ? t("favorite_completed")
+                : t("favorite_driver")
+            }
           >
             <Image
               src={
                 isFavorite
-                  ? "/assets/icon/ic-like-active.svg"
+                  ? "/assets/icon/ic-like-fill.svg"
                   : "/assets/icon/ic-like-default.svg"
               }
               alt="찜하기"
@@ -385,7 +436,7 @@ export default function QuoteReceivedDetailPage({
             onClick={handleCopyLink}
             className="flex-1 h-[54px] rounded-2xl bg-primary-blue-300 text-white pret-xl-semibold flex items-center justify-center hover:brightness-105 transition-all"
           >
-            견적서 공유하기
+            {t("share_quote")}
           </button>
         </div>
       </div>

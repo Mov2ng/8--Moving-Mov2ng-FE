@@ -72,3 +72,17 @@ export function usePostFavoriteMover(id: number) {
     mutationFn: () => moverService.postFavoriteMover(id),
   });
 }
+
+export function useDeleteFavoriteMover(id: number) {
+  return useApiMutation({
+    mutationKey: ["favorite", id],
+    mutationFn: () => moverService.deleteFavoriteMover(id),
+  });
+}
+
+export function usePostRequestDriver(id: number) {
+  return useApiMutation({
+    mutationKey: ["request", id],
+    mutationFn: () => moverService.postRequestDriver(id),
+  });
+}

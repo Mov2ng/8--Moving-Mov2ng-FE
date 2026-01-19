@@ -8,6 +8,8 @@ import Image from "next/image";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 import { useI18n } from "@/libs/i18n/I18nProvider";
+import Notice from "../Notice/Notice";
+import ProfileAvatar from "../common/ProfileAvatar";
 
 // 메뉴 링크 타입
 type MenuItem = {
@@ -36,8 +38,8 @@ export default function Header() {
         { href: "/estimate/user", label: t("my_quotes") },
       ],
       DRIVER: [
-        { href: "/estimate/user/received", label: t("received_requests") },
-        { href: "/estimate/user", label: t("my_quotes") },
+        { href: "/estimate/driver/received", label: t("received_requests") },
+        { href: "/estimate/driver/pending", label: t("my_quotes") },
       ],
     }),
     [t]
@@ -62,6 +64,11 @@ export default function Header() {
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   // 언어 드롭다운 영역 참조
   const languageDropdownRef = useRef<HTMLDivElement>(null);
+
+  // 알림 드롭다운 상태 관리
+  const [isNoticeOpen, setIsNoticeOpen] = useState(false);
+  // 알림 드롭다운 영역 참조
+  const noticeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isDropdownOpen) return;
@@ -90,6 +97,20 @@ export default function Header() {
     // 컴포넌트 언마운트 시 이벤트 정리
     return () => document.removeEventListener("click", handleClick);
   }, [isLanguageDropdownOpen]);
+
+  useEffect(() => {
+    if (!isNoticeOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      // 알림 드롭다운 영역 외부 클릭 시 닫기
+      if (!noticeRef.current?.contains(e.target as Node)) {
+        setIsNoticeOpen(false);
+      }
+    };
+    // 외부 클릭 이벤트 등록
+    document.addEventListener("click", handleClick);
+    // 컴포넌트 언마운트 시 이벤트 정리
+    return () => document.removeEventListener("click", handleClick);
+  }, [isNoticeOpen]);
 
   // 언어 목록
   const languages = [
@@ -250,27 +271,36 @@ export default function Header() {
     return (
       <div className="flex items-center gap-8">
         {renderLanguageSelector()}
-        <button aria-label="알림" onClick={() => {}}>
-          <Image
-            src="/assets/icon/ic-alarm.svg"
-            alt="alarm"
-            width={36}
-            height={36}
+        <div ref={noticeRef} className="relative">
+          <button
+            aria-label="알림"
+            onClick={() => setIsNoticeOpen((prev) => !prev)}
+            className="hover:opacity-70 transition-opacity"
+          >
+            <Image
+              src="/assets/icon/ic-alarm.svg"
+              alt="alarm"
+              width={36}
+              height={36}
+            />
+          </button>
+          <Notice
+            isOpen={isNoticeOpen}
+            onClose={() => setIsNoticeOpen(false)}
           />
-        </button>
+        </div>
         <div ref={dropdownRef} className="relative">
           <div
             aria-label="프로필"
             onClick={() => setIsDropdownOpen((prev) => !prev)}
             className="flex items-center gap-4 cursor-pointer"
           >
-            <Image
-              src={profileImage || "/assets/image/avatartion-3.png"}
+            <ProfileAvatar
+              src={profileImage || "/assets/image/avatar-3.png"}
               alt="profile"
-              width={36}
-              height={36}
-              unoptimized={!!profileImage} // presigned URL은 unoptimized로 처리
-              className="rounded-full"
+              size="xs"
+              className="w-9 h-9 max-md:w-7 max-md:h-7"
+              responsive={false}
             />
             {displayName && (
               <span className="pret-lg-medium text-black-400 max-md:hidden">
@@ -288,7 +318,7 @@ export default function Header() {
                   </div>
                   <div className="py-3.5">
                     <Link
-                      href="/profile/edit"
+                      href="/profile/user/edit"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       {t("profile_edit")}
@@ -318,7 +348,7 @@ export default function Header() {
                   </div>
                   <div className="py-3.5">
                     <Link
-                      href="/estimate/user/received"
+                      href="/estimate/driver/received"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       {t("received_quotes")}
@@ -385,7 +415,7 @@ export default function Header() {
   return (
     <>
       <header className="border-b border-line-100 max-md:border-b-0">
-        <div className="max-w-[1400px] mx-auto px-[24px] py-[15px] md:px-[120px] md:py-[26px] flex justify-between items-center">
+        <div className="max-w-[1400px] mx-auto px-[24px] py-[10px] md:px-[120px] md:py-[26px] flex justify-between items-center">
           <div className="flex items-center gap-20">
             <Link href="/" aria-label="홈으로 이동">
               <Image

@@ -37,9 +37,10 @@ export function useSignup() {
 
 /**
  * 로그인 mutation 생성 훅
+ * @param redirectPath - 로그인 성공 후 리디렉션할 경로 (선택사항)
  * @returns useApiMutation 결과
  */
-export function useLogin() {
+export function useLogin(redirectPath?: string) {
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -75,7 +76,7 @@ export function useLogin() {
 
         if (!hasServiceCategories || !hasRegion) {
           alert("로그인이 완료되었습니다. 추가 정보를 입력해주세요.");
-          router.push("/profile/setup");
+          router.push("/profile/register");
           return;
         }
       } catch (error: unknown) {
@@ -87,17 +88,28 @@ export function useLogin() {
           error.status === 404
         ) {
           alert("로그인이 완료되었습니다. 추가 정보를 입력해주세요.");
-          router.push("/profile/setup");
+          router.push("/profile/register");
           return;
         }
         // 그 외 에러(500, 네트워크 에러 등)는 로그만 남기고 메인으로 이동
-        console.error("프로필 조회 중 오류 발생:", error);
+        const parsedError = parseServerError(error);
+        console.error("프로필 조회 중 오류 발생:", {
+          status: parsedError.status,
+          message: parsedError.message,
+          details: parsedError.details,
+          fullError: error,
+          errorType:
+            error instanceof Error ? error.constructor.name : typeof error,
+          errorString: String(error),
+        });
         // 서버 문제 등으로 프로필 조회 실패해도 로그인은 성공했으므로 메인으로 이동
       }
 
-      // 5. 프로필이 있으면 메인 페이지로 리디렉션
+      // 5. 프로필이 있으면 redirect 파라미터가 있으면 해당 경로로, 없으면 메인 페이지로 리디렉션
       alert("로그인이 완료되었습니다");
-      router.push("/");
+      const finalRedirectPath =
+        redirectPath && redirectPath.startsWith("/") ? redirectPath : "/";
+      router.push(finalRedirectPath);
     },
     onError: (error) => {
       const parsedError = parseServerError(error);
@@ -119,12 +131,10 @@ export function useMe() {
   return useApiQuery({
     queryKey: ["me"],
     queryFn: userService.me,
-    retry: false, // 401 재시도 방지
     staleTime: 1000 * 60 * 5, // 5분 동안 fresh 상태 유지
     gcTime: 1000 * 60 * 5, // 미사용 시 캐시 메모리 정리 시간
-    refetchOnMount: false, // 마운트 시 리패치 방지
-    refetchOnWindowFocus: false, // 창 포커스 시 리패치 방지
-    refetchOnReconnect: false, // 네트워크 재연결 시 리패치 방지
+    refetchOnMount: false, // /auth/me는 무한 호출 방지를 위해 마운트 시 리패치 안 함
+    refetchOnWindowFocus: false, // /auth/me는 포커스 시 리패치 안 함 (staleTime 5분으로 충분)
   });
 }
 
