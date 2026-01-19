@@ -10,6 +10,8 @@ import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 import Notice from "../Notice/Notice";
 import ProfileAvatar from "../common/ProfileAvatar";
+import { useApiQuery } from "@/hooks/useApiQuery";
+import { noticeService } from "@/services/noticeService";
 
 // 메뉴 링크 타입
 type MenuItem = {
@@ -54,6 +56,27 @@ export default function Header() {
 
   // 프로필 이미지 (s3 이미지 조회) - React Query 사용
   const { data: profileImage } = useGetViewPresignedUrl(me?.profileImage);
+
+  // 알림 데이터 조회 (읽지 않은 알림 확인용)
+  const { data: noticesData } = useApiQuery({
+    queryKey: ["notices", "header", me?.id],
+    queryFn: () => {
+      if (isUser && me?.id) {
+        return noticeService.getUserNotices({ userId: me.id, page: 1, pageSize: 100 });
+      } else if (isDriver && me?.id) {
+        return noticeService.getDriverNotices({ userId: me.id, page: 1, pageSize: 100 });
+      }
+      return Promise.resolve({ data: { items: [], page: 0, pageSize: 0, totalItems: 0, totalPages: 0 } });
+    },
+    enabled: !isGuest && !!me?.id,
+    refetchInterval: 30000, // 30초마다 알림 상태 확인
+  });
+
+  // 읽지 않은 알림이 있는지 확인
+  const hasUnreadNotices = useMemo(() => {
+    const notices = noticesData?.data?.items || [];
+    return notices.some((notice) => !notice.isRead);
+  }, [noticesData]);
 
   // 프로필 드롭다운 상태 관리
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -277,12 +300,44 @@ export default function Header() {
             onClick={() => setIsNoticeOpen((prev) => !prev)}
             className="hover:opacity-70 transition-opacity"
           >
-            <Image
-              src="/assets/icon/ic-alarm.svg"
-              alt="alarm"
-              width={36}
-              height={36}
-            />
+            {hasUnreadNotices ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="36"
+                height="36"
+                viewBox="0 0 36 36"
+                fill="none"
+              >
+                <path
+                  d="M7 26L7.15928 25.6525C7.9634 23.898 8.45024 22.015 8.59724 20.0907L9.12162 13.226C9.47615 8.58495 13.3454 5 18 5C22.6546 5 26.5239 8.58495 26.8784 13.226L27.4028 20.0907C27.5498 22.015 28.0366 23.898 28.8407 25.6525L29 26"
+                  stroke="#ABABAB"
+                  strokeWidth="2"
+                />
+                <path
+                  d="M29 26H7L9 21L10 11L12.5 6.5L18 5L23 6.5L26 11L27 21L29 26Z"
+                  fill="#ABABAB"
+                />
+                <path
+                  d="M7 26L29 26"
+                  stroke="#ABABAB"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M21 29C21 30.6569 19.6569 32 18 32C16.3431 32 15 30.6569 15 29"
+                  stroke="#ABABAB"
+                  strokeWidth="2"
+                />
+                <circle cx="26" cy="10" r="5" fill="#FF4444" />
+              </svg>
+            ) : (
+              <Image
+                src="/assets/icon/ic-alarm.svg"
+                alt="alarm"
+                width={36}
+                height={36}
+              />
+            )}
           </button>
           <Notice
             isOpen={isNoticeOpen}

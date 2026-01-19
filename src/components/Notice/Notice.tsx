@@ -113,17 +113,37 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
   // 알림 읽음 처리 mutation
   const readNoticeMutation = useApiMutation({
     mutationFn: (noticeId: number) => noticeService.readNotice(noticeId),
-    onSuccess: () => {
-      refetch();
+    successConfig: {
+      invalidateQueries: [
+        ["notices", role, me?.id], // 현재 Notice 컴포넌트의 쿼리
+        ["notices", "header", me?.id], // Header의 알림 쿼리도 무효화
+      ],
+    },
+    onSuccess: (data, noticeId) => {
+      // API 호출 성공 로그 (개발 환경에서만)
+      if (process.env.NODE_ENV === "development") {
+        console.log(`알림 ${noticeId} 읽음 처리 성공`, data);
+      }
+      // invalidateQueries로 자동 refetch됨
+    },
+    errorConfig: {
+      errorMessagePrefix: "알림 읽음 처리",
+      defaultErrorMessage: "알림 읽음 처리에 실패했습니다.",
     },
   });
 
   // 알림 삭제 mutation
   const deleteNoticeMutation = useApiMutation({
     mutationFn: (noticeId: number) => noticeService.deleteNotice(noticeId),
+    successConfig: {
+      invalidateQueries: [
+        ["notices", role, me?.id], // 현재 Notice 컴포넌트의 쿼리
+        ["notices", "header", me?.id], // Header의 알림 쿼리도 무효화
+      ],
+    },
     onSuccess: () => {
-      // API 성공 후 refetch (로컬 상태는 이미 업데이트됨)
-      refetch();
+      // refetch는 invalidateQueries로 자동 처리되므로 제거
+      // 로컬 상태는 낙관적 업데이트용으로 유지
     },
   });
 
@@ -134,7 +154,17 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
       // 즉시 UI에 반영 (낙관적 업데이트)
       setReadNoticeIds((prev) => new Set(prev).add(notice.noticeId));
       // API 호출
-      readNoticeMutation.mutate(noticeId);
+      readNoticeMutation.mutate(noticeId, {
+        onError: (error) => {
+          // API 실패 시 로컬 상태 롤백
+          setReadNoticeIds((prev) => {
+            const next = new Set(prev);
+            next.delete(notice.noticeId);
+            return next;
+          });
+          console.error("알림 읽음 처리 실패:", error);
+        },
+      });
     }
   };
 
@@ -183,6 +213,13 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
 
   const notices = noticesData?.data?.items || [];
   
+  // 개발 환경에서 알림 데이터 로깅 (디버깅용)
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development" && notices.length > 0) {
+      console.log("알림 데이터:", notices.map(n => ({ id: n.noticeId, isRead: n.isRead })));
+    }
+  }, [notices]);
+  
   // 삭제된 알림 필터링
   const visibleNotices = notices.filter(
     (notice) => !deletedNoticeIds.has(notice.noticeId)
@@ -221,6 +258,7 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
         ) : (
           <ul className="flex flex-col">
             {visibleNotices.map((notice: Notice, index: number) => {
+              // 서버 데이터를 우선시하되, 낙관적 업데이트도 반영
               const isRead = notice.isRead || readNoticeIds.has(notice.noticeId);
               return (
                 <li
