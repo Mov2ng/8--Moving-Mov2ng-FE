@@ -26,10 +26,8 @@ export function useSignup() {
     onError: (error) => {
       const parsedError = parseServerError(error);
       console.error("회원가입 실패:", {
-        status: parsedError?.status,
-        message: parsedError?.message,
-        details: parsedError?.details,
-        fullError: error,
+        parsedError, // 파싱된 결과 전체
+        fullError: error, // 원본 에러 객체
       });
     },
   });
@@ -94,9 +92,9 @@ export function useLogin(redirectPath?: string) {
         // 그 외 에러(500, 네트워크 에러 등)는 로그만 남기고 메인으로 이동
         const parsedError = parseServerError(error);
         console.error("프로필 조회 중 오류 발생:", {
-          status: parsedError.status,
-          message: parsedError.message,
-          details: parsedError.details,
+          status: parsedError?.status,
+          message: parsedError?.message,
+          details: parsedError?.details,
           fullError: error,
           errorType:
             error instanceof Error ? error.constructor.name : typeof error,
@@ -114,10 +112,8 @@ export function useLogin(redirectPath?: string) {
     onError: (error) => {
       const parsedError = parseServerError(error);
       console.error("로그인 실패:", {
-        status: parsedError?.status,
-        message: parsedError?.message,
-        details: parsedError?.details,
-        fullError: error,
+        parsedError, // 파싱된 결과 전체
+        fullError: error, // 원본 에러 객체
       });
     },
   });
@@ -125,27 +121,32 @@ export function useLogin(redirectPath?: string) {
 
 /**
  * 사용자 정보 조회 query 생성 훅
+ * 토큰 만료 체크 및 refresh는 apiClient에서 자동 처리됨
+ * @param enabled - 쿼리 활성화 여부 (기본값: true)
  * @returns useApiQuery 결과
  */
-export function useMe() {
+export function useMe(enabled: boolean = true) {
   return useApiQuery({
     queryKey: ["me"],
     queryFn: userService.me,
+    enabled,
     staleTime: 1000 * 60 * 5, // 5분 동안 fresh 상태 유지
     gcTime: 1000 * 60 * 5, // 미사용 시 캐시 메모리 정리 시간
     refetchOnMount: false, // /auth/me는 무한 호출 방지를 위해 마운트 시 리패치 안 함
     refetchOnWindowFocus: false, // /auth/me는 포커스 시 리패치 안 함 (staleTime 5분으로 충분)
+    refetchOnReconnect: false, // 네트워크 재연결 시 자동 리패치 방지 (서버 꺼져있을 때 무한 호출 방지) // TODO: 재발 방지 재확인 필요
   });
 }
 
 /**
  * 사용자 권한(role) 조회 훅
  * 데이터 접근은 useMe에 맡기고, 판단 로직만 공통화
+ * @param enabled - 쿼리 활성화 여부 (기본값: true)
  * @returns 사용자 권한 판단 결과
  */
-export function useAuth() {
+export function useAuth(enabled: boolean = true) {
   // 사용자 정보 조회
-  const { data: meData, isLoading } = useMe();
+  const { data: meData, isLoading } = useMe(enabled);
   const me = meData?.data;
 
   // 비회원은 me = null로 정상 처리
@@ -184,10 +185,8 @@ export function useLogout() {
     onError: (error) => {
       const parsedError = parseServerError(error);
       console.error("로그아웃 실패:", {
-        status: parsedError?.status,
-        message: parsedError?.message,
-        details: parsedError?.details,
-        fullError: error,
+        parsedError, // 파싱된 결과 전체
+        fullError: error, // 원본 에러 객체
       });
       // 서버 요청 실패해도 클라이언트 상태는 정리
       handleAuthError(queryClient);
