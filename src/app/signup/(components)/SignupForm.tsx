@@ -130,7 +130,8 @@ export default function SignupForm() {
           {t("signup_login_link")}
         </Link>
       </div>
-      <OAuth />
+      {/* NOTE 잠정 중단: 이메일 기반 회원가입, 로그인, 프로필 조회, 수정 로직 모두 변경해야 함 */}
+      {/* <OAuth /> */}
     </div>
   );
 }
