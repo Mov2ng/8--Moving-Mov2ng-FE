@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 export const SearchBar: React.FC<{
   searchQuery?: string;
@@ -12,6 +13,8 @@ export const SearchBar: React.FC<{
   sort = "soonest",
   onSortChange,
 }) => {
+  const { t } = useI18n();
+  
   return (
     <div className="p-5 border-b border-gray-200">
       <div className="flex items-center gap-3">
@@ -25,7 +28,7 @@ export const SearchBar: React.FC<{
           />
           <input
             type="text"
-            placeholder="어떤 고객님을 찾고 계세요?"
+            placeholder={t("driver_received_search_placeholder")}
             value={searchQuery}
             onChange={(e) => onSearchQueryChange?.(e.target.value)}
             className="w-full h-10 pl-10 pr-4 border border-gray-300 rounded-lg text-[14px] focus:outline-none focus:border-blue-500"
@@ -38,7 +41,7 @@ export const SearchBar: React.FC<{
             }
             className="px-4 h-10 text-[14px] text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
           >
-            {sort === "soonest" ? "이사 빠른순" : "요청일 빠른순"}{" "}
+            {sort === "soonest" ? t("driver_received_sort_soonest") : t("driver_received_sort_recent")}{" "}
             <span className="text-blue-500">▼</span>
           </button>
         </div>

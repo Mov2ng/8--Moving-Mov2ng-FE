@@ -3,13 +3,7 @@ import Image from "next/image";
 import type { DriverRequest } from "@/types/api/driverRequest";
 import { formatDateLabel } from "@/utils/date";
 import { formatRelativeTime } from "@/utils/formatRelativeTime";
-
-const movingTypeMap: Record<string, string> = {
-  SMALL: "소형이사",
-  HOME: "가정이사",
-  HOUSE: "가정이사",
-  OFFICE: "사무실이사",
-};
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 export type RequestItem = DriverRequest;
 
@@ -18,6 +12,8 @@ export const RequestCard: React.FC<{
   onReject?: (item: RequestItem) => void;
   onSendEstimate?: (item: RequestItem) => void;
 }> = ({ item, onReject, onSendEstimate }) => {
+  const { t } = useI18n();
+  
   if (!item) {
     console.warn("RequestCard - item is null or undefined");
     return null;
@@ -25,6 +21,13 @@ export const RequestCard: React.FC<{
   
   console.log("RequestCard - item:", item);
   console.log("RequestCard - item.requestId:", item.requestId);
+  
+  const movingTypeMap: Record<string, string> = {
+    SMALL: t("moving_type_small"),
+    HOME: t("moving_type_home"),
+    HOUSE: t("moving_type_home"),
+    OFFICE: t("moving_type_office"),
+  };
   
   const movingTypeLabel =
     movingTypeMap[item.movingType] ?? item.movingType;
@@ -60,7 +63,7 @@ export const RequestCard: React.FC<{
                 height={14}
                 className="w-3.5 h-3.5"
               />
-              지정 견적 요청
+              {t("designated_quote_full")}
             </span>
           )}
         </div>
@@ -69,7 +72,7 @@ export const RequestCard: React.FC<{
 
       {/* 고객명 */}
       <h4 className="text-[16px] font-semibold text-gray-900 mb-4">
-        {item.userName ?? "고객"} 고객님
+        {item.userName ?? t("driver_received_customer")} {t("customer_suffix")}
       </h4>
 
       {/* 구분선 */}
@@ -78,17 +81,17 @@ export const RequestCard: React.FC<{
       {/* 이사 정보 */}
       <div className="flex items-center gap-4 mb-6 text-[14px] flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-gray-500">이사일</span>
+          <span className="text-gray-500">{t("moving_date_label")}</span>
           <span className="text-gray-900">{date}</span>
         </div>
         <span className="text-gray-300 h-4 w-px bg-gray-300"></span>
         <div className="flex items-center gap-2">
-          <span className="text-gray-500">출발</span>
+          <span className="text-gray-500">{t("departure_short")}</span>
           <span className="text-gray-900">{item.origin ?? "-"}</span>
         </div>
         <span className="text-gray-300 h-4 w-px bg-gray-300"></span>
         <div className="flex items-center gap-2">
-          <span className="text-gray-500">도착</span>
+          <span className="text-gray-500">{t("arrival_short")}</span>
           <span className="text-gray-900">{item.destination ?? "-"}</span>
         </div>
       </div>
@@ -99,7 +102,7 @@ export const RequestCard: React.FC<{
           onClick={() => onSendEstimate?.(item)}
           className="flex-1 h-11 bg-blue-500 text-white rounded-lg font-semibold text-[14px] hover:bg-blue-600 flex items-center justify-center gap-1.5"
         >
-          견적 보내기
+          {t("driver_received_send_estimate")}
           <Image
             src="/assets/icon/ic-writing.svg"
             alt=""
@@ -112,7 +115,7 @@ export const RequestCard: React.FC<{
           onClick={() => onReject?.(item)}
           className="flex-1 h-11 border border-blue-500 text-blue-500 bg-white rounded-lg font-semibold text-[14px] hover:bg-blue-50 transition-colors"
         >
-          반려
+          {t("driver_received_reject")}
         </button>
       </div>
     </div>

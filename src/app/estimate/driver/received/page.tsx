@@ -17,10 +17,12 @@ import SendEstimateModal from "../(components)/SendEstimateModal";
 import RejectEstimateModal from "../(components)/RejectEstimateModal";
 import type { DriverRequestDetail } from "@/types/api/driverRequest";
 import { parseServerError } from "@/utils/parseServerError";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 export default function ReceivedPage() {
   const { me, isLoading: authLoading, isDriver } = useAuth();
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [page] = useState(1);
   const [pageSize] = useState(20);
   const [movingTypeFilter, setMovingTypeFilter] = useState<string[]>([]);
@@ -107,13 +109,13 @@ export default function ReceivedPage() {
       
       // 에러 메시지 추출
       const parsedError = parseServerError(error);
-      let errorMessage = parsedError?.message || "견적 보내기에 실패했습니다. 다시 시도해주세요.";
+      let errorMessage = parsedError?.message || t("driver_received_estimate_send_error");
       
       // 한국어 메시지로 변환
       if (errorMessage.includes("Estimate already decided")) {
-        errorMessage = "이미 처리된 견적 요청입니다.";
+        errorMessage = t("driver_received_estimate_already_processed");
       } else if (errorMessage.includes("already decided")) {
-        errorMessage = "이미 결정된 견적입니다.";
+        errorMessage = t("driver_received_estimate_already_processed");
       }
       
       alert(errorMessage);
@@ -137,13 +139,13 @@ export default function ReceivedPage() {
       
       // 에러 메시지 추출
       const parsedError = parseServerError(error);
-      let errorMessage = parsedError?.message || "반려 처리에 실패했습니다. 다시 시도해주세요.";
+      let errorMessage = parsedError?.message || t("driver_received_estimate_reject_error");
       
       // 한국어 메시지로 변환
       if (errorMessage.includes("Estimate already decided")) {
-        errorMessage = "이미 처리된 견적 요청입니다.";
+        errorMessage = t("driver_received_estimate_already_processed");
       } else if (errorMessage.includes("already decided")) {
-        errorMessage = "이미 결정된 견적입니다.";
+        errorMessage = t("driver_received_estimate_already_processed");
       }
       
       alert(errorMessage);
@@ -190,7 +192,7 @@ export default function ReceivedPage() {
   if (authLoading) {
     return (
       <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-        <div>로딩 중...</div>
+        <div>{t("driver_received_loading")}</div>
       </div>
     );
   }
@@ -198,7 +200,7 @@ export default function ReceivedPage() {
   if (!me) {
     return (
       <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-        <div>로그인이 필요합니다.</div>
+        <div>{t("login_required")}</div>
       </div>
     );
   }
@@ -206,7 +208,7 @@ export default function ReceivedPage() {
   if (!isDriver) {
     return (
       <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-        <div>기사님만 접근 가능한 페이지입니다.</div>
+        <div>{t("driver_received_forbidden")}</div>
       </div>
     );
   }
@@ -232,11 +234,11 @@ export default function ReceivedPage() {
               />
               {isLoading ? (
                 <div className="p-5 text-center text-gray-500">
-                  로딩 중...
+                  {t("driver_received_loading")}
                 </div>
               ) : filteredItems.length === 0 ? (
                 <div className="p-5 text-center text-gray-500">
-                  요청이 없습니다.
+                  {t("driver_received_no_items")}
                 </div>
               ) : (
                 <RequestList
