@@ -7,12 +7,13 @@ import QuoteCard from "./QuoteCard";
 import QuoteTabNav from "./QuoteTabNav";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { formatDateLabel } from "@/utils/date";
 import { STALE_TIME } from "@/constants/query";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 import ConfirmQuoteModal from "./ConfirmQuoteModal";
+import { moverService } from "@/services/moverService";
 
 import type { ApiQuote, QuoteStatus } from "@/types/api/quotes";
 import type { QuoteCardView } from "@/types/view/quote";
@@ -21,6 +22,7 @@ import { getServiceLabel } from "@/constants/profile.constants";
 const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   PENDING: "waiting",
   ACCEPTED: "confirmed",
+  COMPLETED: "confirmed",
   REJECTED: "rejected",
 };
 
@@ -61,6 +63,11 @@ export default function QuotePendingPage() {
     };
   };
   const [confirmId, setConfirmId] = useState<number | null>(null);
+  // 각 driver.id별 찜하기 상태 관리
+  const [favoriteStates, setFavoriteStates] = useState<
+    Map<number, { isFavorite: boolean; isPending: boolean }>
+  >(new Map());
+
   const { data, isLoading, error } = useApiQuery<
     {
       success: boolean;
@@ -73,7 +80,7 @@ export default function QuotePendingPage() {
     queryFn: async () => {
       return apiClient(ENDPOINT, {
         method: "GET",
-        query: { status: "PENDING" },
+        query: { status: "ACCEPTED" },
       });
     },
     staleTime: STALE_TIME.ESTIMATE, // 30초 캐싱
@@ -81,6 +88,107 @@ export default function QuotePendingPage() {
 
   const quotes: QuoteCardView[] = data?.data ? data.data.map(adaptQuote) : [];
   const summary = quotes[0];
+
+  // API 응답에서 찜하기 초기 상태 계산 (useMemo로 계산하여 useEffect 없이 처리)
+  const initialFavoriteStates = useMemo(() => {
+    const states = new Map<
+      number,
+      { isFavorite: boolean; isPending: boolean }
+    >();
+
+    if (data?.data) {
+      data.data.forEach((quote: ApiQuote) => {
+        const driverId = quote.driver.id;
+        const driverWithFavorite = quote.driver as ApiQuote["driver"] & {
+          isFavorite?: boolean;
+        };
+        if (driverWithFavorite.isFavorite !== undefined) {
+          states.set(driverId, {
+            isFavorite: driverWithFavorite.isFavorite,
+            isPending: false,
+          });
+        }
+      });
+    }
+
+    return states;
+  }, [data]);
+
+  // 초기 상태와 사용자 액션으로 변경된 상태를 병합
+  const mergedFavoriteStates = useMemo(() => {
+    const merged = new Map(initialFavoriteStates);
+    // 사용자가 변경한 상태가 있으면 우선 적용
+    favoriteStates.forEach((value, key) => {
+      merged.set(key, value);
+    });
+    return merged;
+  }, [initialFavoriteStates, favoriteStates]);
+
+  // 찜하기/찜 취소 mutation
+  const { mutate: toggleFavorite } = useApiMutation<
+    { success: boolean; message: string },
+    number,
+    Error
+  >({
+    mutationFn: async (driverId: number) => {
+      const currentState = favoriteStates.get(driverId);
+      const isFavorite = currentState?.isFavorite ?? false;
+
+      if (isFavorite) {
+        return moverService.deleteFavoriteMover(driverId);
+      } else {
+        return moverService.postFavoriteMover(driverId);
+      }
+    },
+    onSuccess: (_, driverId) => {
+      const currentState = favoriteStates.get(driverId);
+      const isFavorite = currentState?.isFavorite ?? false;
+
+      setFavoriteStates((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(driverId, {
+          isFavorite: !isFavorite,
+          isPending: false,
+        });
+        return newMap;
+      });
+      queryClient.invalidateQueries({ queryKey: ["movers"] });
+    },
+    onError: (_, driverId) => {
+      // 실패 시 원래 상태로 복구
+      setFavoriteStates((prev) => {
+        const newMap = new Map(prev);
+        const currentState = prev.get(driverId);
+        if (currentState) {
+          newMap.set(driverId, {
+            isFavorite: currentState.isFavorite,
+            isPending: false,
+          });
+        }
+        return newMap;
+      });
+    },
+  });
+
+  // 찜하기 핸들러 생성 함수
+  const createFavoriteHandler = (driverId: number) => {
+    return () => {
+      const currentState = favoriteStates.get(driverId);
+      const isFavorite = currentState?.isFavorite ?? false;
+
+      // 상태 업데이트
+      setFavoriteStates((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(driverId, {
+          isFavorite: !isFavorite,
+          isPending: true,
+        });
+        return newMap;
+      });
+
+      toggleFavorite(driverId);
+    };
+  };
 
   useEffect(() => {
     if (!error) return;
@@ -201,32 +309,41 @@ export default function QuotePendingPage() {
           )}
           {!isLoading && !error && quotes.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {quotes.map((quote) => (
-                <QuoteCard
-                  key={quote.id}
-                  name={quote.name}
-                  profileImage={quote.profileImage}
-                  avatarSize="sm"
-                  avatarResponsive={false}
-                  ratingPlacement="meta"
-                  rating={quote.rating}
-                  reviewCount={quote.reviewCount}
-                  experience={quote.experience}
-                  confirmedCount={quote.confirmedCount}
-                  likeCount={quote.likeCount}
-                  status={quote.status}
-                  serviceType={quote.serviceType}
-                  isDesignatedRequest={quote.isDesignatedRequest}
-                  movingDate={quote.movingDate}
-                  departure={quote.departure}
-                  arrival={quote.arrival}
-                  price={quote.price}
-                  onConfirm={() => setConfirmId(quote.id)}
-                  onDetail={() =>
-                    router.push(`/estimate/user/pending/${quote.id}`)
-                  }
-                />
-              ))}
+              {quotes.map((quote) => {
+                const driverId = data?.data?.find(
+                  (q: ApiQuote) => q.id === quote.id
+                )?.driver.id;
+                const favoriteState = driverId
+                  ? mergedFavoriteStates.get(driverId)
+                  : undefined;
+
+                return (
+                  <QuoteCard
+                    key={quote.id}
+                    name={quote.name}
+                    profileImage={quote.profileImage}
+                    avatarSize="sm"
+                    avatarResponsive={false}
+                    ratingPlacement="meta"
+                    rating={quote.rating}
+                    reviewCount={quote.reviewCount}
+                    experience={quote.experience}
+                    confirmedCount={quote.confirmedCount}
+                    likeCount={quote.likeCount}
+                    status={quote.status}
+                    serviceType={quote.serviceType}
+                    isDesignatedRequest={quote.isDesignatedRequest}
+                    movingDate={quote.movingDate}
+                    departure={quote.departure}
+                    arrival={quote.arrival}
+                    price={quote.price}
+                    onConfirm={() => setConfirmId(quote.id)}
+                    onDetail={() =>
+                      router.push(`/estimate/user/pending/${quote.id}`)
+                    }
+                  />
+                );
+              })}
             </div>
           )}
         </main>

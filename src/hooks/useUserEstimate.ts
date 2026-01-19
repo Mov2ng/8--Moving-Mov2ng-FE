@@ -10,7 +10,7 @@ export function useGetUserEstimate() {
     queryFn: async () => {
       return apiClient(ENDPOINT, {
         method: "GET",
-        query: { status: "PENDING" },
+        query: { status: "ACCEPTED" },
       });
     },
     staleTime: STALE_TIME.ESTIMATE,
