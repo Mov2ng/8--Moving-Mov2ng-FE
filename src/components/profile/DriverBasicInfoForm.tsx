@@ -9,6 +9,7 @@ import {
   basicInfoSchema,
 } from "@/libs/validation/basicInfoSchemas";
 import { useUpdateBasicInfo } from "@/hooks/useProfile";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 /**
  * DriverBasicInfoForm: 기사님 기본 정보 수정 폼
@@ -26,6 +27,7 @@ interface DriverBasicInfoFormProps {
 export default function DriverBasicInfoForm({
   initialData,
 }: DriverBasicInfoFormProps) {
+  const { t } = useI18n();
   const {
     register,
     handleSubmit,
@@ -126,28 +128,28 @@ export default function DriverBasicInfoForm({
         {/* 왼쪽 열: 이름, 이메일, 전화번호 */}
         <div className="flex flex-col gap-6">
           <FormField
-            label="이름"
+            label={t("profile_name")}
             type="text"
             register={register("name")}
             error={errors.name}
-            placeholder="이름"
+            placeholder={t("profile_name_placeholder")}
             touched={!!touchedFields.name}
           />
           <FormField
-            label="이메일"
+            label={t("profile_email")}
             type="text"
             register={register("email")}
             error={errors.email}
-            placeholder="이메일"
+            placeholder={t("profile_email_placeholder")}
             touched={!!touchedFields.email}
             disabled
           />
           <FormField
-            label="전화번호"
+            label={t("profile_phone")}
             type="text"
             register={register("phoneNum")}
             error={errors.phoneNum}
-            placeholder="전화번호"
+            placeholder={t("profile_phone_placeholder")}
             touched={!!touchedFields.phoneNum}
           />
         </div>
@@ -155,40 +157,40 @@ export default function DriverBasicInfoForm({
         {/* 오른쪽 열: 비밀번호 변경 */}
         <div className="flex flex-col gap-6">
           <FormField
-            label="현재 비밀번호"
+            label={t("profile_current_password")}
             register={register("currentPassword")}
             error={errors.currentPassword}
             touched={!!touchedFields.currentPassword}
           >
             <PasswordInput
               register={register("currentPassword")}
-              placeholder="현재 비밀번호"
+              placeholder={t("profile_current_password_placeholder")}
               error={errors.currentPassword}
               touched={!!touchedFields.currentPassword}
             />
           </FormField>
           <FormField
-            label="새 비밀번호"
+            label={t("profile_new_password")}
             register={register("newPassword")}
             error={errors.newPassword}
             touched={!!touchedFields.newPassword}
           >
             <PasswordInput
               register={register("newPassword")}
-              placeholder="새 비밀번호"
+              placeholder={t("profile_new_password_placeholder")}
               error={errors.newPassword}
               touched={!!touchedFields.newPassword}
             />
           </FormField>
           <FormField
-            label="새 비밀번호 확인"
+            label={t("profile_new_password_confirm")}
             register={register("newPasswordConfirm")}
             error={errors.newPasswordConfirm}
             touched={!!touchedFields.newPasswordConfirm}
           >
             <PasswordInput
               register={register("newPasswordConfirm")}
-              placeholder="새 비밀번호 확인"
+              placeholder={t("profile_new_password_confirm_placeholder")}
               error={errors.newPasswordConfirm}
               touched={!!touchedFields.newPasswordConfirm}
             />
@@ -199,7 +201,7 @@ export default function DriverBasicInfoForm({
               className="mt-4 w-full h-12 rounded-xl bg-primary-blue-300 text-white pret-lg-semibold disabled:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isSubmitting || !isFormValid()}
             >
-              {isSubmitting ? "수정 중..." : "수정하기"}
+              {isSubmitting ? t("profile_edit_submitting") : t("profile_edit_submit")}
             </button>
           </div>
         </div>

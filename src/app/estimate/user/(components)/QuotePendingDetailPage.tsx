@@ -21,7 +21,7 @@ import { getServiceLabel } from "@/constants/profile.constants";
 
 const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   PENDING: "waiting",
-  ACCEPTED: "confirmed",
+  ACCEPTED: "waiting",
   COMPLETED: "confirmed",
   REJECTED: "rejected",
 };
@@ -64,6 +64,8 @@ export default function QuotePendingDetailPage({
       setIsConfirmOpen(false);
       queryClient.invalidateQueries({ queryKey: ["quote", "pending", id] });
       queryClient.invalidateQueries({ queryKey: ["quote", "pending"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes", "pending"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes", "received"] });
       alert(t("quote_accept_success"));
     },
     onError: (err) => {

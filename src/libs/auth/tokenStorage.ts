@@ -6,7 +6,29 @@
  * - refreshToken: httpOnly 쿠키에 저장 (서버에서만 접근, Middleware에서 검증)
  */
 
+import { jwtDecode } from "jwt-decode";
+
 const ACCESS_TOKEN_KEY = "accessToken";
+
+/**
+ * JWT 토큰의 만료 시간을 디코딩하여 확인
+ * @param token JWT 토큰
+ * @returns 만료 여부 (true: 만료됨, false: 유효함)
+ */
+export function isTokenExpired(token: string): boolean {
+  try {
+    const decoded = jwtDecode<{ exp?: number }>(token);
+    if (!decoded.exp) {
+      return true; // exp가 없으면 만료된 것으로 간주
+    }
+    // exp는 초 단위, 현재 시간과 비교 (여유를 위해 10초 여유를 둠)
+    const currentTime = Math.floor(Date.now() / 1000);
+    return decoded.exp <= currentTime + 10;
+  } catch {
+    // 디코딩 실패 시 만료된 것으로 간주
+    return true;
+  }
+}
 
 /**
  * accessToken을 localStorage에 저장

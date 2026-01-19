@@ -1,5 +1,9 @@
 import { API_URL } from "@/constants/api.constants";
-import { getToken, removeToken } from "@/libs/auth/tokenStorage";
+import {
+  getToken,
+  removeToken,
+  isTokenExpired,
+} from "@/libs/auth/tokenStorage";
 import { refreshAccessToken } from "@/libs/auth/tokenManager";
 // 기본 헤더
 const defaultHeaders: Record<string, string> = {
@@ -39,7 +43,7 @@ export async function apiClient(
     query,
     headers,
     skipAutoRefresh = false,
-    timeout = 3000, // 기본 타임아웃 3초
+    timeout = 5000, // 기본 타임아웃 5초
   } = options;
 
   // 1. body가 FormData인지 확인 (FormData일 때는 Content-Type을 제거해야 함)
@@ -52,7 +56,18 @@ export async function apiClient(
   };
 
   // 2. 클라이언트 사이드에서 토큰 조회 (localStorage에서)
-  const accessToken = getToken();
+  let accessToken = getToken();
+
+  // 토큰이 있고 만료되었으면 미리 refresh(백엔드 unauthorized 받기 전 미리 token 확인)
+  if (accessToken && !skipAutoRefresh && isTokenExpired(accessToken)) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      accessToken = newToken;
+    } else {
+      // refresh 실패 시 토큰 삭제
+      accessToken = null;
+    }
+  }
 
   // 3. 액세스 토큰 있을 시 Auth 헤더 추가
   if (accessToken) {
