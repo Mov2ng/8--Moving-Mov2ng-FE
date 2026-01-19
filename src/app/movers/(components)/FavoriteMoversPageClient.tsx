@@ -96,6 +96,7 @@ export default function FavoriteMoversPageClient() {
             {favorites.map((fav) => (
               <FavoriteDriverCard
                 key={fav.id}
+                id={fav.id}
                 serviceType={fav.serviceType}
                 name={fav.name}
                 profileImage={fav.profileImage}
