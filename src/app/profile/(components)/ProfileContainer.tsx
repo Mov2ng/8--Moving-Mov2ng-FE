@@ -6,12 +6,14 @@ import { useGetMyMoverDetail } from "@/hooks/useProfile";
 import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 import ReviewSection from "../../../components/common/ReviewSection";
 import { useRouter } from "next/navigation";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 /**
  * 마이페이지 컨테이너
  * @returns
  */
 export default function ProfileContainer() {
+  const { t } = useI18n();
   const { me, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
 
@@ -37,14 +39,14 @@ export default function ProfileContainer() {
   if (!driver) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p>데이터를 불러올 수 없습니다.</p>
+        <p>{t("profile_cannot_load_data")}</p>
       </div>
     );
   }
   return (
     <div className="flex flex-col gap-8">
       <h1 className="text-2xl max-md:text-lg font-bold text-black-400">
-        마이페이지
+        {t("profile_my_page")}
       </h1>
       <ProfileEditCard
         name={driver.nickname}

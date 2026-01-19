@@ -1,4 +1,5 @@
-export const BASE_URL = "http://localhost:3000";
+// TODO: 웬만해서는 .env에 있는 정보 기준으로 할 것!
+export const BASE_URL = "http://localhost:8080";
 export const PRODUCT_URL = "http://moving.com";
 
 // API 기본 URL (환경 변수 또는 기본값)

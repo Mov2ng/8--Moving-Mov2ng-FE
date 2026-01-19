@@ -14,22 +14,17 @@ import { parseServerError } from "@/utils/parseServerError";
  * 성공 시 처리 설정
  */
 export type SuccessConfig = {
-  /** 무효화할 쿼리 키 배열 */
-  invalidateQueries?: string[][];
-  /** 성공 메시지 (alert로 표시) */
-  successMessage?: string;
-  /** 성공 후 리디렉션 경로 */
-  redirectPath?: string;
+  invalidateQueries?: string[][]; // 무효화할 쿼리 키 배열
+  successMessage?: string; // 성공 메시지 (alert로 표시)
+  redirectPath?: string; // 성공 후 리디렉션 경로
 };
 
 /**
  * 에러 시 처리 설정
  */
 export type ErrorConfig = {
-  /** 에러 메시지 접두사 (예: "프로필 등록") */
-  errorMessagePrefix?: string;
-  /** 기본 에러 메시지 (parseServerError로 파싱한 메시지가 없을 때 사용) */
-  defaultErrorMessage?: string;
+  errorMessagePrefix?: string; // 에러 메시지 접두사 (예: "프로필 등록")
+  defaultErrorMessage?: string; // 기본 에러 메시지 (parseServerError로 파싱한 메시지가 없을 때)
 };
 
 /**
@@ -140,11 +135,8 @@ export function useApiMutation<TData, TVariables, TError>({
     // errorConfig가 있으면 자동 처리
     if (errorConfig) {
       const parsedError = parseServerError(error);
-      console.error(`${errorConfig.errorMessagePrefix || "작업"} 실패:`, {
-        status: parsedError?.status,
-        message: parsedError?.message,
-        details: parsedError?.details,
-        code: parsedError?.code,
+      console.error(`${errorConfig.errorMessagePrefix || "작업 실패"}:`, {
+        parsedError, // 파싱된 결과 전체
         fullError: error,
       });
       // 사용자에게 에러 메시지 표시
