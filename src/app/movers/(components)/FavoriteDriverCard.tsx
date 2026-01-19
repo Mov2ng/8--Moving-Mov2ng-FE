@@ -2,8 +2,10 @@
 import DriverProfile from "@/components/common/DriverProfile";
 import MovingTypeChip from "@/components/chips/MovingTypeChip";
 import { useI18n } from "@/libs/i18n/I18nProvider";
+import Link from "next/link";
 
 interface FavoriteDriverCardProps {
+  id: number;
   // 이사 유형
   serviceType?: string;
   // 기사 정보
@@ -31,6 +33,7 @@ const serviceLabelShortMap: Record<string, string> = {
 };
 
 export default function FavoriteDriverCard({
+  id,
   serviceType,
   name,
   profileImage,
@@ -43,6 +46,7 @@ export default function FavoriteDriverCard({
   likeCount,
 }: FavoriteDriverCardProps) {
   const { t } = useI18n();
+  
   const iconSrc =
     serviceType && serviceIconMap[serviceType]
       ? serviceIconMap[serviceType]
@@ -53,7 +57,10 @@ export default function FavoriteDriverCard({
       : serviceType ?? "";
 
   return (
-    <div className="bg-gray-50 rounded-2xl p-4 shadow-sm border border-line-100 flex flex-col gap-4">
+    <Link 
+      href={`/movers/${id}`}
+      className="bg-gray-50 rounded-2xl p-4 shadow-sm border border-line-100 flex flex-col gap-4 cursor-pointer hover:shadow-md transition-shadow block"
+    >
       {serviceType && (
         <div className="flex gap-2">
           <div className="lg:hidden">
@@ -87,6 +94,6 @@ export default function FavoriteDriverCard({
         confirmedCount={confirmedCount}
         likeCount={likeCount}
       />
-    </div>
+    </Link>
   );
 }

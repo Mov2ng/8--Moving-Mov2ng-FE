@@ -21,7 +21,7 @@ import { getServiceLabel } from "@/constants/profile.constants";
 
 const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   PENDING: "waiting",
-  ACCEPTED: "confirmed",
+  ACCEPTED: "waiting",
   COMPLETED: "confirmed",
   REJECTED: "rejected",
 };
@@ -222,6 +222,8 @@ export default function QuotePendingPage() {
     onSuccess: () => {
       setConfirmId(null);
       queryClient.invalidateQueries({ queryKey: ["quotes", "pending"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes", "received"] });
+      queryClient.invalidateQueries({ queryKey: ["quote", "pending"] });
       alert("견적을 확정했어요.");
     },
     onError: (err) => {

@@ -18,7 +18,7 @@ import { getServiceLabel } from "@/constants/profile.constants";
 
 const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   PENDING: "waiting",
-  ACCEPTED: "confirmed",
+  ACCEPTED: "waiting",
   COMPLETED: "confirmed",
   REJECTED: "rejected",
 };
