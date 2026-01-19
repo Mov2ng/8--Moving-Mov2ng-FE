@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import MoveTypeSelect from "@/app/quote/request/_components/MoveTypeSelect";
 import DatePicker from "@/components/DatePicker/DatePicker";
 import AddressSearchModal from "@/components/common/AddressSearchModal";
-import { useQuoteRequestStore, MOVING_TYPE_MAP } from "./store";
-import type { MovingType, SimpleAddress } from "./store";
+import { useQuoteRequestStore, MOVING_TYPE_MAP } from "../store";
+import type { MovingType, SimpleAddress } from "../store";
 import { useI18n } from "@/libs/i18n/I18nProvider";
-import { useCreateEstimate } from "./api";
+import { useCreateEstimate } from "../api";
 
 // 오늘 날짜와 비교하기 위해 시간을 제거하고 날짜만 비교하는 함수
 function isDateBeforeToday(date: Date): boolean {
@@ -21,14 +21,12 @@ function isDateBeforeToday(date: Date): boolean {
   return compareDate < today;
 }
 
-export default function QuoteRequestPage() {
+export default function QuoteRequestEditPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useParams();
   const { t } = useI18n();
 
-  // URL에서 step 파라미터 읽기 (없으면 store의 step 사용)
-  const stepParam = searchParams.get("step");
-  const initialStep = stepParam ? parseInt(stepParam, 10) : null;
+  const requestId = params.id as string;
 
   const step = useQuoteRequestStore((s) => s.step);
   const movingType = useQuoteRequestStore((s) => s.movingType);
@@ -39,16 +37,6 @@ export default function QuoteRequestPage() {
   const setMovingType = useQuoteRequestStore((s) => s.setMovingType);
   const setDate = useQuoteRequestStore((s) => s.setDate);
   const setAddress = useQuoteRequestStore((s) => s.setAddress);
-
-  // URL step이 있으면 그것을 사용, 없으면 store의 step 사용
-  const currentStep = initialStep || step;
-
-  // URL step이 변경되면 store 업데이트
-  useEffect(() => {
-    if (initialStep && (initialStep === 1 || initialStep === 2 || initialStep === 3 || initialStep === 4)) {
-      setStep(initialStep as 1 | 2 | 3 | 4);
-    }
-  }, [initialStep, setStep]);
 
   // Step 2: Date state
   const [dateValue, setDateValue] = useState<Date | null>(savedDate ?? null);
@@ -65,10 +53,10 @@ export default function QuoteRequestPage() {
 
   // Step 4: API mutation
   const {
-    mutate: createEstimateMutation,
+    mutate: updateEstimateMutation,
     isPending,
     error,
-  } = useCreateEstimate();
+  } = useCreateEstimate(); // TODO: updateEstimate API가 있다면 그걸 사용
 
   // Step 1: Moving Type Options
   const OPTIONS = [
@@ -88,6 +76,12 @@ export default function QuoteRequestPage() {
       desc: t("quote_request_moving_type_office_desc") 
     },
   ] satisfies Array<{ value: MovingType; title: string; desc: string }>;
+
+  // TODO: requestId로 기존 데이터 로드
+  useEffect(() => {
+    // 여기에 requestId로 기존 견적 요청 데이터를 불러와서 store에 설정하는 로직 추가
+    // 예: fetch(`/api/requests/${requestId}`).then(...)
+  }, [requestId]);
 
   // Step 2: Date validation
   const dateError = useMemo(() => {
@@ -117,7 +111,7 @@ export default function QuoteRequestPage() {
   const handleTypeConfirm = () => {
     if (!movingType) return;
     setStep(2);
-    router.push("/quote/request?step=2");
+    router.push(`/quote/request/${requestId}?step=2`);
   };
 
   // Step 2: Handle date confirm
@@ -125,14 +119,14 @@ export default function QuoteRequestPage() {
     if (!isValidDate || !dateValue || dateError || !movingType) return;
     setDate(dateValue);
     setStep(3);
-    router.push("/quote/request?step=3");
+    router.push(`/quote/request/${requestId}?step=3`);
   };
 
   const handleDateChange = (date: Date) => {
     setDateValue(date);
   };
 
-  // Step 3: Handle address confirm - 주소를 store에 저장만 하고 step은 유지
+  // Step 3: Handle address change - 주소를 store에 저장만 하고 step은 유지
   const handleAddressChange = () => {
     if (!from || !to) return;
     setAddress({
@@ -167,13 +161,14 @@ export default function QuoteRequestPage() {
       destination: to.address,
     };
 
-    createEstimateMutation(payload, {
+    // TODO: updateEstimate API 호출로 변경
+    updateEstimateMutation(payload, {
       onSuccess: (res) => {
         alert(t("quote_request_confirm_success"));
         router.push("/estimate/user/pending");
       },
       onError: (e) => {
-        console.error("견적 생성 실패", e);
+        console.error("견적 수정 실패", e);
       },
     });
   };
@@ -181,12 +176,12 @@ export default function QuoteRequestPage() {
   // Edit handlers
   const handleEditMovingType = () => {
     setStep(1);
-    router.push("/quote/request?step=1");
+    router.push(`/quote/request/${requestId}?step=1`);
   };
 
   const handleEditDate = () => {
     setStep(2);
-    router.push("/quote/request?step=2");
+    router.push(`/quote/request/${requestId}?step=2`);
   };
 
 
@@ -203,14 +198,14 @@ export default function QuoteRequestPage() {
 
   // Progress bar width calculation - 주소 입력 완료 시 100%
   const progressWidth = useMemo(() => {
-    if (currentStep === 3 && canNextAddress) return "100%";
-    switch (currentStep) {
+    if (step === 3 && canNextAddress) return "100%";
+    switch (step) {
       case 1: return "28%";
       case 2: return "56%";
       case 3: return "72%";
       default: return "28%";
     }
-  }, [currentStep, canNextAddress]);
+  }, [step, canNextAddress]);
 
   const errorMessage =
     error && typeof error === "object" && "message" in error
@@ -228,7 +223,7 @@ export default function QuoteRequestPage() {
       </section>
 
       {/* Step 1: Moving Type Selection */}
-      {currentStep === 1 && (
+      {step === 1 && (
         <section className="flex flex-col gap-6">
           <div className="pt-14">
             <BubbleLeft>{t("quote_request_intro")}</BubbleLeft>
@@ -248,7 +243,7 @@ export default function QuoteRequestPage() {
       )}
 
       {/* Step 2: Date Selection */}
-      {currentStep === 2 && (
+      {step === 2 && (
         <section className="flex flex-col gap-8">
           <div className="pt-2">
             <BubbleLeft>{t("quote_request_intro")}</BubbleLeft>
@@ -282,7 +277,7 @@ export default function QuoteRequestPage() {
       )}
 
       {/* Step 3: Address Selection */}
-      {currentStep === 3 && (
+      {step === 3 && (
         <section className="flex flex-col gap-8">
           <div className="pt-2">
             <BubbleLeft>{t("quote_request_intro")}</BubbleLeft>
@@ -414,3 +409,4 @@ function BubbleRight({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
