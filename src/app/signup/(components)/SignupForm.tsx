@@ -53,14 +53,17 @@ export default function SignupForm() {
       // 에러 파싱
       const parsed = parseServerError(error);
 
-      // 파싱 실패시 서버 에러
+      // 파싱 실패시 사용자에게 알림
       if (!parsed) {
         alert(t("signup_error"));
         return;
       }
 
-      // 에러 메시지 표시
-      alert(parsed.message || t("signup_error_unknown"));
+      // 사용자 액션이 필요한 에러 
+      if (parsed.status === 400) {
+        alert(parsed.message || t("signup_error_unknown"));
+        return;
+      }
     }
   };
 

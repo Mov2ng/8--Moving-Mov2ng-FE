@@ -19,7 +19,7 @@ const GUEST_ONLY_ROUTES = ["/login", "/signup"];
 
 // 기사님만 접근 가능한 경로
 // /profile은 정확히 일치하는 경우만, /profile/driver로 시작하는 경로는 모두 기사 전용
-const DRIVER_ONLY_ROUTES = ["/estimate/driver, /profile/driver"];
+const DRIVER_ONLY_ROUTES = ["/estimate/driver", "/profile/driver"];
 
 // 일반 회원만 접근 가능한 경로
 const USER_ONLY_ROUTES = ["/profile/user"];
@@ -108,6 +108,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   const isUserOnlyRoute = USER_ONLY_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
+
   // 드라이버 전용 경로에서 프로필 조회 (드라이버이고 로딩이 완료되었을 때만)
   const {
     data: profileData,
@@ -155,9 +156,10 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
       !isFetching && // 재시도 중이 아닐 때만 체크
       pathname !== "/profile/register" // 프로필 등록 페이지이므로 예외 처리
     ) {
-      // 프로필 데이터가 있으면 캐시된 데이터로 판단 (가장 안전)
+      // 프로필 데이터가 있으면 캐시된 데이터를 우선 사용
       if (profileData) {
         const isProfileMissing = checkProfileMissing(profileData, profileError);
+        // 프로필 미등록 시 프로필 등록 페이지로 리디렉션
         if (isProfileMissing) {
           alert("프로필 등록 후 이용 부탁드립니다.");
           router.push("/profile/register");
