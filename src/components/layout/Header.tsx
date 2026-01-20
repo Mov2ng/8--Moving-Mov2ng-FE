@@ -315,6 +315,7 @@ export default function Header() {
               </span>
             )}
           </div>
+          {/* 프로필 드롭다운 */}
           {isDropdownOpen && (
             <div className="absolute top-full right-0 mt-2 w-55 rounded-lg border border-line-100 p-4 bg-white z-20 shadow-lg">
               {isUser ? (
@@ -341,7 +342,7 @@ export default function Header() {
                   </div>
                   <div className="py-3.5">
                     <Link
-                      href="/review/user"
+                      href="/review/writable"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       {t("moving_reviews")}

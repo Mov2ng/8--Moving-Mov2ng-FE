@@ -35,8 +35,8 @@
   "signup_password_confirm_placeholder": "请再次输入您的密码",
   "signup_submitting": "注册中...",
   "signup_submit": "开始",
-  "signup_error": "注册过程中发生错误。",
-  "signup_error_unknown": "注册过程中发生未知错误。",
+  "signup_error": "注册过程中发生错误。请重试。",
+  "signup_error_unknown": "注册过程中发生未知错误。请重试。",
 
   "loading": "加载中...",
   "forbidden_user": "仅普通会员可访问。",

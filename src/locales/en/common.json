@@ -35,8 +35,8 @@
   "signup_password_confirm_placeholder": "Enter your password again",
   "signup_submitting": "Signing up...",
   "signup_submit": "Get Started",
-  "signup_error": "An error occurred during signup.",
-  "signup_error_unknown": "An unknown error occurred during signup.",
+  "signup_error": "An error occurred during signup. Please try again.",
+  "signup_error_unknown": "An unknown error occurred during signup. Please try again.",
 
   "loading": "Loading...",
   "forbidden_user": "Only regular users can access this.",
