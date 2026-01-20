@@ -103,8 +103,8 @@ export default function MoversDetailPage() {
           if (found) return found;
         }
       }
-      // 일반 useQuery의 data.list 구조 처리 (fallback)
-      else if (data && "data" in data) {
+        // 일반 useQuery의 data.list 구조 처리 (fallback)
+      else if (data && "data" in data && data.data && Array.isArray(data.data.list)) {
         const found = data.data.list.find(
           (mover: Mover) => mover.id === idNumber
         );

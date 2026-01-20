@@ -68,6 +68,7 @@ export default function QuotePendingPage() {
     Map<number, { isFavorite: boolean; isPending: boolean }>
   >(new Map());
 
+  // 최근 견적 정보 조회 
   const { data, isLoading, error } = useApiQuery<
     {
       success: boolean;
@@ -80,14 +81,78 @@ export default function QuotePendingPage() {
     queryFn: async () => {
       return apiClient(ENDPOINT, {
         method: "GET",
-        query: { status: "ACCEPTED" },
       });
     },
     staleTime: STALE_TIME.ESTIMATE, // 30초 캐싱
   });
 
-  const quotes: QuoteCardView[] = data?.data ? data.data.map(adaptQuote) : [];
-  const summary = quotes[0];
+  // 견적 요청 정보 조회 (서브헤더용 - 견적이 없을 때 사용)
+  const { data: requestData } = useApiQuery<
+    {
+      success: boolean;
+      message: string;
+      data: Array<{
+        id: number;
+        user_id: string;
+        moving_type: "SMALL" | "HOME" | "OFFICE";
+        moving_data: string;
+        origin: string;
+        destination: string;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+    },
+    Error
+  >({
+    queryKey: ["requests", "user"],
+    queryFn: async () => {
+      return apiClient("/request/user/requests", {
+        method: "GET",
+      });
+    },
+    staleTime: STALE_TIME.ESTIMATE,
+    enabled: !data?.data || data.data.length === 0, // 견적이 없을 때만 조회
+  });
+
+  // ACCEPTED 상태인 견적만 필터링 (카드 표시용)
+  const acceptedQuotes: ApiQuote[] = data?.data
+    ? data.data.filter((quote) => quote.status === "ACCEPTED")
+    : [];
+  
+  const quotes: QuoteCardView[] = acceptedQuotes.map(adaptQuote);
+  
+  // 서브헤더용: 최근 견적 정보 또는 견적 요청 정보 사용
+  const allQuotes: QuoteCardView[] = data?.data ? data.data.map(adaptQuote) : [];
+  
+  const summary = (() => {
+    // 견적이 있으면 첫 번째 견적 사용
+    if (allQuotes.length > 0) {
+      return allQuotes[0];
+    }
+    
+    // 견적이 없으면 최근 견적 요청 정보 사용
+    if (requestData?.data && requestData.data.length > 0) {
+      const recentRequest = requestData.data[0];
+      const movingTypeMap: Record<string, string> = {
+        SMALL: t("moving_type_small"),
+        HOME: t("moving_type_home"),
+        OFFICE: t("moving_type_office"),
+      };
+      const serviceType =
+        movingTypeMap[recentRequest.moving_type] ??
+        getServiceLabel(recentRequest.moving_type);
+
+      return {
+        serviceType,
+        requestedAt: recentRequest.createdAt,
+        departure: recentRequest.origin,
+        arrival: recentRequest.destination,
+        movingDate: formatDateLabel(recentRequest.moving_data),
+      } as Pick<QuoteCardView, "serviceType" | "requestedAt" | "departure" | "arrival" | "movingDate">;
+    }
+    
+    return null;
+  })();
 
   // API 응답에서 찜하기 초기 상태 계산 (useMemo로 계산하여 useEffect 없이 처리)
   const initialFavoriteStates = useMemo(() => {
@@ -225,6 +290,7 @@ export default function QuotePendingPage() {
       queryClient.invalidateQueries({ queryKey: ["quotes", "received"] });
       queryClient.invalidateQueries({ queryKey: ["quote", "pending"] });
       alert("견적을 확정했어요.");
+      router.push("/estimate/user/received");
     },
     onError: (err) => {
       alert(err.message ?? "견적 확정에 실패했습니다.");
