@@ -290,6 +290,7 @@ export default function QuotePendingPage() {
       queryClient.invalidateQueries({ queryKey: ["quotes", "received"] });
       queryClient.invalidateQueries({ queryKey: ["quote", "pending"] });
       alert("견적을 확정했어요.");
+      router.push("/estimate/user/received");
     },
     onError: (err) => {
       alert(err.message ?? "견적 확정에 실패했습니다.");

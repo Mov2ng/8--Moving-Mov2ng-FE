@@ -6,6 +6,7 @@ import { apiClient } from "@/libs/apiClient";
 import QuoteDetailCard from "./QuoteDetailCard";
 import QuoteTabNav from "./QuoteTabNav";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import Button from "@/components/common/button";
 import { formatDate, formatDateTime } from "@/utils/date";
 import Image from "next/image";
@@ -34,6 +35,7 @@ type QuotePendingDetailPageProps = {
 export default function QuotePendingDetailPage({
   estimateId,
 }: QuotePendingDetailPageProps) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useI18n();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -67,6 +69,7 @@ export default function QuotePendingDetailPage({
       queryClient.invalidateQueries({ queryKey: ["quotes", "pending"] });
       queryClient.invalidateQueries({ queryKey: ["quotes", "received"] });
       alert(t("quote_accept_success"));
+      router.push("/estimate/user/received");
     },
     onError: (err) => {
       alert(err.message ?? t("quote_accept_fail"));
