@@ -9,6 +9,7 @@ import { setToken, getToken, isTokenExpired } from "@/libs/auth/tokenStorage";
 import { refreshAccessToken } from "@/libs/auth/tokenManager";
 import { handleAuthError } from "@/utils/authError";
 import { parseServerError } from "@/utils/parseServerError";
+import { useEffect } from "react";
 
 /**
  * 회원가입 mutation 생성 훅
@@ -26,8 +27,12 @@ export function useSignup() {
     },
     onError: (error) => {
       const parsedError = parseServerError(error);
-      console.error("회원가입 실패:", {
-        parsedError, // 파싱된 결과 전체
+      
+      // 개발자용 상세 로깅
+      console.error("[useSignup] 회원가입 실패:", {
+        endpoint: "/auth/signup",
+        timestamp: new Date().toISOString(),
+        parsedError, // 파싱된 결과 전체 (status, code, message, details 포함)
         fullError: error, // 원본 에러 객체
       });
     },
@@ -127,10 +132,20 @@ export function useLogin(redirectPath?: string) {
  * @returns useApiQuery 결과
  */
 export function useMe(enabled: boolean = true) {
+  const queryClient = useQueryClient();
+  const currentHasToken = getToken() !== null;
+  
+  // 토큰이 없어질 때만 캐시 삭제 (refresh 실패 후 오래된 캐시 방지)
+  useEffect(() => {
+    if (!currentHasToken) {
+      queryClient.removeQueries({ queryKey: ["me"] });
+    }
+  }, [currentHasToken, queryClient]);
+
   return useApiQuery({
     queryKey: ["me"],
     queryFn: userService.me,
-    enabled,
+    enabled: enabled && currentHasToken, // 토큰이 없으면 쿼리 비활성화 (무한 호출 방지)
     staleTime: 1000 * 60 * 5, // 5분 동안 fresh 상태 유지
     gcTime: 1000 * 60 * 5, // 미사용 시 캐시 메모리 정리 시간
     refetchOnMount: false, // /auth/me는 무한 호출 방지를 위해 마운트 시 리패치 안 함
