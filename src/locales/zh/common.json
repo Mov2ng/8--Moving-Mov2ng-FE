@@ -98,6 +98,7 @@
   "select_region": "选择地区",
   "select_service": "选择服务",
   "all_drivers_loaded": "所有司机已加载。",
+  "no_results_found": "没有找到结果。",
   "service_available_regions": "服务可用地区",
   "provided_service": "提供服务",
   "review": "评论",

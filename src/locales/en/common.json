@@ -98,6 +98,7 @@
   "select_region": "Select region",
   "select_service": "Select service",
   "all_drivers_loaded": "All drivers loaded.",
+  "no_results_found": "No results found.",
   "service_available_regions": "Service available regions",
   "provided_service": "Provided service",
   "review": "Review",
