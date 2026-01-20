@@ -12,7 +12,7 @@ export const signupSchema = z
     role: z.enum(["USER", "DRIVER"], {
       message: "role은 'USER' 또는 'DRIVER'만 가능합니다",
     }),
-    name: z.string().min(1, "이름을 입력해 주세요").max(50),
+    name: z.string().min(1, "이름을 입력해 주세요").max(20, "이름은 20자 이하로 입력해 주세요"),
     email: z.email("유효한 이메일을 입력해 주세요"),
     phoneNum: z
       .string()
@@ -67,7 +67,7 @@ export const signupSchema = z
     password: z
       .string()
       .min(8, "비밀번호는 최소 8자 이상이어야 합니다")
-      .max(128)
+      .max(32, "비밀번호는 최대 32자 이하로 입력해 주세요")
       .regex(/[A-Za-z]/, { message: "비밀번호에 영문이 포함되어야 합니다." }) // 영문 1자 이상
       .regex(/[0-9]/, { message: "비밀번호에 숫자가 포함되어야 합니다." }) // 숫자 1자 이상
       .regex(/[!@#$%^&*()_\-+=]/, {

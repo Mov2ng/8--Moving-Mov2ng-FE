@@ -46,11 +46,12 @@ export default function PasswordInput({
         type="button"
         aria-label={visible ? "비밀번호 숨기기" : "비밀번호 보기"}
         onClick={() => setVisible((prev) => !prev)}
+        tabIndex={-1}
         className="absolute right-4 size-6 bg-center bg-no-repeat cursor-pointer"
         style={{
           backgroundImage: visible
-            ? "url(/assets/icon/ic-visibility-off.svg)"
-            : "url(/assets/icon/ic-visibility-on.svg)",
+            ? "url(/assets/icon/ic-visibility-on.svg)"
+            : "url(/assets/icon/ic-visibility-off.svg)",
         }}
       />
     </div>

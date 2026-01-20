@@ -120,6 +120,7 @@ export default function SignupForm() {
           type="submit"
           className="mt-4 w-full h-12 rounded-xl bg-primary-blue-300 text-white pret-lg-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
           disabled={isSubmitting || !isValid}
+          tabIndex={isSubmitting || !isValid ? -1 : 0}
         >
           {isSubmitting ? t("signup_submitting") : t("signup_submit")}
         </button>
