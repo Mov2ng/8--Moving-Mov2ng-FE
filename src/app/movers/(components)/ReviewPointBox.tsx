@@ -4,7 +4,13 @@ import StarRating from './StarRating';
 
 import type { ReviewType } from '@/types/driverProfileType';
 
-export default function ReviewPointBox({ rating, reviewCount, reviewList }: { rating: number, reviewCount: number, reviewList: ReviewType[] }) {
+interface ReviewPointBoxProps {
+  rating: number;
+  reviewCount: number;
+  reviewList: ReviewType[];
+}
+
+export default function ReviewPointBox({ rating, reviewCount, reviewList }: ReviewPointBoxProps) {
   // 리뷰 rating 값 계산
   const ratingList = {
     5: 0,

@@ -103,6 +103,9 @@
   "processing": "처리 중...",
   "favorite_completed": "찜 완료",
   "only_know_driver": "나만 알기엔 아쉬운 기사님인가요?",
+  "share_driver_link": "링크가 복사되었어요.",
+  "share_kakao_link": "카카오톡 공유",
+  "share_facebook_link": "페이스북 공유",
 
   "review_many": "리뷰 많은순",
   "rating_high": "평점 높은순",
