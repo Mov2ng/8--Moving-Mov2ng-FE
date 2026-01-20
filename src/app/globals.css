@@ -669,6 +669,17 @@ section {
   }
 }
 
+@keyframes fadeOutUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
 @keyframes float {
   0%,
   100% {
@@ -681,6 +692,10 @@ section {
 
 .animate-fade-in-up {
   animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-fade-out-up {
+  animation: fadeOutUp 0.5s ease-in forwards;
 }
 
 .animate-float {

@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import RatingPoints from "./RatingPoints";
+import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 
 interface FindDriverProfileProps {
   name: string;
@@ -14,13 +15,14 @@ interface FindDriverProfileProps {
 }
 
 export default function FindDriverProfile({ name, likeCount, rating, reviewCount, driverYears, confirmedCount, imageSrc, size = 'md' }: FindDriverProfileProps) {
+  const { data: profileImageUrl } = useGetViewPresignedUrl(imageSrc);
   return (
     <div className={`flex items-center max-w-[907px] w-full h-[92px] max-md:h-[78px] bg-gray-50 border border-line-100 rounded-md
         ${size === 'sm' ? 'gap-3 p-[10px]' : 'gap-6 px-4.5 py-4 max-md:p-[10px] max-md:gap-3'}`}>
       <div className={`rounded-full overflow-hidden border-3 border-black-300
         ${size === 'sm' ? 'w-12 h-12' : 'w-[60px] h-[60px]'}`}>
         <Image
-          src={`${imageSrc || '/assets/image/avatartion-3.png'}`}  
+          src={profileImageUrl || '/assets/image/avatartion-3.png'}  
           alt="driver-profile"
           width={150}
           height={150}

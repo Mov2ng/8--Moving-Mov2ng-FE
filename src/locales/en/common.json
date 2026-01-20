@@ -104,6 +104,9 @@
   "processing": "Processing...",
   "favorite_completed": "Favorite completed",
   "only_know_driver": "Do you know a driver who is only known to you?",
+  "share_driver_link": "Link copied.",
+  "share_kakao_link": "Share on KakaoTalk",
+  "share_facebook_link": "Share on Facebook",
 
   "review_many": "Review many",
   "rating_high": "Rating high",

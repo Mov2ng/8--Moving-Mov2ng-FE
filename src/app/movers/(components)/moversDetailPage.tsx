@@ -1,12 +1,17 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import ReviewSection from "@/components/common/ReviewSection";
 import FindDriverProfile from "./FindDriverProfile";
+import MoverShareBox from "./MoverShareBox";
+import ReviewSection from "@/components/common/ReviewSection";
 import RegionChip from "@/components/chips/RegionChip";
 import Image from "next/image";
 import Button from "@/components/common/button";
 import Modal from "@/components/common/Modal";
+import Toast from "@/components/common/Toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/useToast";
+import { useGetUserEstimate } from "@/hooks/useUserEstimate";
 import {
   useGetMoverExtra,
   useGetMoverFull,
@@ -14,7 +19,8 @@ import {
   useDeleteFavoriteMover,
   usePostRequestDriver,
 } from "@/hooks/useMover";
-import Toast from "@/components/common/Toast";
+import { useParams, useRouter } from "next/navigation";
+import { SERVICE_CATEGORIES, REGIONS } from "@/constants/profile.constants";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 
 import type { Estimate, DriverEstimate } from "@/types/estimateType";
@@ -37,13 +43,6 @@ interface MoversNormalCache {
   };
 }
 
-import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
-import { SERVICE_CATEGORIES, REGIONS } from "@/constants/profile.constants";
-
-import type { ReviewType } from "@/types/driverProfileType";
-import { useGetUserEstimate } from "@/hooks/useUserEstimate";
-
 interface Mover {
   id: number;
   name: string;
@@ -56,12 +55,6 @@ interface Mover {
   regions: string[];
   driverIntro?: string;
   driverContent?: string;
-}
-
-interface MoversCache {
-  data?: {
-    list?: Mover[];
-  };
 }
 
 export default function MoversDetailPage() {
@@ -77,10 +70,7 @@ export default function MoversDetailPage() {
     isOpen: false,
     buttonClick: () => {},
   }); // 모달 열기
-  const [toastState, setToastState] = useState({
-    content: "",
-    isOpen: false,
-  }); // 토스트 열기
+  const { toastContent, showToast } = useToast(); // 토스트 내용
 
   // 서비스 카테고리 라벨 매핑
   const SERVICE_CATEGORY_LABEL_MAP: Record<string, string> = Object.fromEntries(
@@ -127,15 +117,14 @@ export default function MoversDetailPage() {
   const hasExistingData = cachedMover !== null;
 
   // 전체 데이터 (캐시에 없을 때만 fetch)
-  const { data: fullData, isLoading: isFullLoading } = useGetMoverFull(
+  const { data: fullData, isPending: isFullPending } = useGetMoverFull(
     idNumber,
     {
       enabled: !hasExistingData,
     }
   );
-
   // 추가 데이터 (캐시에 있을 때만 fetch)
-  const { data: extraData, isLoading: isExtraLoading } = useGetMoverExtra(
+  const { data: extraData, isPending: isExtraPending } = useGetMoverExtra(
     idNumber,
     {
       enabled: hasExistingData,
@@ -156,7 +145,7 @@ export default function MoversDetailPage() {
   );
 
   // 로딩 상태
-  const isLoading = hasExistingData ? isExtraLoading : isFullLoading;
+  const isLoading = hasExistingData ? isExtraPending : isFullPending;
 
   // ⚠️ 모든 hooks는 조건부 return 이전에 호출해야 함
   // ===== 모든 hooks 시작 =====
@@ -169,7 +158,7 @@ export default function MoversDetailPage() {
     isPending: isDeleteFavoriteMoverPending,
   } = useDeleteFavoriteMover(idNumber);
   // 지정 견적 요청 조회
-  const { data: userEstimateData, isLoading: isUserEstimateLoading } =
+  const { data: userEstimateData, isPending: isUserEstimatePending } =
     useGetUserEstimate();
   // 지정 견적 요청
   const { mutate: postRequestDriver, isPending: isPostRequestDriverPending } =
@@ -259,16 +248,7 @@ export default function MoversDetailPage() {
     // 이미 지정 견적 요청한 상태면 알림, 아니면 요청
     if (isEstimateRequested) {
       // 이미 지정 견적 요청한 상태
-      setToastState({
-        content: t("already_requested_estimate"),
-        isOpen: true,
-      });
-      setTimeout(() => {
-        setToastState({
-          content: "",
-          isOpen: false,
-        });
-      }, 3000);
+      showToast(t("already_requested_estimate"));
       return;
     }
 
@@ -289,16 +269,7 @@ export default function MoversDetailPage() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["movers"] });
         // 지정 견적 요청 완료 알림
-        setToastState({
-          content: t("designated_request_success"),
-          isOpen: true,
-        });
-        setTimeout(() => {
-          setToastState({
-            content: "",
-            isOpen: false,
-          });
-        }, 3000);
+        showToast(t("designated_request_success"));
         // 지정 견적 요청 조회 상태 초기화
         setIsEstimateRequested(false);
       },
@@ -327,7 +298,7 @@ export default function MoversDetailPage() {
         ModalState={modalState}
         setIsOpen={setModalState}
       />
-      {toastState.isOpen && <Toast content={toastState.content} info={false} />}
+      <Toast content={toastContent} info={false} />
       <div className="flex flex-col gap-10 max-w-[955px] w-full">
         <FindDriverProfile
           name={driver.nickname}
@@ -368,7 +339,7 @@ export default function MoversDetailPage() {
 
         <div className="flex flex-col gap-8">
           <h2 className="pret-2xl-bold text-black-400">{t("service_available_regions")}</h2>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             {regionLabels?.map((region: string) => (
               <RegionChip key={region} label={region} size="md" />
             ))}
@@ -380,7 +351,6 @@ export default function MoversDetailPage() {
         <ReviewSection
           rating={driver?.rating}
           reviewCount={driver?.reviewCount}
-          reviewList={driver?.reviewList}
           reviews={driver?.reviews}
           page={1}
         />
@@ -423,37 +393,7 @@ export default function MoversDetailPage() {
           />
         </div>
         <div className="w-full h-px bg-line-100" />
-        <div className="flex flex-col gap-[22px] max-md:hidden">
-          <h2 className="pret-xl-semibold text-black-400">
-            {t("only_know_driver")}
-          </h2>
-          <div className="flex gap-4">
-            <button className="size-16 bg-gray-50 border border-line-200 rounded-2xl flex items-center justify-center">
-              <Image
-                src="/assets/icon/ic-clip.svg"
-                alt="clip"
-                width={36}
-                height={36}
-              />
-            </button>
-            <button className="size-16 bg-[#FAE100] rounded-2xl flex items-center justify-center">
-              <Image
-                src="/assets/icon/ic-kakao.svg"
-                alt="kakao"
-                width={36}
-                height={36}
-              />
-            </button>
-            <button className="size-16 bg-[#4285F4] rounded-2xl flex items-center justify-center">
-              <Image
-                src="/assets/icon/ic-facebook.svg"
-                alt="facebook"
-                width={36}
-                height={36}
-              />
-            </button>
-          </div>
-        </div>
+        <MoverShareBox showToast={showToast}/>
       </div>
     </section>
   );
