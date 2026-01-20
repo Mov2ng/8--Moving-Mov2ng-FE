@@ -29,7 +29,7 @@ export default function SignupForm() {
     reset,
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
-    mode: "onChange", // 입력 중 실시간 검증
+    mode: "all",
   });
 
   // useSignup hook: 서버에 회원가입 요청 mutation
@@ -83,21 +83,21 @@ export default function SignupForm() {
           register={register("name")}
           placeholder={t("signup_name_placeholder")}
           error={errors.name}
-          touched={!!touchedFields.name}
+          touched={!!touchedFields.name || !!errors.name}
         />
         <FormField
           label={t("signup_email")}
           register={register("email")}
           placeholder={t("signup_email_placeholder")}
           error={errors.email}
-          touched={!!touchedFields.email}
+          touched={!!touchedFields.email || !!errors.email}
         />
         <FormField
           label={t("signup_phone")}
           register={register("phoneNum")}
           placeholder={t("signup_phone_placeholder")}
           error={errors.phoneNum}
-          touched={!!touchedFields.phoneNum}
+          touched={!!touchedFields.phoneNum || !!errors.phoneNum}
         />
         <FormField
           label={t("signup_password")}
@@ -105,7 +105,7 @@ export default function SignupForm() {
           register={register("password")}
           placeholder={t("signup_password_placeholder")}
           error={errors.password}
-          touched={!!touchedFields.password}
+          touched={!!touchedFields.password || !!errors.password}
         />
         <FormField
           label={t("signup_password_confirm")}
@@ -113,7 +113,7 @@ export default function SignupForm() {
           register={register("passwordConfirm")}
           placeholder={t("signup_password_confirm_placeholder")}
           error={errors.passwordConfirm}
-          touched={!!touchedFields.passwordConfirm}
+          touched={!!touchedFields.passwordConfirm || !!errors.passwordConfirm}
         />
         {/* TODO: 추후 Button 컴포넌트로 리팩토링 */}
         <button

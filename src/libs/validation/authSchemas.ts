@@ -16,8 +16,54 @@ export const signupSchema = z
     email: z.email("유효한 이메일을 입력해 주세요"),
     phoneNum: z
       .string()
-      .regex(/^[0-9]+$/, "숫자만 입력해 주세요")
-      .transform((val) => (typeof val === "string" ? val : String(val))), // 숫자면 문자열로 변환
+      .superRefine((val, ctx) => {
+        // 빈 값 체크
+        if (!val || val.length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "전화번호를 입력해 주세요",
+          });
+          return;
+        }
+
+        // 1. 숫자만 허용
+        if (!/^\d+$/.test(val)) {
+          ctx.addIssue({
+            code: "custom",
+            message: "숫자만 입력해 주세요",
+          });
+          return;
+        }
+
+        // 2. 010으로 시작하는지 체크 (각 자리수 입력 시 즉시 체크)
+        const prefix = "010";
+        for (let i = 0; i < Math.min(val.length, prefix.length); i++) {
+          if (val[i] !== prefix[i]) {
+            ctx.addIssue({
+              code: "custom",
+              message: "010으로 시작하는 숫자만 입력해 주세요",
+            });
+            return;
+          }
+        }
+
+        // 3. 길이 체크
+        if (val.length >= 12) {
+          ctx.addIssue({
+            code: "custom",
+            message: "11자 이하의 숫자만 입력해 주세요",
+          });
+          return;
+        }
+
+        // 010 조건을 만족한 후에만 10자 미만 에러 표시
+        if (val.length >= 3 && val.startsWith("010") && val.length < 10) {
+          ctx.addIssue({
+            code: "custom",
+            message: "10자 이상의 숫자만 입력해 주세요",
+          });
+        }
+      }),
     password: z
       .string()
       .min(8, "비밀번호는 최소 8자 이상이어야 합니다")
