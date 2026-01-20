@@ -58,12 +58,6 @@ interface Mover {
   driverContent?: string;
 }
 
-interface MoversCache {
-  data?: {
-    list?: Mover[];
-  };
-}
-
 export default function MoversDetailPage() {
   const { t } = useI18n(); // 언어 훅
   const { id } = useParams<{ id: string }>();
@@ -127,15 +121,14 @@ export default function MoversDetailPage() {
   const hasExistingData = cachedMover !== null;
 
   // 전체 데이터 (캐시에 없을 때만 fetch)
-  const { data: fullData, isLoading: isFullLoading } = useGetMoverFull(
+  const { data: fullData, isPending: isFullPending } = useGetMoverFull(
     idNumber,
     {
       enabled: !hasExistingData,
     }
   );
-
   // 추가 데이터 (캐시에 있을 때만 fetch)
-  const { data: extraData, isLoading: isExtraLoading } = useGetMoverExtra(
+  const { data: extraData, isPending: isExtraPending } = useGetMoverExtra(
     idNumber,
     {
       enabled: hasExistingData,
@@ -156,7 +149,7 @@ export default function MoversDetailPage() {
   );
 
   // 로딩 상태
-  const isLoading = hasExistingData ? isExtraLoading : isFullLoading;
+  const isLoading = hasExistingData ? isExtraPending : isFullPending;
 
   // ⚠️ 모든 hooks는 조건부 return 이전에 호출해야 함
   // ===== 모든 hooks 시작 =====
@@ -169,7 +162,7 @@ export default function MoversDetailPage() {
     isPending: isDeleteFavoriteMoverPending,
   } = useDeleteFavoriteMover(idNumber);
   // 지정 견적 요청 조회
-  const { data: userEstimateData, isLoading: isUserEstimateLoading } =
+  const { data: userEstimateData, isPending: isUserEstimatePending } =
     useGetUserEstimate();
   // 지정 견적 요청
   const { mutate: postRequestDriver, isPending: isPostRequestDriverPending } =

@@ -3,6 +3,7 @@ import DriverProfile from "@/components/common/DriverProfile";
 import MovingTypeChip from "@/components/chips/MovingTypeChip";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 import Link from "next/link";
+import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 
 interface FavoriteDriverCardProps {
   id: number;
@@ -46,7 +47,8 @@ export default function FavoriteDriverCard({
   likeCount,
 }: FavoriteDriverCardProps) {
   const { t } = useI18n();
-  
+  const { data: profileImageUrl } = useGetViewPresignedUrl(profileImage);
+
   const iconSrc =
     serviceType && serviceIconMap[serviceType]
       ? serviceIconMap[serviceType]
@@ -84,7 +86,7 @@ export default function FavoriteDriverCard({
 
       <DriverProfile
         name={name}
-        profileImage={profileImage}
+        profileImage={profileImageUrl || '/assets/image/avatartion-3.png'}
         avatarSize={avatarSize}
         avatarResponsive={avatarResponsive}
         nameSuffix={t("driver_suffix")}

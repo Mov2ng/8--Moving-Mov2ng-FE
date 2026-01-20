@@ -4,8 +4,9 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 
 import Search from "@/components/common/Search";
 import SortDropdown from "@/components/common/SortDropdown";
-import ServiceDropdown from "./ServiceDropdown";
-import RegionDropdown from "./RegionDropdown";
+import MoversFilter from "./MoversFilter";
+import MoversFavoriteList from "./MoversFavoriteList";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 import DriverList from "./FindDriverList";
 import { useGetMovers } from "@/hooks/useMover";
 
@@ -42,7 +43,7 @@ export default function MoversPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading,
+    isPending,
   } = useGetMovers({
     keyword: keyword,
     region: selectedRegion.value,
@@ -87,6 +88,8 @@ export default function MoversPage() {
   const onClickReset = () => {
     setSelectedRegion(regionTypeOption(t)[0]);
     setSelectedService(serviceTypeOption(t)[0]);
+    setKeyword("");
+    setSort(moverSortOption(t)[0]);
   };
 
   return (
@@ -96,56 +99,8 @@ export default function MoversPage() {
       </div>
       <div className="flex gap-4 justify-between max-md:flex-col max-md:gap-0 max-md:relative max-md:pt-4">
         <div className="max-w-[328px] w-full flex flex-col gap-8 max-md:flex-row max-md:gap-3 max-md:absolute max-sm:gap-0.5">
-          <div className="flex items-center justify-between border-b border-line-200 px-[10px] py-4 max-md:hidden">
-            <p className="pret-xl-medium text-black">{t("filter")}</p>
-            <button
-              className="pret-lg-medium text-gray-300 cursor-pointer"
-              onClick={onClickReset}
-            >
-              {t("reset")}
-            </button>
-          </div>
-          <div>
-            <p className="pret-2lg-medium text-black-400 mb-4 max-md:hidden">
-              {t("select_region")}
-            </p>
-            <RegionDropdown
-              regionList={regionTypeOption(t)}
-              selectedRegion={selectedRegion}
-              setSelectedRegion={setSelectedRegion}
-            />
-          </div>
-          <div>
-            <p className="pret-2lg-medium text-black-400 mb-4 max-md:hidden">
-              {t("select_service")}
-            </p>
-            <ServiceDropdown
-              serviceList={serviceTypeOption(t)}
-              selectedService={selectedService}
-              setSelectedService={setSelectedService}
-            />
-          </div>
-          <div className="flex flex-col gap-4 mt-3.5 max-md:hidden">
-            <p className="pret-xl-semibold text-black-400">{t("favorite_drivers")}</p>
-            {isGuest ? (
-              <></>
-            ) : (
-              <DriverList
-                size="sm"
-                key={1}
-                id={1}
-                name="이영훈"
-                driverIntro="고객님의 물품을 안전하게 운송해 드립니다. (한줄소개란)"
-                likeCount={234}
-                rating={4.5}
-                reviewCount={10}
-                driverYears={10}
-                confirmedCount={334}
-                movingType={['SMALL', 'HOME']}
-                imageSrc="/assets/image/avatartion-3.png"
-              />
-            )}
-          </div>
+          <MoversFilter t={t} onClickReset={onClickReset} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} selectedService={selectedService} setSelectedService={setSelectedService} />
+          <MoversFavoriteList t={t} isGuest={isGuest} />
         </div>
         <div className="max-w-[955px] w-full flex flex-col gap-8 max-md:gap-6">
           <div className="flex flex-col gap-6 items-end">
@@ -157,10 +112,8 @@ export default function MoversPage() {
             <Search keyword={keyword} setKeyword={setKeyword} />
           </div>
           <div className="flex flex-col gap-12 max-md:gap-8 max-sm:gap-6">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-              </div>
+            {isPending ? (
+              <LoadingSpinner />
             ) : (
               allMovers.map((driver: DriverResponseType) => (
                 <DriverList
@@ -174,7 +127,7 @@ export default function MoversPage() {
                   reviewCount={driver.reviewCount}
                   driverYears={driver.driverYears}
                   confirmedCount={driver.confirmCount}
-                  imageSrc={"/assets/image/avatartion-3.png"}
+                  imageSrc={driver.profileImage}
                   movingType={driver.serviceCategories}
                 />
               ))
