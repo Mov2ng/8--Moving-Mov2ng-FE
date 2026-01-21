@@ -135,10 +135,6 @@ export function useApiMutation<TData, TVariables, TError>({
     // errorConfig가 있으면 자동 처리
     if (errorConfig) {
       const parsedError = parseServerError(error);
-      console.error(`${errorConfig.errorMessagePrefix || "작업 실패"}:`, {
-        parsedError, // 파싱된 결과 전체
-        fullError: error,
-      });
       // 사용자에게 에러 메시지 표시
       const errorMessage =
         parsedError?.message ||

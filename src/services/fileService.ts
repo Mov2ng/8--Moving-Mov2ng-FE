@@ -223,14 +223,6 @@ export const fileService = {
         throw new Error(errorMessage);
       }
     } catch (error) {
-      // 삭제 실패 시 에러 로깅 (프로필 등록 실패 시 롤백이므로 에러를 throw하지 않음)
-      const parsedError = parseServerError(error);
-      console.error("파일 삭제 실패:", {
-        status: parsedError?.status,
-        message: parsedError?.message,
-        details: parsedError?.details,
-        fullError: error,
-      });
       // 삭제 실패는 조용히 처리 (이미 프로필 등록이 실패한 상태이므로)
     }
   },

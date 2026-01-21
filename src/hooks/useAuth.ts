@@ -25,17 +25,6 @@ export function useSignup() {
       alert("회원가입이 완료되었습니다. 로그인 해주세요.");
       router.push("/login");
     },
-    onError: (error) => {
-      const parsedError = parseServerError(error);
-      
-      // 개발자용 상세 로깅
-      console.error("[useSignup] 회원가입 실패:", {
-        endpoint: "/auth/signup",
-        timestamp: new Date().toISOString(),
-        parsedError, // 파싱된 결과 전체 (status, code, message, details 포함)
-        fullError: error, // 원본 에러 객체
-      });
-    },
   });
 }
 
@@ -95,18 +84,6 @@ export function useLogin(redirectPath?: string) {
           router.push("/profile/register");
           return;
         }
-        // 그 외 에러(500, 네트워크 에러 등)는 로그만 남기고 메인으로 이동
-        const parsedError = parseServerError(error);
-        console.error("프로필 조회 중 오류 발생:", {
-          status: parsedError?.status,
-          message: parsedError?.message,
-          details: parsedError?.details,
-          fullError: error,
-          errorType:
-            error instanceof Error ? error.constructor.name : typeof error,
-          errorString: String(error),
-        });
-        // 서버 문제 등으로 프로필 조회 실패해도 로그인은 성공했으므로 메인으로 이동
       }
 
       // 5. 프로필이 있으면 redirect 파라미터가 있으면 해당 경로로, 없으면 메인 페이지로 리디렉션
@@ -114,13 +91,6 @@ export function useLogin(redirectPath?: string) {
       const finalRedirectPath =
         redirectPath && redirectPath.startsWith("/") ? redirectPath : "/";
       router.push(finalRedirectPath);
-    },
-    onError: (error) => {
-      const parsedError = parseServerError(error);
-      console.error("로그인 실패:", {
-        parsedError, // 파싱된 결과 전체
-        fullError: error, // 원본 에러 객체
-      });
     },
   });
 }
@@ -199,11 +169,6 @@ export function useLogout() {
       router.push("/");
     },
     onError: (error) => {
-      const parsedError = parseServerError(error);
-      console.error("로그아웃 실패:", {
-        parsedError, // 파싱된 결과 전체
-        fullError: error, // 원본 에러 객체
-      });
       // 서버 요청 실패해도 클라이언트 상태는 정리
       handleAuthError(queryClient);
     },

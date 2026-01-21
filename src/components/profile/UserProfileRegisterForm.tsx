@@ -156,12 +156,6 @@ export default function UserProfileRegisterForm() {
           setUploadedFileKey(fileKey);
         } catch (error) {
           const parsedError = parseServerError(error);
-          console.error("파일 업로드 실패:", {
-            status: parsedError?.status,
-            message: parsedError?.message,
-            details: parsedError?.details,
-            fullError: error,
-          });
           setError("profileImage", {
             type: "upload",
             message:
@@ -186,13 +180,8 @@ export default function UserProfileRegisterForm() {
           await deleteFileMutation.mutateAsync(data.profileImage);
           console.log("프로필 등록 실패로 인한 이미지 롤백 완료");
         } catch (rollbackError) {
-          const parsedRollbackError = parseServerError(rollbackError);
-          console.error("이미지 롤백 실패:", {
-            status: parsedRollbackError?.status,
-            message: parsedRollbackError?.message,
-            details: parsedRollbackError?.details,
-            fullError: rollbackError,
-          });
+          // 롤백 실패는 조용히 처리 (이미 프로필 등록이 실패한 상태)
+          // console.error는 제거
         }
         setUploadedFileKey(null);
         setSelectedFile(null);
