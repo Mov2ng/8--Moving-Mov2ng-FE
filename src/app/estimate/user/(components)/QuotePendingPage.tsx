@@ -14,6 +14,9 @@ import { STALE_TIME } from "@/constants/query";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 import ConfirmQuoteModal from "./ConfirmQuoteModal";
 import { moverService } from "@/services/moverService";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/common/Toast";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 import type { ApiQuote, QuoteStatus } from "@/types/api/quotes";
 import type { QuoteCardView } from "@/types/view/quote";
@@ -55,7 +58,7 @@ export default function QuotePendingPage() {
       serviceType,
       isDesignatedRequest: item.isRequest ?? false,
       designatedLabel: t("designated_quote_full"),
-      movingDate: formatDateLabel(item.request.moving_data),
+      movingDate: formatDateLabel(item.request.moving_data, t),
       requestedAt: item.request.createdAt,
       departure: item.request.origin,
       arrival: item.request.destination,
@@ -63,13 +66,14 @@ export default function QuotePendingPage() {
     };
   };
   const [confirmId, setConfirmId] = useState<number | null>(null);
+  const { toastContent, showToast } = useToast();
   // 각 driver.id별 찜하기 상태 관리
   const [favoriteStates, setFavoriteStates] = useState<
     Map<number, { isFavorite: boolean; isPending: boolean }>
   >(new Map());
 
   // 최근 견적 정보 조회 
-  const { data, isLoading, error } = useApiQuery<
+  const { data, isPending, error } = useApiQuery<
     {
       success: boolean;
       message: string;
@@ -270,7 +274,7 @@ export default function QuotePendingPage() {
     const isForbidden = status === 403 || code === "FORBIDDEN";
 
     if (isForbidden) {
-      alert(t("forbidden_user"));
+      showToast(t("forbidden_user"));
       setTimeout(() => router.replace("/estimate/driver/pending"), 0);
     }
   }, [error, router, t]);
@@ -289,11 +293,13 @@ export default function QuotePendingPage() {
       queryClient.invalidateQueries({ queryKey: ["quotes", "pending"] });
       queryClient.invalidateQueries({ queryKey: ["quotes", "received"] });
       queryClient.invalidateQueries({ queryKey: ["quote", "pending"] });
-      alert("견적을 확정했어요.");
-      router.push("/estimate/user/received");
+      showToast(t("quote_accept_success"));
+      setTimeout(() => {
+        router.push("/estimate/user/received");
+      }, 1500);
     },
     onError: (err) => {
-      alert(err.message ?? "견적 확정에 실패했습니다.");
+      showToast(err.message ?? t("quote_accept_fail"));
     },
   });
 
@@ -315,7 +321,7 @@ export default function QuotePendingPage() {
                 <span className="text-gray-400 pret-14-medium">
                   {t("quote_request_date")}:{" "}
                   {summary.requestedAt
-                    ? formatDateLabel(summary.requestedAt)
+                    ? formatDateLabel(summary.requestedAt, t)
                     : "-"}
                 </span>
               </div>
@@ -353,17 +359,13 @@ export default function QuotePendingPage() {
         </header>
 
         <main className="max-w-6xl mx-auto px-5 py-6">
-          {isLoading && (
-            <div className="text-center text-gray-400 pret-14-medium">
-              {t("loading")}
-            </div>
-          )}
+          {isPending && <LoadingSpinner />}
           {error && (
             <div className="text-center text-secondary-red-200 pret-14-medium">
               {error.message}
             </div>
           )}
-          {!isLoading && !error && quotes.length === 0 && (
+          {!isPending && !error && quotes.length === 0 && (
             <div className="flex flex-col items-center justify-center py-14 gap-4 text-center text-gray-400 pret-14-medium">
               <Image
                 src="/assets/image/img-empty-blue.png"
@@ -375,7 +377,7 @@ export default function QuotePendingPage() {
               <div>{t("empty_pending_quotes")}</div>
             </div>
           )}
-          {!isLoading && !error && quotes.length > 0 && (
+          {!isPending && !error && quotes.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {quotes.map((quote) => {
                 const driverId = data?.data?.find(
@@ -423,6 +425,7 @@ export default function QuotePendingPage() {
         onConfirm={() => acceptQuote()}
         isSubmitting={isAccepting}
       />
+      <Toast content={toastContent} info={false} />
     </>
   );
 }
