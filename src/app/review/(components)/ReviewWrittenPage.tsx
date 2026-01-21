@@ -46,7 +46,7 @@ export default function ReviewWrittenPage() {
 
         const movingDateRaw =
           item.request?.moving_data ?? primaryEstimate?.request?.moving_data;
-        const movingDate = movingDateRaw ? formatDate(movingDateRaw, t) : "-";
+        const movingDate = movingDateRaw ? formatDate(movingDateRaw) : "-";
 
         const price =
           item.request?.price ?? primaryEstimate?.price ?? item.price ?? 0;

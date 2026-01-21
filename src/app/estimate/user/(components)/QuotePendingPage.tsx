@@ -151,7 +151,7 @@ export default function QuotePendingPage() {
         requestedAt: recentRequest.createdAt,
         departure: recentRequest.origin,
         arrival: recentRequest.destination,
-        movingDate: formatDateLabel(recentRequest.moving_data),
+        movingDate: formatDateLabel(recentRequest.moving_data, t),
       } as Pick<QuoteCardView, "serviceType" | "requestedAt" | "departure" | "arrival" | "movingDate">;
     }
     

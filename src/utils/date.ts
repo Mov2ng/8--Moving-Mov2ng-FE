@@ -1,6 +1,12 @@
+import ko from '../locales/ko/common.json';
+import en from '../locales/en/common.json';
+import zh from '../locales/zh/common.json';
+
 type DayKey = "day_sun" | "day_mon" | "day_tue" | "day_wed" | "day_thu" | "day_fri" | "day_sat";
 
-type TranslateFunction = ((key: string) => string) | undefined;
+type Message = typeof ko & typeof en & typeof zh;
+
+type TranslateFunction = ((key: keyof Message) => string) | undefined;
 
 const DAY_KEYS: readonly DayKey[] = ["day_sun", "day_mon", "day_tue", "day_wed", "day_thu", "day_fri", "day_sat"] as const;
 
@@ -11,7 +17,7 @@ const getDayName = (dayIndex: number, t?: TranslateFunction): string => {
   }
   const dayKey = DAY_KEYS[dayIndex];
   if (!dayKey) return "";
-  return t(dayKey) || "";
+  return t(dayKey as keyof Message) || "";
 };
 
 export const formatDate = (iso: string) => {

@@ -53,7 +53,7 @@ export default function ReviewWritablePage() {
         item.driver.user?.name ?? item.driver.nickname ?? t("driver_suffix"),
       profileImage:
         item.driver.profileImage ?? "/assets/image/avatartion-1.png",
-      movingDate: formatDate(item.request.moving_data, t),
+      movingDate: formatDate(item.request.moving_data),
       price: item.price ?? 0,
       reviewEnabled: true,
       reviewButtonText: t("review_write"),
