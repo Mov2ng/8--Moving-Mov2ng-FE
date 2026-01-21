@@ -34,8 +34,7 @@ export default function LandingPage() {
 
           {/* Service Cards Grid - Desktop Layout (1920px 기준) */}
           <div
-            className="grid grid-cols-3 grid-rows-2 gap-6 mt-12 max-md:mt-11 w-full h-[598px]
-          max-md:grid-cols-1 max-md:grid-rows-3 max-md:gap-6 max-md:h-[792px]"
+            className="grid grid-cols-3 grid-rows-2 gap-6 mt-12 max-md:mt-11 w-full h-[598px] max-md:grid-cols-1 max-md:grid-rows-3 max-md:gap-6 max-md:h-[792px]"
           >
             {/* Large Card (소형이사) - Left Side */}
             <div className="row-span-2 col-span-1 w-full h-full max-md:row-span-1 max-md:col-span-1 animate-fade-in-up animation-delay-200">
