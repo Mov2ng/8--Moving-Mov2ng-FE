@@ -5,6 +5,7 @@ import DriverProfileForm from "@/components/profile/DriverProfileForm";
 import UserProfileRegisterForm from "@/components/profile/UserProfileRegisterForm";
 import { usePostProfile } from "@/hooks/useProfile";
 import { ProfileFormValues } from "@/libs/validation/profileSchemas";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 /**
  * 프로필 등록 페이지 컨테이너
@@ -12,7 +13,8 @@ import { ProfileFormValues } from "@/libs/validation/profileSchemas";
  * - 로딩 처리는 RouteGuard에서 담당
  */
 export default function ProfileRegisterContainer() {
-  const { me, isLoading } = useAuth();
+  const { me, isLoading: isPending } = useAuth();
+  const { t } = useI18n();
   const postProfileMutation = usePostProfile();
 
   const handleDriverSubmit = async (data: ProfileFormValues) => {
@@ -20,19 +22,19 @@ export default function ProfileRegisterContainer() {
   };
 
   // me가 로드되지 않았으면 렌더링하지 않음 (깜빡임 방지)
-  if (isLoading || me === undefined) {
+  if (isPending || me === undefined) {
     return null;
   }
 
   const isDriver = me?.role === "DRIVER";
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 mt-10 px-6">
+    <div className="max-w-[1400px] mx-auto space-y-8 my-10 px-6">
       <div className="text-[32px] font-semibold">
-        {isDriver ? "기사님 " : ""}프로필 등록
+        {isDriver ? t("driver_profile_register_title") : t("profile_register_title")}
       </div>
       <div className="text-xl text-black-200">
-        추가 정보를 입력하여 회원가입을 완료해주세요.
+        {t("profile_register_desc")}
       </div>
       <hr className="border-line-100" />
       {isDriver ? (

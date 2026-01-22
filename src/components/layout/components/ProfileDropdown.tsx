@@ -57,8 +57,8 @@ export default function ProfileDropdown({
     >
       <div className="">
         {isUser ? (
-          <div className="flex flex-col py-2">
-            <div className="pret-lg-bold text-black-400 py-3.5">
+          <div className="flex flex-col px-3 py-4">
+            <div className="pret-lg-bold text-black-400 px-4 py-3 max-md:px-2">
               {me?.name}
               {t("customer_suffix") && ` ${t("customer_suffix")}`}
             </div>
@@ -107,7 +107,7 @@ export default function ProfileDropdown({
         ) : null}
         <div className="border-t border-line-100" />
         <button
-          className="w-full text-center px-4 py-4 pret-14-regular text-gray-500 hover:text-red-500 transition-colors"
+          className="w-full text-center p-4 pret-14-regular text-gray-500 hover:text-red-500 transition-colors"
           onClick={handleLogout}
         >
           {t("logout")}

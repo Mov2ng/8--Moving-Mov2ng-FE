@@ -8,6 +8,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 import { getToken } from "@/libs/auth/tokenStorage";
+import { DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
 import Button from "@/components/common/button";
 import Notice from "@/components/Notice/Notice";
 import ProfileAvatar from "@/components/common/ProfileAvatar";
@@ -24,18 +25,19 @@ type MenuItem = {
 export default function Header() {
   const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [hasToken, setHasToken] = useState<boolean | null>(null); // null: 아직 확인 안 함, true/false: 확인 완료
   
   // 서버/클라이언트 상태 일치를 위해 항상 useAuth 호출 (토큰 없으면 쿼리 비활성화)
-  const { me, isGuest, isLoading, isFetching, status, isUser, isDriver } = useAuth();
+  const { me, isGuest, isPending, isFetching, status, isUser, isDriver } = useAuth();
   
-  // 클라이언트에서만 토큰 확인 (hydration 에러 방지)
+  // 클라이언트에서 accessToken 확인 (서버에서 refreshToken 확인했지만 accessToken도 확인 필요)
+  const [hasAccessToken, setHasAccessToken] = useState<boolean | null>(null);
+  
   useEffect(() => {
-    setHasToken(getToken() !== null);
+    setHasAccessToken(getToken() !== null);
   }, []);
   
-  // 토큰 확인 전까지 로딩 처리하여 새로고침 시 비회원 헤더 노출 방지
-  const isAuthLoading = hasToken === null || (hasToken && (isLoading || isFetching || status === 'pending'));
+  // 인증 로딩 상태: accessToken 확인 중이거나, accessToken이 있는데 me 데이터 로딩 중
+  const isAuthLoading = hasAccessToken === null || (hasAccessToken && (isPending || isFetching || status === 'pending'));
 
   const { t, locale, setLocale } = useI18n();
 
@@ -168,7 +170,7 @@ export default function Header() {
             className="flex items-center gap-4 cursor-pointer"
           >
             <ProfileAvatar
-              src={profileImage || "/assets/image/avatartion-3.png"}
+              src={profileImage || DEFAULT_AVATAR_IMAGE}
               alt="profile"
               size="xs"
               className="w-9 h-9 max-md:w-7 max-md:h-7"

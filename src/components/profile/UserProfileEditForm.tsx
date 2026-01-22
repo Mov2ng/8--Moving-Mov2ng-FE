@@ -20,6 +20,8 @@ import {
   useUploadToS3,
 } from "@/hooks/useFileService";
 import { useI18n } from "@/libs/i18n/I18nProvider";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/common/Toast";
 
 const DEFAULT_PROFILE_IMAGE = "/assets/image/upload-default.png";
 
@@ -52,6 +54,7 @@ export default function UserProfileEditForm({
 }: UserProfileEditFormProps) {
   const { t } = useI18n();
   const router = useRouter();
+  const { toastContent, showToast } = useToast();
 
   const {
     register,
@@ -285,7 +288,7 @@ export default function UserProfileEditForm({
       const parsed = parseServerError(error);
 
       if (!parsed) {
-        alert(t("profile_edit_error"));
+        showToast(t("profile_edit_error"));
         return;
       }
 
@@ -295,22 +298,19 @@ export default function UserProfileEditForm({
       if (status === 401) {
         setError("currentPassword", {
           type: "server",
-          message: message || "현재 비밀번호가 일치하지 않습니다.",
+          message: message || t("current_password_mismatch"),
         });
         return;
       }
       
       // 429: Rate limit 초과
       if (status === 429) {
-        alert(
-          message || 
-          "비밀번호 변경 요청이 너무 많습니다. 1시간 후 다시 시도해주세요."
-        );
+        showToast(message || t("password_change_rate_limit"));
         return;
       }
 
       // 기타 에러
-      alert(message || t("profile_edit_error_unknown"));
+      showToast(message || t("profile_edit_error_unknown"));
     }
   };
 
@@ -454,6 +454,7 @@ export default function UserProfileEditForm({
           </div>
         </div>
       </div>
+      <Toast content={toastContent} />
     </form>
   );
 }
