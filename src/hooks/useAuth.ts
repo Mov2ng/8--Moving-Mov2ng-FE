@@ -5,10 +5,8 @@ import { useApiMutation } from "./useApiMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "./useApiQuery";
 import { useRouter } from "next/navigation";
-import { setToken, getToken, isTokenExpired } from "@/libs/auth/tokenStorage";
-import { refreshAccessToken } from "@/libs/auth/tokenManager";
+import { setToken, getToken } from "@/libs/auth/tokenStorage";
 import { handleAuthError } from "@/utils/authError";
-import { parseServerError } from "@/utils/parseServerError";
 import { useEffect } from "react";
 
 /**
@@ -52,45 +50,31 @@ export function useLogin(redirectPath?: string) {
       // 3. 사용자 정보(me) 쿼리 캐시 삭제 (다음 useMe 호출 시 자동으로 새로 가져옴)
       queryClient.removeQueries({ queryKey: ["me"] });
 
-      // 4. 프로필 완성 여부 확인하여 첫 로그인 판단
+      // 4. 사용자 정보(me) 조회 및 프로필 등록 여부 확인
       try {
-        const profileResponse = await userService.getProfile();
-        const profile = profileResponse?.data;
+        const meResponse = await userService.me();
+        const me = meResponse?.data;
 
-        // serviceCategories와 region이 없거나 비어있으면 프로필 미완성으로 판단
-        const hasServiceCategories =
-          profile?.serviceCategories &&
-          Array.isArray(profile.serviceCategories) &&
-          profile.serviceCategories.length > 0;
-        const hasRegion =
-          profile?.region &&
-          Array.isArray(profile.region) &&
-          profile.region.length > 0;
+        // React Query 캐시에 me 데이터 저장 (RouteGuard가 즉시 인식하도록)
+        if (me) {
+          queryClient.setQueryData(["me"], meResponse);
+        }
 
-        if (!hasServiceCategories || !hasRegion) {
-          alert("로그인이 완료되었습니다. 추가 정보를 입력해주세요.");
+        // 프로필 미등록이면 프로필 등록 페이지로, 아니면 원래 경로로 리디렉션
+        if (!me?.hasProfile) {
+          alert("로그인이 완료되었습니다. 프로필을 등록해주세요.");
           router.push("/profile/register");
-          return;
+        } else {
+          const finalRedirectPath =
+            redirectPath && redirectPath.startsWith("/") ? redirectPath : "/";
+          router.push(finalRedirectPath);
         }
-      } catch (error: unknown) {
-        // 404 에러만 "프로필 없음"으로 판단 (첫 로그인)
-        if (
-          error &&
-          typeof error === "object" &&
-          "status" in error &&
-          error.status === 404
-        ) {
-          alert("로그인이 완료되었습니다. 추가 정보를 입력해주세요.");
-          router.push("/profile/register");
-          return;
-        }
+      } catch (error) {
+        // 예상치 못한 에러 시에도 기본 경로로 리디렉션
+        const finalRedirectPath =
+          redirectPath && redirectPath.startsWith("/") ? redirectPath : "/";
+        router.push(finalRedirectPath);
       }
-
-      // 5. 프로필이 있으면 redirect 파라미터가 있으면 해당 경로로, 없으면 메인 페이지로 리디렉션
-      alert("로그인이 완료되었습니다");
-      const finalRedirectPath =
-        redirectPath && redirectPath.startsWith("/") ? redirectPath : "/";
-      router.push(finalRedirectPath);
     },
   });
 }
@@ -132,13 +116,15 @@ export function useMe(enabled: boolean = true) {
  */
 export function useAuth(enabled: boolean = true) {
   // 사용자 정보 조회
-  const { data: meData, isLoading } = useMe(enabled);
+  const { data: meData, isLoading, isFetching, status } = useMe(enabled);
   const me = meData?.data;
 
   // 비회원은 me = null로 정상 처리
   return {
     me,
     isLoading,
+    isFetching, // 서버/클라이언트 초기 상태 일치용
+    status, // 서버/클라이언트 초기 상태 일치용
     isGuest: !me, // 비회원 (me가 null이면 guest)
     isUser: me?.role === "USER", // 일반회원
     isDriver: me?.role === "DRIVER", // 기사님

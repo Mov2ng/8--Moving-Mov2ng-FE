@@ -1,261 +1,295 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { useGetMyMoverDetail } from "@/hooks/useProfile";
+import { useGetMyMoverDetail, useGetProfile } from "@/hooks/useProfile";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { getToken } from "@/libs/auth/tokenStorage";
 
-/**
- * RouteGuard - 클라이언트 사이드에서 접근 제한
- * - useAuth로 인증 상태 체크
- * - 프로필 완성 여부 등 추가 검증 가능
- */
-
-// 게스트 접근 불가 목록
 const PROTECTED_ROUTES = ["/profile", "/quote", "/estimate", "/review"];
-
-// 회원 접근 불가
 const GUEST_ONLY_ROUTES = ["/login", "/signup"];
-
-// 기사님만 접근 가능한 경로
-// /profile은 정확히 일치하는 경우만, /profile/driver로 시작하는 경로는 모두 기사 전용
-const DRIVER_ONLY_ROUTES = ["/estimate/driver", "/profile/driver"];
-
-// 일반 회원만 접근 가능한 경로
+const DRIVER_ONLY_ROUTES = ["/profile", "/estimate/driver", "/profile/driver"];
 const USER_ONLY_ROUTES = ["/profile/user"];
-
-// 모든 회원 접근 가능한 경로 (예외 처리용)
-const PUBLIC_PROFILE_ROUTES = ["/profile/register"];
+const PROFILE_MISSING_ONLY_ROUTES = ["/profile/register"];
 
 /**
  * 프로필 미등록 여부 체크
- * @param profileData - 프로필 데이터
- * @param profileError - 프로필 에러
- * @returns 프로필이 미등록되었는지 여부
+ * me.hasProfile 우선 사용, 없으면 프로필 데이터나 에러로 판단 (하위 호환성)
  */
 function checkProfileMissing(
-  profileData: unknown,
-  profileError: unknown
+  me?: { hasProfile?: boolean } | null,
+  profileData?: unknown,
+  profileError?: unknown
 ): boolean {
-  const profile = (profileData as { data?: unknown })?.data;
-
-  // 프로필 데이터가 있으면 데이터 기반으로 판단
-  if (profile) {
-    // 프로필이 있거나 필수 정보가 없는 경우
-    const hasServiceCategories =
-      (profile as { serviceCategories?: unknown[] })?.serviceCategories &&
-      Array.isArray(
-        (profile as { serviceCategories?: unknown[] }).serviceCategories
-      ) &&
-      ((profile as { serviceCategories?: unknown[] }).serviceCategories
-        ?.length ?? 0) > 0;
-
-    const hasRegion =
-      (profile as { regions?: unknown[] })?.regions &&
-      Array.isArray((profile as { regions?: unknown[] }).regions) &&
-      ((profile as { regions?: unknown[] }).regions?.length ?? 0) > 0;
-
-    // 필수 정보가 없으면 프로필 미등록으로 판단
-    return !hasServiceCategories || !hasRegion;
+  if (me && typeof me.hasProfile === "boolean") {
+    return !me.hasProfile;
   }
 
-  // 프로필 데이터가 없을 때만 에러 체크
-  // 404 에러만 프로필 미등록으로 판단 (401, 500 등은 네트워크/인증 문제이므로 프로필 미등록으로 판단하지 않음)
-  if (profileError) {
-    if (
-      typeof profileError === "object" &&
-      "status" in profileError &&
-      profileError.status === 404
-    ) {
-      // 404 에러는 프로필이 실제로 없는 경우
-      return true;
+  if (profileData) {
+    const profile = (profileData as { data?: unknown })?.data;
+    if (profile) {
+      const serviceCategories = (profile as { serviceCategories?: unknown[] })
+        ?.serviceCategories;
+      const regionData =
+        (profile as { region?: unknown[] })?.region ||
+        (profile as { regions?: unknown[] })?.regions;
+      return (
+        !Array.isArray(serviceCategories) ||
+        serviceCategories.length === 0 ||
+        !Array.isArray(regionData) ||
+        regionData.length === 0
+      );
     }
-    // 404가 아닌 에러(401 토큰 만료, 500 서버 에러, 네트워크 에러 등)는
-    // 프로필 미등록이 아닌 다른 문제이므로 false 반환 (프로필 체크 건너뜀)
-    return false;
   }
 
-  // 프로필 데이터도 없고 에러도 없으면 프로필 미등록으로 판단
+  if (
+    profileError &&
+    typeof profileError === "object" &&
+    "status" in profileError &&
+    profileError.status === 404
+  ) {
+    return true;
+  }
+
   return true;
 }
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
-  const { isGuest, isDriver, isLoading } = useAuth();
+  const { me, isGuest, isDriver, isLoading, isFetching: isAuthFetching, status } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
+  const hasRedirectedRef = useRef(false); // 리디렉션 중복 방지
+
+  // 클라이언트 마운트 후에만 로딩 상태 체크 (Hydration 에러 방지)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // pathname이 변경되면 리디렉션 플래그 리셋 (리디렉션 대상 경로가 아닐 때만)
+  useEffect(() => {
+    if (pathname !== "/profile/register") {
+      hasRedirectedRef.current = false;
+    }
+  }, [pathname]);
 
   // 보호된 경로 접근 시도
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
+  
+  // 캐시 확인: me가 있으면 캐시된 데이터 있음
+  const hasCachedData = me !== undefined;
+  
+  // 로딩 체크: 캐시 없고 보호된 경로이고 실제 로딩 중일 때만
+  const hasToken = isMounted && getToken() !== null;
+  const isAuthLoading = isProtectedRoute && !hasCachedData && hasToken && isLoading && me === undefined;
+  const isCurrentlyLoading = isAuthLoading;
 
-  // 게스트 전용 경로 접근 시도
+  // 프로필 미등록자만 접근 가능한 경로
+  const isProfileMissingOnlyRoute = PROFILE_MISSING_ONLY_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
   const isGuestOnlyRoute = GUEST_ONLY_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
-
-  // 모든 회원 접근 가능한 프로필 경로 (예외 처리용)
-  const isProfileRegisterRoute = PUBLIC_PROFILE_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  // 기사님 전용 경로 접근 시도
   const isDriverOnlyRoute =
     pathname === "/profile" ||
-    DRIVER_ONLY_ROUTES.some((route) => pathname.startsWith(route));
-
-  // 일반 회원 전용 경로 접근 시도
+    DRIVER_ONLY_ROUTES.some((route) => route !== "/profile" && pathname.startsWith(route));
   const isUserOnlyRoute = USER_ONLY_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
 
-  // 드라이버 전용 경로에서 프로필 조회 (드라이버이고 로딩이 완료되었을 때만)
+  const canCheckProfile = !isGuest && !isAuthLoading;
+  const shouldWaitForAuth = pathname === "/profile/register" && hasToken && isAuthLoading;
+  const needsProfileCheck = canCheckProfile && me && typeof me.hasProfile !== "boolean";
+
+  const shouldFetchDriverProfile =
+    isDriver && needsProfileCheck && isDriverOnlyRoute;
+  const shouldFetchUserProfile = !isDriver && needsProfileCheck && isUserOnlyRoute;
+
   const {
     data: profileData,
     isLoading: isProfileLoading,
     error: profileError,
     isError,
     isFetching,
-  } = useGetMyMoverDetail(isDriver && !isLoading && isDriverOnlyRoute);
+  } = useGetMyMoverDetail(shouldFetchDriverProfile);
+
+  const {
+    data: userProfileData,
+    isLoading: isUserProfileLoading,
+    error: userProfileError,
+    isError: isUserProfileError,
+    isFetching: isUserProfileFetching,
+  } = useGetProfile(shouldFetchUserProfile);
 
   useEffect(() => {
-    // 로딩 중이면 아무것도 안 함
-    if (isLoading) return;
+    if (isCurrentlyLoading || shouldWaitForAuth) return;
 
-    // 비회원이 보호된 경로 접근 시도 시 로그인 페이지로 리디렉션
-    if (isProtectedRoute && isGuest) {
-      // 리디렉션 후 원래 가려던 경로로 돌아올 수 있도록 URL 파라미터로 전달
-      const loginUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
-      router.push(loginUrl);
-      return;
-    }
-
-    // 기사님이 아닌 회원이 기사님 전용 경로 접근 시도 시 홈으로 리디렉션
-    if (isDriverOnlyRoute && !isGuest && !isDriver && !isProfileRegisterRoute) {
+    // 프로필 등록 페이지: 이미 프로필이 등록되어 있으면 홈으로 리디렉션
+    if (isProfileMissingOnlyRoute && canCheckProfile && me?.hasProfile === true) {
       router.push("/");
       return;
     }
 
-    // 일반 회원이 아닌 회원이 일반 회원 전용 경로 접근 시도 시 홈으로 리디렉션
-    if (isUserOnlyRoute && !isGuest && isDriver) {
-      router.push("/");
-      return;
-    }
-
-    // 로그인한 사용자가 게스트 전용 경로 접근 시도 시 홈으로 리디렉션
-    if (isGuestOnlyRoute && !isGuest) {
-      router.push("/");
-      return;
-    }
-
-    // 드라이버 전용 경로 접근 시 프로필 등록 여부 체크
+    // 비회원이 보호된 경로 접근 시 로그인 페이지로 리디렉션
+    // 로딩이 완료된 후(isLoading, isAuthFetching이 false) 실제 게스트인 경우에만 리디렉션
     if (
+      isProtectedRoute &&
+      isGuest &&
+      !shouldWaitForAuth &&
+      !isLoading &&
+      !isAuthFetching &&
+      status !== "pending"
+    ) {
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    // 권한 체크: 잘못된 경로 접근 시 홈으로 리디렉션
+    if (
+      (isDriverOnlyRoute && !isGuest && !isDriver && !isProfileMissingOnlyRoute) ||
+      (isUserOnlyRoute && !isGuest && isDriver) ||
+      (isGuestOnlyRoute && !isGuest)
+    ) {
+      router.push("/");
+      return;
+    }
+
+    // 드라이버 전용 경로: 프로필 미등록 시 리디렉션 (한 번만)
+    if (
+      !hasRedirectedRef.current &&
+      pathname !== "/profile/register" &&
       isDriverOnlyRoute &&
       isDriver &&
+      !isProfileMissingOnlyRoute &&
       !isProfileLoading &&
-      !isFetching && // 재시도 중이 아닐 때만 체크
-      pathname !== "/profile/register" // 프로필 등록 페이지이므로 예외 처리
+      !isFetching &&
+      (me?.hasProfile === false ||
+        (profileData && checkProfileMissing(me, profileData, profileError)) ||
+        (isError && profileError))
     ) {
-      // 프로필 데이터가 있으면 캐시된 데이터를 우선 사용
-      if (profileData) {
-        const isProfileMissing = checkProfileMissing(profileData, profileError);
-        // 프로필 미등록 시 프로필 등록 페이지로 리디렉션
-        if (isProfileMissing) {
-          alert("프로필 등록 후 이용 부탁드립니다.");
-          router.push("/profile/register");
-          return;
-        }
-        // 프로필 데이터가 있고 유효하면 통과
-        return;
-      }
+      hasRedirectedRef.current = true;
+      alert("프로필 등록 후 이용해주세요");
+      router.push("/profile/register");
+      return;
+    }
 
-      // 프로필 데이터가 없을 때만 에러 체크
-      if (isError && profileError) {
-        const is404Error =
-          typeof profileError === "object" &&
-          "status" in profileError &&
-          profileError.status === 404;
-
-        // 404 에러만 프로필 미등록으로 판단
-        if (is404Error) {
-          alert("프로필 등록 후 이용 부탁드립니다.");
-          router.push("/profile/register");
-          return;
-        }
-      }
+    // 일반 회원 전용 경로: 프로필 미등록 시 리디렉션 (한 번만)
+    if (
+      !hasRedirectedRef.current &&
+      pathname !== "/profile/register" &&
+      isUserOnlyRoute &&
+      !isDriver &&
+      !isGuest &&
+      !isProfileMissingOnlyRoute &&
+      !isUserProfileLoading &&
+      !isUserProfileFetching &&
+      (me?.hasProfile === false ||
+        (userProfileData && checkProfileMissing(me, userProfileData, userProfileError)) ||
+        (isUserProfileError && userProfileError))
+    ) {
+      hasRedirectedRef.current = true;
+      alert("프로필 등록 후 이용해주세요");
+      router.push("/profile/register");
+      return;
     }
   }, [
     isGuest,
     isDriver,
+    me,
     isLoading,
+    isAuthFetching,
+    status,
     isProfileLoading,
     isFetching,
     profileData,
     profileError,
     isError,
+    isUserProfileLoading,
+    isUserProfileFetching,
+    userProfileData,
+    userProfileError,
+    isUserProfileError,
     pathname,
     router,
+    isCurrentlyLoading,
+    shouldWaitForAuth,
+    canCheckProfile,
+    isProfileMissingOnlyRoute,
     isProtectedRoute,
-    isGuestOnlyRoute,
     isDriverOnlyRoute,
     isUserOnlyRoute,
-    isProfileRegisterRoute,
+    isGuestOnlyRoute,
   ]);
 
-  // 로딩 중일 때는 로딩 UI 표시
-  // TODO: 추후 로딩중 텍스트 애니메이션으로 변경
-  if (
-    isLoading ||
-    (isDriverOnlyRoute && isDriver && (isProfileLoading || isFetching))
-  ) {
+  // 프로필 데이터 로딩: 캐시 없고 프로필 체크 필요할 때만
+  const isProfileDataLoading =
+    !hasCachedData &&
+    needsProfileCheck &&
+    ((isDriverOnlyRoute && isDriver && isProfileLoading) ||
+      (isUserOnlyRoute && !isDriver && isUserProfileLoading));
+
+  // 프로필 미등록 체크: 리디렉션이 필요한 경우 렌더링하지 않음
+  const isAuthComplete = !isLoading && !isAuthFetching && status !== "pending";
+  const isDriverProfileMissing =
+    isAuthComplete &&
+    !hasRedirectedRef.current &&
+    pathname !== "/profile/register" &&
+    isDriverOnlyRoute &&
+    isDriver &&
+    !isProfileMissingOnlyRoute &&
+    !isProfileLoading &&
+    !isFetching &&
+    (me?.hasProfile === false ||
+      (profileData && checkProfileMissing(me, profileData, profileError)) ||
+      (isError && profileError));
+
+  const isUserProfileMissing =
+    isAuthComplete &&
+    !hasRedirectedRef.current &&
+    pathname !== "/profile/register" &&
+    isUserOnlyRoute &&
+    !isDriver &&
+    !isGuest &&
+    !isProfileMissingOnlyRoute &&
+    !isUserProfileLoading &&
+    !isUserProfileFetching &&
+    (me?.hasProfile === false ||
+      (userProfileData && checkProfileMissing(me, userProfileData, userProfileError)) ||
+      (isUserProfileError && userProfileError));
+
+  // 프로필 미등록이면 렌더링하지 않음 (useEffect에서 리디렉션 처리)
+  if (isDriverProfileMissing || isUserProfileMissing) {
+    return null;
+  }
+
+  // 로딩 스피너: 캐시 없고 로딩 중일 때만
+  const isAllLoading = !hasCachedData && (isCurrentlyLoading || isProfileDataLoading || shouldWaitForAuth);
+
+  if (isAllLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div>로딩 중...</div>
+        <LoadingSpinner size="md" showText={true} />
       </div>
     );
   }
 
-  // 리디렉션 중이면 렌더링하지 않음 (깜빡임 방지)
-  if (
-    (isProtectedRoute && isGuest) || // 보호된 경로 접근 시도 시
-    (isDriverOnlyRoute && !isGuest && !isDriver && !isProfileRegisterRoute) || // 기사님 전용 경로 접근 시도 시
-    (isUserOnlyRoute && !isGuest && isDriver) || // 일반 회원 전용 경로 접근 시도 시
-    (isGuestOnlyRoute && !isGuest) // 게스트 전용 경로 접근 시도 시
-  ) {
-    return null;
-  }
-
-  // 드라이버 전용 경로에서 프로필 미등록 시 리디렉션 중이면 렌더링하지 않음
-  if (
-    isDriverOnlyRoute &&
-    isDriver &&
-    !isProfileLoading &&
-    !isFetching && // 재시도 중이 아닐 때만 체크
-    pathname !== "/profile/register" // 프로필 등록 페이지이므로 예외 처리
-  ) {
-    // 프로필 데이터가 있으면 캐시된 데이터로 판단
-    if (profileData) {
-      if (checkProfileMissing(profileData, profileError)) {
-        return null;
-      }
-      // 프로필 데이터가 있고 유효하면 통과
-      return <>{children}</>;
-    }
-
-    // 프로필 데이터가 없을 때만 에러 체크
-    if (isError && profileError) {
-      const is404Error =
-        typeof profileError === "object" &&
-        "status" in profileError &&
-        profileError.status === 404;
-
-      // 404 에러만 프로필 미등록으로 판단
-      if (is404Error) {
-        return null;
-      }
-      // 404가 아닌 에러는 프로필 체크를 건너뛰고 페이지 렌더링 허용
+  // 리디렉션 중이면 렌더링하지 않음 (로딩 완료 후에만 체크)
+  if (isAuthComplete) {
+    if (
+      (isProtectedRoute && isGuest && !shouldWaitForAuth) ||
+      (isDriverOnlyRoute && !isGuest && !isDriver && !isProfileMissingOnlyRoute) ||
+      (isUserOnlyRoute && !isGuest && isDriver) ||
+      (isGuestOnlyRoute && !isGuest) ||
+      (isProfileMissingOnlyRoute && !isGuest && me?.hasProfile === true)
+    ) {
+      return null;
     }
   }
 
   return <>{children}</>;
 }
+// TODO: 보호 접근 페이지에 프로필 미등록 판단시 토스트 컴포넌트로 알리고 리디렉션 처리

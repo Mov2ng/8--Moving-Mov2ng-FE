@@ -44,6 +44,9 @@ export default function LoginForm() {
 
   // useLogin hook: onSuccess에서 accessToken 저장 + me invalidate 처리
   const loginMutation = useLogin(redirectPath || undefined);
+  
+  // mutation의 실제 로딩 상태 사용 (isSubmitting보다 정확함)
+  const isLoggingIn = loginMutation.isPending || isSubmitting;
 
   // Rate limit 카운트다운 타이머
   useEffect(() => {
@@ -147,7 +150,7 @@ export default function LoginForm() {
   // 버튼 비활성화 조건: 폼 검증 실패, 제출 중, rate limit 적용 중
   const isButtonDisabled =
     !isValid ||
-    isSubmitting ||
+    isLoggingIn ||
     (rateLimitUntil !== null && rateLimitUntil > Date.now());
 
   return (
@@ -181,7 +184,7 @@ export default function LoginForm() {
           ? t("login_rate_limit_retry_after")
               .replaceAll("{minutes}", String(Math.floor(remainingSeconds / 60)))
               .replaceAll("{seconds}", String(remainingSeconds % 60))
-          : isSubmitting
+          : isLoggingIn
           ? t("login_submitting")
           : t("login")}
       </button>
