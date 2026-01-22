@@ -3,6 +3,7 @@ import ReviewPointBox from "@/app/movers/(components)/ReviewPointBox";
 import ReviewList from "@/app/movers/(components)/ReviewList";
 import { Pagination } from "@/components/common/Pagination";
 import { formatRelativeTime } from "@/utils/formatRelativeTime";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 import type { ReviewType } from "@/types/driverProfileType";
 
@@ -29,10 +30,11 @@ export default function ReviewSection({
   reviews= [],
   page = 1,
 }: ReviewSectionProps) {
+  const { t } = useI18n();
 
   return (
     <div className="flex flex-col gap-8">
-      <h2 className="pret-2xl-bold text-black-400">리뷰</h2>
+      <h2 className="pret-2xl-bold max-md:pret-2xl-bold text-black-400">{t("review")}</h2>
       <ReviewPointBox
         rating={rating}
         reviewCount={reviewCount}
@@ -64,7 +66,7 @@ export default function ReviewSection({
               />
             </div>
             <p className="text-gray-400 pret-2xl-regular text-center">
-              아직 등록된 리뷰가 없어요!
+              {t("no_reviews_yet")}
             </p>
           </div>
         )}
