@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import LandingButton from "./LandingButton";
 import ServiceCard from "./ServiceCard";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,12 +11,18 @@ import { useI18n } from "@/libs/i18n/I18nProvider";
 export default function LandingPage() {
   const router = useRouter();
   const { t } = useI18n();
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
+  
+  // 클라이언트 마운트 후 토큰 확인 (hydration 에러 방지)
+  useEffect(() => {
+    setHasToken(getToken() !== null);
+  }, []);
+  
   // 랜딩 페이지에서는 토큰이 없으면 API 호출을 건너뛰어 빠르게 렌더링
-  const hasToken = typeof window !== "undefined" && getToken() !== null;
-  const { isGuest } = useAuth(hasToken);
+  const { isGuest } = useAuth(hasToken === true);
 
-  // 토큰이 없으면 무조건 비회원으로 간주
-  const showButtons = !hasToken || isGuest;
+  // 토큰이 없거나 게스트면 버튼 표시 (토큰 확인 전까지는 버튼 표시하여 깜빡임 방지)
+  const showButtons = hasToken === null || hasToken === false || isGuest;
 
   return (
     <div className="min-h-screen bg-background-400">
