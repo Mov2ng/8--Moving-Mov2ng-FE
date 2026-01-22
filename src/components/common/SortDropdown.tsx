@@ -49,7 +49,7 @@ export default function SortDropdown({
       >
         {sort.label}
         <Image
-          src="assets/icon/ic-chevron-down.svg"
+          src="/assets/icon/ic-chevron-down.svg"
           alt="arrow-down"
           width={20}
           height={20}

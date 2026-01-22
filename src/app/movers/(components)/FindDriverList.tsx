@@ -46,7 +46,7 @@ export default function DriverList({ size = 'md', id, name, driverIntro, likeCou
         ))}
         <MovingTypeChip
           label="지정 견적 요청"
-          iconSrc="assets/icon/ic-File-dock-fill.svg"
+          iconSrc="/assets/icon/ic-File-dock-fill.svg"
           size={size === 'sm' ? 'sm' : 'md'}
           variant="rd"
         />
