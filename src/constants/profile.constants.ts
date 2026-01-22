@@ -2,6 +2,9 @@
  * 프로필 관련 상수
  */
 
+// 기본 아바타 이미지 (프로필 이미지가 없을 때 사용)
+export const DEFAULT_AVATAR_IMAGE = "/assets/image/avatartion-default.png";
+
 // 기본 아바타 이미지 목록
 export const DEFAULT_AVATARS: string[] = [
   "/assets/image/avatartion-1.png",
