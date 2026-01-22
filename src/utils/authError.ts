@@ -14,6 +14,7 @@ export function handleAuthError(
   options?: {
     redirectTo?: string;
     showMessage?: string;
+    onShowMessage?: (message: string) => void; // toast 콜백
   }
 ) {
   // accessToken 삭제
@@ -24,9 +25,14 @@ export function handleAuthError(
     queryClient.removeQueries({ queryKey: ["me"] });
   }
 
-  // 메시지 표시
+  // 메시지 표시 (toast 콜백이 있으면 사용, 없으면 alert)
   if (options?.showMessage) {
-    alert(options.showMessage);
+    if (options.onShowMessage) {
+      options.onShowMessage(options.showMessage);
+    } else {
+      // fallback: alert (하위 호환성)
+      alert(options.showMessage);
+    }
   }
 
   // 리디렉션 (클라이언트 사이드에서만 동작)

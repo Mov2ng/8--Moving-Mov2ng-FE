@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { setToken, getToken } from "@/libs/auth/tokenStorage";
 import { handleAuthError } from "@/utils/authError";
 import { useEffect } from "react";
+import { useI18n } from "@/libs/i18n/I18nProvider";
+import { useToast } from "@/hooks/useToast";
 
 /**
  * 회원가입 mutation 생성 훅
@@ -15,13 +17,16 @@ import { useEffect } from "react";
  */
 export function useSignup() {
   const router = useRouter();
+  const { t } = useI18n();
+  const { showToast } = useToast();
 
   return useApiMutation({
     mutationKey: ["signup"],
     mutationFn: userService.signup,
-    onSuccess: () => {
-      alert("회원가입이 완료되었습니다. 로그인 해주세요.");
-      router.push("/login");
+    successConfig: {
+      successMessage: t("signup_success"),
+      onSuccessMessage: showToast,
+      redirectPath: "/login",
     },
   });
 }
@@ -34,6 +39,8 @@ export function useSignup() {
 export function useLogin(redirectPath?: string) {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { t } = useI18n();
+  const { showToast } = useToast();
 
   return useApiMutation({
     mutationKey: ["login"],
@@ -62,7 +69,8 @@ export function useLogin(redirectPath?: string) {
 
         // 프로필 미등록이면 프로필 등록 페이지로, 아니면 원래 경로로 리디렉션
         if (!me?.hasProfile) {
-          alert("로그인이 완료되었습니다. 프로필을 등록해주세요.");
+          // 프로필 미등록 시에는 별도 메시지 표시
+          showToast(t("login_success"));
           router.push("/profile/register");
         } else {
           const finalRedirectPath =
@@ -122,7 +130,8 @@ export function useAuth(enabled: boolean = true) {
   // 비회원은 me = null로 정상 처리
   return {
     me,
-    isLoading,
+    isLoading: isLoading, // 하위 호환성을 위해 유지하되, isPending도 제공
+    isPending: isLoading, // isLoading의 별칭
     isFetching, // 서버/클라이언트 초기 상태 일치용
     status, // 서버/클라이언트 초기 상태 일치용
     isGuest: !me, // 비회원 (me가 null이면 guest)

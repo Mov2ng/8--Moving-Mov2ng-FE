@@ -11,6 +11,8 @@ import { useI18n } from "@/libs/i18n/I18nProvider";
 import Image from "next/image";
 import Link from "next/link";
 import OAuth from "@/components/form/OAuth";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/common/Toast";
 
 /**
  * 회원가입 폼 컴포넌트
@@ -20,6 +22,7 @@ import OAuth from "@/components/form/OAuth";
  */
 export default function SignupForm() {
   const { t } = useI18n();
+  const { toastContent, showToast } = useToast();
 
   // react-hook-form 세팅 (zod 검증)
   const {
@@ -58,13 +61,13 @@ export default function SignupForm() {
 
       // 파싱 실패시 사용자에게 알림
       if (!parsed) {
-        alert(t("signup_error"));
+        showToast(t("signup_error"));
         return;
       }
 
       // 사용자 액션이 필요한 에러 
       if (parsed.status === 400) {
-        alert(parsed.message || t("signup_error_unknown"));
+        showToast(parsed.message || t("signup_error_unknown"));
         return;
       }
     }
@@ -139,6 +142,7 @@ export default function SignupForm() {
       </div>
       {/* NOTE 잠정 중단: 이메일 기반 회원가입, 로그인, 프로필 조회, 수정 로직 모두 변경해야 함 */}
       {/* <OAuth /> */}
+      <Toast content={toastContent} />
     </div>
   );
 }

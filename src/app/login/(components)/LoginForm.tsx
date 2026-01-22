@@ -10,6 +10,8 @@ import RoleToggle from "../../../components/toggle/RoleToggle";
 import { useSearchParams } from "next/navigation";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 import { useState, useEffect, useRef } from "react";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/common/Toast";
 
 /**
  * 로그인 폼
@@ -19,6 +21,7 @@ import { useState, useEffect, useRef } from "react";
  */
 export default function LoginForm() {
   const { t } = useI18n();
+  const { toastContent, showToast } = useToast();
   // URL에서 redirect 파라미터 읽기
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get("redirect");
@@ -104,7 +107,7 @@ export default function LoginForm() {
       const remaining = Math.ceil((rateLimitUntil - Date.now()) / 1000);
       const minutes = Math.floor(remaining / 60);
       const seconds = remaining % 60;
-      alert(
+      showToast(
         t("login_rate_limit_message")
           .replaceAll("{minutes}", String(minutes))
           .replaceAll("{seconds}", String(seconds))
@@ -126,7 +129,7 @@ export default function LoginForm() {
 
       // 파싱 실패시 서버 에러
       if (!parsed) {
-        alert(t("login_error"));
+        showToast(t("login_error"));
         return; // finally에서 플래그 해제됨
       }
 
@@ -135,11 +138,11 @@ export default function LoginForm() {
         const cooldownUntil = Date.now() + RATE_LIMIT_COOLDOWN_MS;
         setRateLimitUntil(cooldownUntil); // rate limit 적용 종료 시간 설정
         localStorage.setItem("loginRateLimitUntil", cooldownUntil.toString()); // rate limit 상태 저장
-        alert(parsed.message || t("login_rate_limit_message_15min"));
+        showToast(parsed.message || t("login_rate_limit_message_15min"));
         return; // finally에서 플래그 해제
       } else {
         // 다른 에러는 기존대로 처리
-        alert(parsed.message || t("login_error_unknown"));
+        showToast(parsed.message || t("login_error_unknown"));
         return; // finally에서 플래그 해제
       }
     } finally {
@@ -188,6 +191,7 @@ export default function LoginForm() {
           ? t("login_submitting")
           : t("login")}
       </button>
+      <Toast content={toastContent} />
     </form>
   );
 }

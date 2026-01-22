@@ -6,6 +6,9 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { getToken } from "@/libs/auth/tokenStorage";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/common/Toast";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 const PROTECTED_ROUTES = ["/profile", "/quote", "/estimate", "/review"];
 const GUEST_ONLY_ROUTES = ["/login", "/signup"];
@@ -56,11 +59,13 @@ function checkProfileMissing(
 }
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
-  const { me, isGuest, isDriver, isLoading, isFetching: isAuthFetching, status } = useAuth();
+  const { me, isGuest, isDriver, isLoading: isPending, isFetching: isAuthFetching, status } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
   const hasRedirectedRef = useRef(false); // 리디렉션 중복 방지
+  const { toastContent, showToast } = useToast();
+  const { t } = useI18n();
 
   // 클라이언트 마운트 후에만 로딩 상태 체크 (Hydration 에러 방지)
   useEffect(() => {
@@ -84,7 +89,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   
   // 로딩 체크: 캐시 없고 보호된 경로이고 실제 로딩 중일 때만
   const hasToken = isMounted && getToken() !== null;
-  const isAuthLoading = isProtectedRoute && !hasCachedData && hasToken && isLoading && me === undefined;
+  const isAuthLoading = isProtectedRoute && !hasCachedData && hasToken && isPending && me === undefined;
   const isCurrentlyLoading = isAuthLoading;
 
   // 프로필 미등록자만 접근 가능한 경로
@@ -140,7 +145,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
       isProtectedRoute &&
       isGuest &&
       !shouldWaitForAuth &&
-      !isLoading &&
+      !isPending &&
       !isAuthFetching &&
       status !== "pending"
     ) {
@@ -172,7 +177,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
         (isError && profileError))
     ) {
       hasRedirectedRef.current = true;
-      alert("프로필 등록 후 이용해주세요");
+      showToast(t("profile_register_required"));
       router.push("/profile/register");
       return;
     }
@@ -192,7 +197,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
         (isUserProfileError && userProfileError))
     ) {
       hasRedirectedRef.current = true;
-      alert("프로필 등록 후 이용해주세요");
+      showToast(t("profile_register_required"));
       router.push("/profile/register");
       return;
     }
@@ -200,7 +205,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     isGuest,
     isDriver,
     me,
-    isLoading,
+    isPending,
     isAuthFetching,
     status,
     isProfileLoading,
@@ -233,7 +238,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
       (isUserOnlyRoute && !isDriver && isUserProfileLoading));
 
   // 프로필 미등록 체크: 리디렉션이 필요한 경우 렌더링하지 않음
-  const isAuthComplete = !isLoading && !isAuthFetching && status !== "pending";
+  const isAuthComplete = !isPending && !isAuthFetching && status !== "pending";
   const isDriverProfileMissing =
     isAuthComplete &&
     !hasRedirectedRef.current &&
@@ -272,7 +277,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   if (isAllLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner size="md" showText={true} />
+        <LoadingSpinner size="md" />
       </div>
     );
   }
@@ -290,6 +295,11 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     }
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <Toast content={toastContent} />
+    </>
+  );
 }
 // TODO: 보호 접근 페이지에 프로필 미등록 판단시 토스트 컴포넌트로 알리고 리디렉션 처리
