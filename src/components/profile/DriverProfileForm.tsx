@@ -293,8 +293,6 @@ export default function DriverProfileForm({
           await deleteFileMutation.mutateAsync(data.profileImage);
           console.log("프로필 등록/수정 실패로 인한 이미지 롤백 완료");
         } catch (rollbackError) {
-          // 롤백 실패는 조용히 처리 (이미 프로필 등록/수정이 실패한 상태)
-          // console.error는 제거
         }
         setUploadedFileKey(null); // fileKey 정리
         setSelectedFile(null); // 파일 선택 정리
@@ -312,38 +310,29 @@ export default function DriverProfileForm({
       // 서버 에러 파싱
       const parsed = parseServerError(error);
 
-      if (!parsed) {
-        alert(
-          mode === "create"
-            ? t("profile_register_error")
-            : t("profile_edit_error")
-        );
-        return;
-      }
+      // 특정 에러(409 등)에 대한 추가 처리만 수행
+      // 일반적인 에러 메시지는 useApiMutation의 errorConfig에서 자동 처리됨
+      if (parsed) {
+        const { code, status } = parsed;
 
-      const { code, status, message } = parsed;
-
-      if (status === 409 || code === "PROFILE_ALREADY_EXISTS") {
-        alert(message || t("profile_register_already_exists"));
-        if (mode === "create") {
+        // 프로필이 이미 존재하는 경우 특별 처리
+        if ((status === 409 || code === "PROFILE_ALREADY_EXISTS") && mode === "create") {
+          // useApiMutation이 이미 alert를 표시했으므로, 리디렉션만 수행
           router.push("/");
+          return;
         }
-        return;
       }
 
-      alert(
-        message ||
-          (mode === "create"
-            ? t("profile_register_error_unknown")
-            : t("profile_edit_error_unknown"))
-      );
+      // 일반적인 에러는 useApiMutation의 errorConfig에서 처리되므로
+      // 여기서는 추가 alert를 표시하지 않음
+      // 에러를 다시 throw하지 않아도 useApiMutation의 onError가 이미 처리했음
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       {/* 기사님 프로필 등록/수정: PC에서는 2단, 모바일/태블릿에서는 1단 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 justify-between">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 justify-between">
         {/* 왼쪽 열: 프로필 이미지, 별명, 경력, 한줄 소개 */}
         <div className="flex flex-col gap-6">
           <FormField
@@ -390,13 +379,13 @@ export default function DriverProfileForm({
           />
           <FormField
             label={t("profile_experience")}
-            register={register("driverYears", { valueAsNumber: true })}
+            register={register("driverYears")}
             error={errors.driverYears}
             touched={!!touchedFields.driverYears || !!errors.driverYears}
           >
             <div className="flex items-center gap-2">
               <TextInput
-                register={register("driverYears", { valueAsNumber: true })}
+                register={register("driverYears")}
                 placeholder={t("profile_experience_placeholder")}
                 error={
                   isFieldError(errors.driverYears)
