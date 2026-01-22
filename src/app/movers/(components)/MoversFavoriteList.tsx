@@ -2,6 +2,7 @@ import React from 'react'
 import { useGetFavoriteMovers } from '@/hooks/useMover';
 import FavoriteDriverCard from './FavoriteDriverCard';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { DEFAULT_AVATAR_IMAGE } from '@/constants/profile.constants';
 
 import type { ApiFavoriteDriver } from '@/types/view/favorite';
 
@@ -27,7 +28,7 @@ function MoversFavoriteList({ t, isGuest }: MoversFavoriteListProps) {
               key={fav.id}
               id={fav.id ?? 0}
               name={fav.nickname ?? ''}
-              profileImage={fav.profileImage || '/assets/image/avatartion-3.png'}
+              profileImage={fav.profileImage || DEFAULT_AVATAR_IMAGE}
               rating={fav.rating}
               reviewCount={fav.ratingCount}
               experience={fav.careerYears}

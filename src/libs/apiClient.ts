@@ -5,6 +5,7 @@ import {
   isTokenExpired,
 } from "@/libs/auth/tokenStorage";
 import { refreshAccessToken } from "@/libs/auth/tokenManager";
+import { handleAuthError } from "@/utils/authError";
 // 기본 헤더
 const defaultHeaders: Record<string, string> = {
   "Content-Type": "application/json",
@@ -148,6 +149,13 @@ export async function apiClient(
         if (endpoint === "/auth/me") {
           return { data: null };
         }
+        
+        // refresh 실패 시 인증 에러 처리 (리디렉션 및 메시지 포함)
+        handleAuthError(undefined, {
+          redirectTo: "/login",
+          showMessage: "세션이 만료되었습니다. 다시 로그인해주세요.",
+        });
+        
         // refresh 실패는 개발 환경에서만 로그 남기고 원래 에러를 throw
         if (process.env.NODE_ENV !== "production") {
           console.warn("[apiClient] 토큰 재발급 실패:", {

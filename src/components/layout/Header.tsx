@@ -1,18 +1,22 @@
 "use client";
 
-import { useAuth, useLogout } from "@/hooks/useAuth";
-import Button from "../common/button";
-import { useRouter, usePathname } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 import { useI18n } from "@/libs/i18n/I18nProvider";
-import Notice from "../Notice/Notice";
-import ProfileAvatar from "../common/ProfileAvatar";
 import { getToken } from "@/libs/auth/tokenStorage";
+import { DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
+import Button from "@/components/common/button";
+import Notice from "@/components/Notice/Notice";
+import ProfileAvatar from "@/components/common/ProfileAvatar";
+import MenuNav from "./components/MenuNav";
+import MenuDrawer from "./components/MenuDrawer";
+import LanguageDropdown from "./components/LanguageDropdown";
+import ProfileDropdown from "./components/ProfileDropdown";
 
-// 메뉴 링크 타입
 type MenuItem = {
   href: string;
   label: string;
@@ -20,16 +24,21 @@ type MenuItem = {
 
 export default function Header() {
   const router = useRouter();
-  const pathname = usePathname();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
-  // 랜딩 페이지에서 토큰이 없으면 API 호출을 건너뛰어 초기 로딩 속도 개선
-  const isLandingPage = pathname === "/";
-  const hasToken = typeof window !== "undefined" && getToken() !== null;
-  const shouldFetchMe = !isLandingPage || hasToken;
+  // 서버/클라이언트 상태 일치를 위해 항상 useAuth 호출 (토큰 없으면 쿼리 비활성화)
+  const { me, isGuest, isPending, isFetching, status, isUser, isDriver } = useAuth();
   
-  const { me, isGuest, isLoading, isUser, isDriver } = useAuth(shouldFetchMe);
-  const logoutMutation = useLogout();
+  // 클라이언트에서 accessToken 확인 (서버에서 refreshToken 확인했지만 accessToken도 확인 필요)
+  const [hasAccessToken, setHasAccessToken] = useState<boolean | null>(null);
+  
+  useEffect(() => {
+    setHasAccessToken(getToken() !== null);
+  }, []);
+  
+  // 인증 로딩 상태: accessToken 확인 중이거나, accessToken이 있는데 me 데이터 로딩 중
+  const isAuthLoading = hasAccessToken === null || (hasAccessToken && (isPending || isFetching || status === 'pending'));
+
   const { t, locale, setLocale } = useI18n();
 
   // 역할별 메뉴 정의 (다국어 지원)
@@ -64,60 +73,9 @@ export default function Header() {
 
   // 프로필 드롭다운 상태 관리
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  // 드롭다운 영역 참조
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // 언어 선택 드롭다운 상태 관리
-  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
-  // 언어 드롭다운 영역 참조
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
 
   // 알림 드롭다운 상태 관리
   const [isNoticeOpen, setIsNoticeOpen] = useState(false);
-  // 알림 드롭다운 영역 참조
-  const noticeRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!isDropdownOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      // 드롭다운 영역 외부 클릭 시 닫기
-      if (!dropdownRef.current?.contains(e.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    // 외부 클릭 이벤트 등록
-    document.addEventListener("click", handleClick);
-    // 컴포넌트 언마운트 시 이벤트 정리
-    return () => document.removeEventListener("click", handleClick);
-  }, [isDropdownOpen]);
-
-  useEffect(() => {
-    if (!isLanguageDropdownOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      // 언어 드롭다운 영역 외부 클릭 시 닫기
-      if (!languageDropdownRef.current?.contains(e.target as Node)) {
-        setIsLanguageDropdownOpen(false);
-      }
-    };
-    // 외부 클릭 이벤트 등록
-    document.addEventListener("click", handleClick);
-    // 컴포넌트 언마운트 시 이벤트 정리
-    return () => document.removeEventListener("click", handleClick);
-  }, [isLanguageDropdownOpen]);
-
-  useEffect(() => {
-    if (!isNoticeOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      // 알림 드롭다운 영역 외부 클릭 시 닫기
-      if (!noticeRef.current?.contains(e.target as Node)) {
-        setIsNoticeOpen(false);
-      }
-    };
-    // 외부 클릭 이벤트 등록
-    document.addEventListener("click", handleClick);
-    // 컴포넌트 언마운트 시 이벤트 정리
-    return () => document.removeEventListener("click", handleClick);
-  }, [isNoticeOpen]);
 
   // 언어 목록
   const languages = [
@@ -131,128 +89,31 @@ export default function Header() {
     languages.find((lang) => lang.code === locale)?.label ||
     t("language_korean");
 
-  // 메뉴 네비게이션 렌더링
-  const renderMenuNav = () => {
-    const menuItems = isGuest
-      ? MENU_ITEMS.GUEST.filter((item) => item.href !== "/login") // PC 버전에서는 로그인 제외
-      : isUser
-      ? MENU_ITEMS.USER
-      : MENU_ITEMS.DRIVER;
+  // 메뉴 아이템 계산
+  const menuItemsForNav = isGuest
+    ? MENU_ITEMS.GUEST.filter((item) => item.href !== "/login") // PC 버전에서는 로그인 제외
+    : isUser
+    ? MENU_ITEMS.USER
+    : MENU_ITEMS.DRIVER;
 
-    return (
-      <nav
-        className="max-md:hidden flex items-center gap-10"
-        aria-label="주요 메뉴"
-      >
-        {menuItems.map((item) => {
-          // 현재 경로와 메뉴 링크 경로가 일치하는지 확인
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`pret-lg-regular font-bold ${
-                isActive ? "text-black-400" : "text-gray-500"
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-    );
-  };
+  const menuItemsForDrawer = isGuest
+    ? MENU_ITEMS.GUEST
+    : isUser
+    ? MENU_ITEMS.USER
+    : MENU_ITEMS.DRIVER;
 
-  // 메뉴 사이드 패널 렌더링
-  const renderMenuDrawer = () => {
-    const menuItems = isGuest
-      ? MENU_ITEMS.GUEST
-      : isUser
-      ? MENU_ITEMS.USER
-      : MENU_ITEMS.DRIVER;
-
-    return (
-      <nav
-        className="md:hidden fixed flex flex-col gap-4 top-0 right-0 w-55 h-full bg-white z-20"
-        aria-label="주요 메뉴"
-      >
-        <div className="flex justify-end items-center px-4 py-3 border-b border-line-100">
-          <Image
-            src="/assets/icon/ic-cancel.svg"
-            alt="close"
-            width={24}
-            height={24}
-            onClick={() => setIsDrawerOpen(false)}
-            className="cursor-pointer"
-          />
-        </div>
-        {menuItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="px-4 py-2 text-black-400"
-            onClick={() => setIsDrawerOpen(false)}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-    );
-  };
-
-  // 언어 선택 드롭다운 렌더링
-  const renderLanguageSelector = () => {
-    return (
-      <div ref={languageDropdownRef} className="relative">
-        <button
-          onClick={() => setIsLanguageDropdownOpen((prev) => !prev)}
-          className="pret-lg-regular text-black-400 flex items-center gap-1 px-2 py-1 hover:text-primary-blue-300 transition-colors"
-          aria-label="언어 선택"
-        >
-          {currentLanguageLabel}
-          <Image
-            src="/assets/icon/ic-chevron-down.svg"
-            alt="chevron"
-            width={16}
-            height={16}
-            className={
-              isLanguageDropdownOpen
-                ? "rotate-180 transition-transform"
-                : "transition-transform"
-            }
-          />
-        </button>
-        {isLanguageDropdownOpen && (
-          <div className="absolute top-full right-0 mt-2 w-32 rounded-lg border border-line-100 bg-white z-30 shadow-lg">
-            {languages.map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => {
-                  setLocale(lang.code);
-                  setIsLanguageDropdownOpen(false);
-                }}
-                className={`w-full text-left px-4 py-2 pret-lg-regular hover:bg-primary-blue-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                  locale === lang.code
-                    ? "text-primary-blue-300 bg-primary-blue-50"
-                    : "text-black-400"
-                }`}
-              >
-                {lang.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // 오른쪽 섹션 렌더링
+  // RightSection 렌더링 함수
   const renderRightSection = () => {
     // 비로그인 상태
     if (isGuest) {
       return (
         <div className="flex items-center gap-4">
-          {renderLanguageSelector()}
+          <LanguageDropdown
+            languages={languages}
+            currentLocale={locale}
+            currentLanguageLabel={currentLanguageLabel}
+            onLanguageChange={setLocale}
+          />
           <Button
             text={t("login")}
             onClick={() => router.push("/login")}
@@ -274,11 +135,17 @@ export default function Header() {
         </div>
       );
     }
+
     // 로그인 상태
     return (
       <div className="flex items-center gap-8">
-        {renderLanguageSelector()}
-        <div ref={noticeRef} className="relative">
+        <LanguageDropdown
+          languages={languages}
+          currentLocale={locale}
+          currentLanguageLabel={currentLanguageLabel}
+          onLanguageChange={setLocale}
+        />
+        <div className="relative flex items-center">
           <button
             aria-label="알림"
             onClick={() => setIsNoticeOpen((prev) => !prev)}
@@ -296,14 +163,14 @@ export default function Header() {
             onClose={() => setIsNoticeOpen(false)}
           />
         </div>
-        <div ref={dropdownRef} className="relative">
+        <div className="relative">
           <div
             aria-label="프로필"
             onClick={() => setIsDropdownOpen((prev) => !prev)}
             className="flex items-center gap-4 cursor-pointer"
           >
             <ProfileAvatar
-              src={profileImage || "/assets/image/avatar-3.png"}
+              src={profileImage || DEFAULT_AVATAR_IMAGE}
               alt="profile"
               size="xs"
               className="w-9 h-9 max-md:w-7 max-md:h-7"
@@ -315,74 +182,13 @@ export default function Header() {
               </span>
             )}
           </div>
-          {isDropdownOpen && (
-            <div className="absolute top-full right-0 mt-2 w-55 rounded-lg border border-line-100 p-4 bg-white z-20 shadow-lg">
-              {isUser ? (
-                <div className="flex flex-col px-6">
-                  <div className="text-lg font-bold py-3.5">
-                    {me?.name}
-                    {t("customer_suffix") && ` ${t("customer_suffix")}`}
-                  </div>
-                  <div className="py-3.5">
-                    <Link
-                      href="/profile/user/edit"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      {t("profile_edit")}
-                    </Link>
-                  </div>
-                  <div className="py-3.5">
-                    <Link
-                      href="/movers/favorites"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      {t("favorite_drivers")}
-                    </Link>
-                  </div>
-                  <div className="py-3.5">
-                    <Link
-                      href="/review/user"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      {t("moving_reviews")}
-                    </Link>
-                  </div>
-                </div>
-              ) : isDriver ? (
-                <div className="flex flex-col px-6">
-                  <div className="text-lg font-bold py-3.5">
-                    {me?.nickname ?? me?.name} {t("driver_suffix")}
-                  </div>
-                  <div className="py-3.5">
-                    <Link
-                      href="/estimate/driver/received"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      {t("received_quotes")}
-                    </Link>
-                  </div>
-                  <div className="py-3.5">
-                    <Link
-                      href="/profile"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      {t("my_page")}
-                    </Link>
-                  </div>
-                </div>
-              ) : null}
-              <div className="border-t border-line-100 my-3" />
-              <button
-                className="w-full text-center py-1.5 text-sm text-gray-500"
-                onClick={() => {
-                  setIsDropdownOpen(false);
-                  logoutMutation.mutate();
-                }}
-              >
-                {t("logout")}
-              </button>
-            </div>
-          )}
+          <ProfileDropdown
+            isOpen={isDropdownOpen}
+            isUser={isUser}
+            isDriver={isDriver}
+            me={me}
+            onClose={() => setIsDropdownOpen(false)}
+          />
         </div>
         <button
           className="md:hidden"
@@ -400,10 +206,10 @@ export default function Header() {
     );
   };
 
-  if (isLoading) {
+  if (isAuthLoading) {
     return (
       <header className="border-b border-line-100 max-md:border-b-0">
-        <div className="max-w-[1400px] mx-auto px-[24px] py-[15px] md:py-[26px] flex justify-between items-center">
+        <div className="max-w-[1400px] mx-auto px-[16px] md:px-[120px] h-[54px] md:h-[84px] flex justify-between items-center">
           <Link href="/" aria-label="홈으로 이동">
             <Image
               src="/assets/image/logo.png"
@@ -422,7 +228,7 @@ export default function Header() {
   return (
     <>
       <header className="border-b border-line-100 max-md:border-b-0">
-        <div className="max-w-[1400px] mx-auto px-[24px] py-[10px] md:px-[120px] md:py-[26px] flex justify-between items-center">
+        <div className="max-w-[1400px] mx-auto px-[16px] md:px-[120px] h-[54px] md:h-[84px] flex justify-between items-center">
           <div className="flex items-center gap-20">
             <Link href="/" aria-label="홈으로 이동">
               <Image
@@ -433,22 +239,16 @@ export default function Header() {
                 className="w-[88px] h-[34px] md:w-[116px] md:h-[44px]"
               />
             </Link>
-            {renderMenuNav()}
+            <MenuNav menuItems={menuItemsForNav} />
           </div>
           {renderRightSection()}
         </div>
       </header>
-      {isDrawerOpen && (
-        <>
-          {/* 배경 오버레이 */}
-          <div
-            className="md:hidden fixed inset-0 bg-black/50 z-10"
-            onClick={() => setIsDrawerOpen(false)}
-            aria-hidden="true" // 순수 장식용
-          />
-          {renderMenuDrawer()}
-        </>
-      )}
+      <MenuDrawer
+        menuItems={menuItemsForDrawer}
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
     </>
   );
 }

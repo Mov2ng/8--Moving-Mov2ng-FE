@@ -4,6 +4,7 @@ import {
   getServiceLabels,
   getRegionLabels,
 } from "@/constants/profile.constants";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 interface MypageProfileProps {
   profileImage: string;
@@ -31,6 +32,7 @@ export default function MypageProfile({
   services,
   regions,
 }: MypageProfileProps) {
+  const { t } = useI18n();
   // 프로필 메타 정보
   const metaItems: React.ReactNode[] = [];
 
@@ -57,8 +59,8 @@ export default function MypageProfile({
   if (experience !== undefined) {
     metaItems.push(
       <span key="experience" className="flex items-center gap-1 lg:gap-1.5">
-        <span className="text-base text-gray-300">경력</span>
-        <span className="text-base text-black-300">{experience}년</span>
+        <span className="text-base text-gray-300">{t("experience")}</span>
+        <span className="text-base text-black-300">{experience}{t("profile_experience_year")}</span>
       </span>
     );
   }
@@ -66,8 +68,8 @@ export default function MypageProfile({
   if (confirmedCount !== undefined) {
     metaItems.push(
       <span key="confirmed" className="flex items-center gap-1 lg:gap-1.5">
-        <span className="text-base text-black-300">{confirmedCount}건</span>
-        <span className="text-base text-gray-300">확정</span>
+        <span className="text-base text-black-300">{confirmedCount}{t("count_unit")}</span>
+        <span className="text-base text-gray-300">{t("confirmed_count")}</span>
       </span>
     );
   }
@@ -108,7 +110,7 @@ export default function MypageProfile({
               {services?.length ? (
                 <div className="flex items-center gap-2 lg:gap-3">
                   <span className="text-lg px-[6px] py-[2px] lg:px-[6px] lg:py-1 bg-background-200 lg:bg-background-200 text-gray-400 lg:text-gray-500 rounded">
-                    제공 서비스
+                    {t("profile_driver_service_label")}
                   </span>
                   <span className="text-lg text-black-300 lg:text-black-300">
                     {getServiceLabels(services).join(", ")}
@@ -125,7 +127,7 @@ export default function MypageProfile({
                   )}
                   <div className="flex items-center gap-2 lg:gap-3">
                     <span className="text-lg px-[6px] py-[2px] lg:px-[6px] lg:py-1 bg-background-200 lg:bg-background-200 text-gray-400 lg:text-gray-500 rounded">
-                      지역
+                      {t("profile_driver_region_label")}
                     </span>
                     <span className="text-lg text-black-300 lg:text-black-300">
                       {getRegionLabels(regions).join(", ")}

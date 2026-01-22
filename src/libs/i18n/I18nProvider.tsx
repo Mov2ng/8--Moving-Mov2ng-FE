@@ -21,57 +21,48 @@ const messageMap : Record<Locale, Message> = { ko, en, zh }; // 언어별 메시
 
 const LOCALE_STORAGE_KEY = 'locale';
 
-/**
- * 사용자 위치 기반으로 언어 자동 감지
- * 한국 → 한국어, 중국 → 중국어, 그 외 → 영어
- */
-function detectLocaleFromBrowser(): Locale {
-  if (typeof window === 'undefined') {
-    return 'ko'; // SSR 기본값
-  }
+type I18nProviderProps = {
+  children: React.ReactNode;
+  initialLocale?: Locale; // 서버에서 전달받은 초기 locale (Accept-Language 헤더 기반)
+};
 
-  try {
-    // localStorage에 저장된 언어 설정이 있으면 우선 사용
-    const savedLocale = localStorage.getItem(LOCALE_STORAGE_KEY) as Locale;
-    if (savedLocale && ['ko', 'en', 'zh'].includes(savedLocale)) {
-      return savedLocale;
+export function I18nProvider({ children, initialLocale = 'ko' }: I18nProviderProps) {
+  // 서버에서 전달받은 initialLocale을 사용하여 서버와 클라이언트가 동일한 값으로 시작
+  const [locale, setLocale] = useState<Locale>(initialLocale);
+
+  // 클라이언트 마운트 후 localStorage 확인 및 동기화
+  useEffect(() => {
+    try {
+      // localStorage에 저장된 언어가 있으면 우선 사용
+      const savedLocale = localStorage.getItem(LOCALE_STORAGE_KEY) as Locale;
+      if (savedLocale && ['ko', 'en', 'zh'].includes(savedLocale)) {
+        // localStorage 값이 서버에서 감지한 값과 다르면 localStorage 값으로 업데이트
+        if (savedLocale !== locale) {
+          setLocale(savedLocale);
+        }
+        return;
+      }
+
+      // localStorage에 없으면 서버에서 감지한 값(initialLocale)을 localStorage에 저장
+      // (이미 서버에서 Accept-Language 헤더로 감지했으므로 동일한 값일 가능성이 높음)
+      localStorage.setItem(LOCALE_STORAGE_KEY, initialLocale);
+    } catch {
+      // localStorage 접근 실패 시 기본값 유지
     }
+  }, []); // 마운트 시 한 번만 실행
 
-    // 브라우저 언어 설정 기반으로 자동 감지
-    // navigator.language: 브라우저 언어 설정, (navigator as any).userLanguage: 브라우저 언어 설정 (IE 지원)
-    const browserLang = navigator.language || (navigator as any).userLanguage; 
-    const langCode = browserLang.toLowerCase().split('-')[0]; // 'ko-KR' → 'ko'
-
-    // 한국어
-    if (langCode === 'ko') {
-      return 'ko';
-    }
-    // 중국어 (간체/번체 모두)
-    if (langCode === 'zh' || langCode === 'cn') {
-      return 'zh';
-    }
-    // 그 외는 영어
-    return 'en';
-  } catch {
-    // 에러 발생 시 기본값
-    return 'ko';
-  }
-}
-
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocale] = useState<Locale>(() => {
-    // 초기값: localStorage 또는 브라우저 언어 기반 자동 감지
-    return detectLocaleFromBrowser();
-  });
-
-  // locale 변경 시 localStorage에 저장
+  // locale 변경 시 localStorage에 저장 (쿠키 제거로 성능 최적화)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+      try {
+        localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+      } catch {
+        // localStorage 저장 실패 시 무시
+      }
     }
   }, [locale]);
 
-  // setLocale 래퍼: localStorage 저장은 useEffect에서 처리
+  // setLocale 래퍼: 쿠키와 localStorage 저장은 useEffect에서 처리
   const handleSetLocale = (newLocale: Locale) => {
     setLocale(newLocale);
   };

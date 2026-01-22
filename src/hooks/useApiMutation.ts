@@ -15,7 +15,8 @@ import { parseServerError } from "@/utils/parseServerError";
  */
 export type SuccessConfig = {
   invalidateQueries?: string[][]; // 무효화할 쿼리 키 배열
-  successMessage?: string; // 성공 메시지 (alert로 표시)
+  successMessage?: string; // 성공 메시지 (toast로 표시)
+  onSuccessMessage?: (message: string) => void; // 성공 메시지 표시 콜백 (toast)
   redirectPath?: string; // 성공 후 리디렉션 경로
 };
 
@@ -25,6 +26,7 @@ export type SuccessConfig = {
 export type ErrorConfig = {
   errorMessagePrefix?: string; // 에러 메시지 접두사 (예: "프로필 등록")
   defaultErrorMessage?: string; // 기본 에러 메시지 (parseServerError로 파싱한 메시지가 없을 때)
+  onErrorMessage?: (message: string) => void; // 에러 메시지 표시 콜백 (toast)
 };
 
 /**
@@ -103,9 +105,14 @@ export function useApiMutation<TData, TVariables, TError>({
           queryClient.invalidateQueries({ queryKey });
         });
       }
-      // 성공 메시지 표시
+      // 성공 메시지 표시 (toast 콜백이 있으면 사용, 없으면 alert)
       if (successConfig.successMessage) {
-        alert(successConfig.successMessage);
+        if (successConfig.onSuccessMessage) {
+          successConfig.onSuccessMessage(successConfig.successMessage);
+        } else {
+          // fallback: alert (하위 호환성)
+          alert(successConfig.successMessage);
+        }
       }
       // 리디렉션
       if (successConfig.redirectPath) {
@@ -135,16 +142,17 @@ export function useApiMutation<TData, TVariables, TError>({
     // errorConfig가 있으면 자동 처리
     if (errorConfig) {
       const parsedError = parseServerError(error);
-      console.error(`${errorConfig.errorMessagePrefix || "작업 실패"}:`, {
-        parsedError, // 파싱된 결과 전체
-        fullError: error,
-      });
-      // 사용자에게 에러 메시지 표시
+      // 사용자에게 에러 메시지 표시 (toast 콜백이 있으면 사용, 없으면 alert)
       const errorMessage =
         parsedError?.message ||
         errorConfig.defaultErrorMessage ||
         "작업에 실패했습니다. 다시 시도해주세요.";
-      alert(errorMessage);
+      if (errorConfig.onErrorMessage) {
+        errorConfig.onErrorMessage(errorMessage);
+      } else {
+        // fallback: alert (하위 호환성)
+        alert(errorMessage);
+      }
     }
     // 기존 onError도 호출 (있다면)
     // 타입 가드: onError가 함수인지 확인

@@ -57,7 +57,6 @@ export default function PendingDetailPage({
           setData(res);
         }
       } catch (e) {
-        console.error(e);
         setError("데이터 로드 실패");
       } finally {
         if (mounted) setLoading(false);
@@ -93,7 +92,6 @@ export default function PendingDetailPage({
       alert("견적이 제출되었습니다.");
       router.push("/estimate/driver/pending");
     } catch (error) {
-      console.error("견적 수락 실패:", error);
       alert("견적 제출 중 오류가 발생했습니다.");
     }
   };
@@ -117,7 +115,6 @@ export default function PendingDetailPage({
       setIsEditing(false);
       router.push("/estimate/driver/pending");
     } catch (error) {
-      console.error("견적 수정 실패:", error);
       alert("견적 수정 중 오류가 발생했습니다.");
     }
   };
@@ -134,7 +131,6 @@ export default function PendingDetailPage({
       alert("요청이 취소되었습니다.");
       router.push("/estimate/driver/pending");
     } catch (error) {
-      console.error("요청 취소 실패:", error);
       alert("요청 취소 중 오류가 발생했습니다.");
     }
   };

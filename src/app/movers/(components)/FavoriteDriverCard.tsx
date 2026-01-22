@@ -4,6 +4,7 @@ import MovingTypeChip from "@/components/chips/MovingTypeChip";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 import Link from "next/link";
 import { useGetViewPresignedUrl } from "@/hooks/useFileService";
+import { DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
 
 interface FavoriteDriverCardProps {
   id: number;
@@ -86,7 +87,7 @@ export default function FavoriteDriverCard({
 
       <DriverProfile
         name={name}
-        profileImage={profileImageUrl || '/assets/image/avatartion-3.png'}
+        profileImage={profileImageUrl || DEFAULT_AVATAR_IMAGE}
         avatarSize={avatarSize}
         avatarResponsive={avatarResponsive}
         nameSuffix={t("driver_suffix")}

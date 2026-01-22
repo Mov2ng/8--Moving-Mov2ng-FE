@@ -1,5 +1,6 @@
 import { apiClient } from "@/libs/apiClient";
 import { removeToken, setToken } from "./tokenStorage";
+import { parseServerError } from "@/utils/parseServerError";
 
 // 동시 요청 시 refresh 중복 호출 방지
 let isRefreshing = false; // refresh 중복 호출 방지 플래그
@@ -28,6 +29,7 @@ export async function refreshAccessToken(): Promise<string | null> {
       // 응답 데이터 구조 확인
       const accessToken = response?.accessToken || response?.data?.accessToken;
 
+      // accessToken이 없으면 토큰 삭제
       if (!accessToken) {
         removeToken();
         return null;
@@ -36,8 +38,19 @@ export async function refreshAccessToken(): Promise<string | null> {
       // 새 accessToken을 localStorage에 저장
       setToken(accessToken);
       return accessToken;
-    } catch {
-      // 네트워크 에러 등 예외 발생 시 토큰만 삭제 (리디렉션은 호출하는 쪽에서 처리)
+    } catch (error) {
+      // refreshToken이 유효하지 않은 경우 (401) 상세 로깅
+      const parsed = parseServerError(error);
+      if (parsed?.status === 401) {
+        // 개발 환경에서만 상세 로그
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[refreshAccessToken] 유효하지 않은 토큰:", {
+            message: parsed.message,
+            code: parsed.code,
+          });
+        }
+      }
+      // 네트워크 에러 등 예외 발생 시 토큰 삭제 (리디렉션은 apiClient에서 처리)
       removeToken();
       return null;
     } finally {

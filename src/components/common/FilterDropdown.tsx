@@ -81,8 +81,7 @@ export default function FilterDropdown({
             // 두 컬럼으로 분할
             <>
               <ul
-                className="w-[50%] h-full pret-2lg-medium text-black-400 flex flex-col items-center
-                max-md:w-[89px] max-md:pret-14-medium max-md:rounded-lg"
+                className="w-[50%] h-full pret-2lg-medium text-black-400 flex flex-col items-center max-md:w-[89px] max-md:pret-14-medium max-md:px-[14px] max-md:rounded-lg"
               >
                 {menuList
                   .slice(1, Math.ceil(menuList.length / 2))
@@ -97,8 +96,7 @@ export default function FilterDropdown({
                   ))}
               </ul>
               <ul
-                className="w-[50%] h-full pret-2lg-medium text-black-400 flex flex-col items-center
-                max-md:w-[89px] max-md:pret-14-medium max-md:rounded-lg"
+                className="w-[50%] h-full pret-2lg-medium text-black-400 flex flex-col items-center max-md:w-[89px] max-md:pret-14-medium max-md:px-[14px] max-md:rounded-lg"
               >
                 {menuList.slice(Math.ceil(menuList.length / 2)).map((menu) => (
                   <li
@@ -114,8 +112,7 @@ export default function FilterDropdown({
           ) : (
             // 단일 컬럼
             <ul
-              className="w-full h-full pret-2lg-medium text-black-400 flex flex-col items-center
-              max-md:w-[89px] max-md:pret-14-medium max-md:rounded-lg"
+              className="w-full h-full pret-2lg-medium text-black-400 flex flex-col items-center max-md:w-[89px] max-md:pret-14-medium max-md:px-[14px] max-md:rounded-lg"
             >
               {menuList.slice(1).map((menu) => (
                 <li
