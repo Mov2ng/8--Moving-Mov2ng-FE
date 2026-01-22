@@ -2,6 +2,8 @@ import Image from "next/image";
 import ReviewPointBox from "@/app/movers/(components)/ReviewPointBox";
 import ReviewList from "@/app/movers/(components)/ReviewList";
 import { Pagination } from "@/components/common/Pagination";
+import { formatRelativeTime } from "@/utils/formatRelativeTime";
+
 import type { ReviewType } from "@/types/driverProfileType";
 
 interface ReviewSectionProps {
@@ -24,17 +26,17 @@ interface ReviewSectionProps {
 export default function ReviewSection({
   rating = 0,
   reviewCount = 0,
-  reviewList = [],
-  reviews = [],
+  reviews= [],
   page = 1,
 }: ReviewSectionProps) {
+
   return (
     <div className="flex flex-col gap-8">
       <h2 className="pret-2xl-bold text-black-400">리뷰</h2>
       <ReviewPointBox
         rating={rating}
         reviewCount={reviewCount}
-        reviewList={reviewList}
+        reviewList={reviews}
       />
       <div>
         {reviews && reviews.length > 0 ? (
@@ -43,7 +45,7 @@ export default function ReviewSection({
               <ReviewList
                 key={review.id}
                 username={review.user.name}
-                date={review.createdAt}
+                date={formatRelativeTime(review.createdAt)}
                 rating={review.rating}
                 content={review.content}
                 isLast={index === reviews.length - 1}
@@ -67,7 +69,6 @@ export default function ReviewSection({
           </div>
         )}
       </div>
-      <Pagination page={page} />
     </div>
   );
 }

@@ -98,12 +98,17 @@
   "select_region": "选择地区",
   "select_service": "选择服务",
   "all_drivers_loaded": "所有司机已加载。",
+  "no_results_found": "没有找到结果。",
   "service_available_regions": "服务可用地区",
   "provided_service": "提供服务",
   "review": "评论",
   "processing": "处理中...",
   "favorite_completed": "收藏完成",
   "only_know_driver": "只有你知道的司机吗？",
+  "share_driver_link": "链接已复制。",
+  "share_kakao_link": "分享到 KakaoTalk",
+  "share_facebook_link": "分享到 Facebook",
+  "internal_system_error": "发生内部系统错误。请联系客户服务中心。",
 
   "review_many": "评论最多",
   "rating_high": "评分最高",
@@ -221,5 +226,12 @@
   "profile_service_chip_info": "可以选择多个服务，随时可以修改！",
   "profile_region_chip_info": "可以选择多个地区，随时可以修改！",
   "profile_driver_service_label": "提供的服务",
-  "profile_driver_region_label": "服务可用地区"
+  "profile_driver_region_label": "服务可用地区",
+  "day_sun": "日",
+  "day_mon": "一",
+  "day_tue": "二",
+  "day_wed": "三",
+  "day_thu": "四",
+  "day_fri": "五",
+  "day_sat": "六"
 }

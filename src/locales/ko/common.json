@@ -97,12 +97,17 @@
   "select_region": "지역을 선택해주세요",
   "select_service": "어떤 서비스가 필요하세요?",
   "all_drivers_loaded": "모든 기사님을 불러왔습니다.",
+  "no_results_found": "검색 결과가 없습니다.",
   "service_available_regions": "서비스 가능 지역",
   "provided_service": "제공 서비스",
   "review": "리뷰",
   "processing": "처리 중...",
   "favorite_completed": "찜 완료",
   "only_know_driver": "나만 알기엔 아쉬운 기사님인가요?",
+  "share_driver_link": "링크가 복사되었어요.",
+  "share_kakao_link": "카카오톡 공유",
+  "share_facebook_link": "페이스북 공유",
+  "internal_system_error": "내부 시스템 오류가 발생했습니다. 고객센터에 문의해주세요.",
 
   "review_many": "리뷰 많은순",
   "rating_high": "평점 높은순",
@@ -220,5 +225,12 @@
   "profile_service_chip_info": "이용 서비스는 중복 선택 가능하며, 언제든 수정 가능해요!",
   "profile_region_chip_info": "내가 사는 지역은 중복 선택 가능하며, 언제든 수정 가능해요!",
   "profile_driver_service_label": "제공 서비스",
-  "profile_driver_region_label": "서비스 가능 지역"
+  "profile_driver_region_label": "서비스 가능 지역",
+  "day_sun": "일",
+  "day_mon": "월",
+  "day_tue": "화",
+  "day_wed": "수",
+  "day_thu": "목",
+  "day_fri": "금",
+  "day_sat": "토"
 }

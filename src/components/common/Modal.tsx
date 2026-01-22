@@ -1,5 +1,6 @@
+"use client";
 import Image from 'next/image'
-import React, { useState } from 'react'
+import { useEffect } from 'react'
 
 interface ModalState {
   title: string;
@@ -15,15 +16,33 @@ interface ModalProps {
 }
 
 function Modal({ ModalState, setIsOpen }: ModalProps) { 
-
   const handleClose = () => {
     setIsOpen({ title: "", content: "", buttonText: "", isOpen: false, buttonClick: () => {} });
   }
-  
+
+  const handleESCClose = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      handleClose();
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleESCClose);
+    return () => {
+      window.removeEventListener("keydown", handleESCClose);
+    }
+  }, []);
+
   return (
     ModalState.isOpen && (
-    <div className="fixed top-0 left-0 w-full h-full bg-[#141414]/50 flex justify-center items-center z-50">
-      <div className='py-8 px-6 w-[680px] flex flex-col gap-10 bg-white rounded-4xl'>
+    <div 
+      className="fixed top-0 left-0 w-full h-full bg-[#141414]/50 flex justify-center items-center z-50"
+      onClick={handleClose}
+    >
+      <div 
+        className='py-8 px-6 w-[680px] flex flex-col gap-10 bg-white rounded-4xl'
+        onClick={(e) => e.stopPropagation()}
+      >
         <p className="flex justify-between items-center pret-2xl-semibold text-black-400">
           {ModalState.title} 
           <Image src="/assets/icon/ic-cancel.svg" alt="cancel" width={36} height={36} onClick={handleClose} className="cursor-pointer"></Image>

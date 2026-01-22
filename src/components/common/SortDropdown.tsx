@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
 import type { QuerySelectType } from "@/types/queryType";
@@ -13,6 +13,8 @@ export default function SortDropdown({
   setSort: (sort: QuerySelectType) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const toggleDropdown = () => {
     setIsOpen((prev) => !prev);
   };
@@ -21,8 +23,26 @@ export default function SortDropdown({
     setSort(sort);
     setIsOpen(false);
   };
+
+  // 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    // 드롭다운이 열려있을 때만 이벤트 리스너 추가
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
   return (
-    <div className="flex flex-col w-[114px] max-md:w-[91px] relative">
+    <div ref={dropdownRef} className="flex flex-col w-[120px] max-md:w-[91px] relative">
       <button
         className="flex items-center justify-center gap-[10px] w-[114px] h-10 pret-14-semibold text-black-400 max-md:gap-0.5 max-md:w-[91px] max-md:h-8 max-md:pret-xs-semibold"
         onClick={toggleDropdown}

@@ -98,12 +98,17 @@
   "select_region": "Select region",
   "select_service": "Select service",
   "all_drivers_loaded": "All drivers loaded.",
+  "no_results_found": "No results found.",
   "service_available_regions": "Service available regions",
   "provided_service": "Provided service",
   "review": "Review",
   "processing": "Processing...",
   "favorite_completed": "Favorite completed",
   "only_know_driver": "Do you know a driver who is only known to you?",
+  "share_driver_link": "Link copied.",
+  "share_kakao_link": "Share on KakaoTalk",
+  "share_facebook_link": "Share on Facebook",
+  "internal_system_error": "An internal system error occurred. Please contact customer service.",
 
   "review_many": "Review many",
   "rating_high": "Rating high",
@@ -221,5 +226,12 @@
   "profile_service_chip_info": "You can select multiple services and modify them anytime!",
   "profile_region_chip_info": "You can select multiple regions and modify them anytime!",
   "profile_driver_service_label": "Services Provided",
-  "profile_driver_region_label": "Service Available Regions"
+  "profile_driver_region_label": "Service Available Regions",
+  "day_sun": "Sun",
+  "day_mon": "Mon",
+  "day_tue": "Tue",
+  "day_wed": "Wed",
+  "day_thu": "Thu",
+  "day_fri": "Fri",
+  "day_sat": "Sat"
 }

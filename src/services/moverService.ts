@@ -44,4 +44,9 @@ export const moverService = {
       method: "POST",
     });
   },
+  getFavoriteMovers: () => {
+    return apiClient("/movers/favorites", {
+      method: "GET",
+    });
+  },
 };
