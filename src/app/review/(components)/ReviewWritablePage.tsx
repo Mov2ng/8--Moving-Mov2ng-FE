@@ -14,7 +14,7 @@ import { STALE_TIME } from "@/constants/query";
 import ReviewTabNav from "./ReviewTabNav";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/libs/i18n/I18nProvider";
-import { getServiceLabel } from "@/constants/profile.constants";
+import { getServiceLabel, DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
 import { useToast } from "@/hooks/useToast";
 import Toast from "@/components/common/Toast";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -52,7 +52,7 @@ export default function ReviewWritablePage() {
       name:
         item.driver.user?.name ?? item.driver.nickname ?? t("driver_suffix"),
       profileImage:
-        item.driver.profileImage ?? "/assets/image/avatartion-1.png",
+        item.driver.profileImage ?? DEFAULT_AVATAR_IMAGE,
       movingDate: formatDate(item.request.moving_data),
       price: item.price ?? 0,
       reviewEnabled: true,

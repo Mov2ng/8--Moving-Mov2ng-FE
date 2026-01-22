@@ -10,7 +10,7 @@ import { useState, useEffect, useMemo } from "react";
 import { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
 import { STALE_TIME } from "@/constants/query";
 import Image from "next/image";
-import { getServiceLabel } from "@/constants/profile.constants";
+import { getServiceLabel, DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
 import ReviewTabNav from "./ReviewTabNav";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/libs/i18n/I18nProvider";
@@ -64,7 +64,7 @@ export default function ReviewWrittenPage() {
             item.driver.nickname ??
             t("driver_suffix"),
           profileImage:
-            item.driver.profileImage ?? "/assets/image/avatartion-1.png",
+            item.driver.profileImage ?? DEFAULT_AVATAR_IMAGE,
           movingDate,
           price,
           rating: item.rating ?? 0,

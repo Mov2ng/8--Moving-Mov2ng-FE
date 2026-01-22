@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import RatingPoints from "./RatingPoints";
 import { useGetViewPresignedUrl } from "@/hooks/useFileService";
+import { DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
 
 interface FindDriverProfileProps {
   name: string;
@@ -22,7 +23,7 @@ export default function FindDriverProfile({ name, likeCount, rating, reviewCount
       <div className={`rounded-full overflow-hidden border-3 border-black-300
         ${size === 'sm' ? 'w-12 h-12' : 'w-[60px] h-[60px]'}`}>
         <Image
-          src={profileImageUrl || '/assets/image/avatartion-3.png'}  
+          src={profileImageUrl || DEFAULT_AVATAR_IMAGE}  
           alt="driver-profile"
           width={150}
           height={150}

@@ -17,7 +17,7 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 import type { ApiQuote, QuoteStatus } from "@/types/api/quotes";
 import type { QuoteCardView } from "@/types/view/quote";
-import { getServiceLabel } from "@/constants/profile.constants";
+import { getServiceLabel, DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
 
 const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   PENDING: "waiting",
@@ -47,7 +47,7 @@ export default function QuoteReceivedPage() {
     return {
       id: item.id,
       name: item.driver.nickname,
-      profileImage: "/assets/image/avatartion-1.png", // 임시 프로필 이미지
+      profileImage: DEFAULT_AVATAR_IMAGE, // 임시 프로필 이미지
       rating: item.driver.rating ?? 0,
       reviewCount: item.driver.reviewCount ?? 0,
       experience: item.driver.driver_years ?? 0,
