@@ -1,8 +1,15 @@
 import QuoteReceivedDetailPage from "../../(components)/QuoteReceivedDetailPage";
+import { generateEstimateMetadata } from "@/utils/metadata";
+import type { Metadata } from "next";
 
 type Props = {
   params: Promise<{ id: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const resolved = await Promise.resolve(params);
+  return generateEstimateMetadata({ id: resolved.id, type: "received" });
+}
 
 export default async function ReceivedDetailPage({ params }: Props) {
   const resolved = await Promise.resolve(params);
