@@ -7,10 +7,12 @@ import { I18nProvider } from "../libs/i18n/I18nProvider";
 
 type ProviderProps = {
   children: React.ReactNode;
+  initialLocale?: "ko" | "en" | "zh";
+  initialHasAuth?: boolean; // 서버에서 확인한 초기 인증 상태 (refreshToken 쿠키 기반)
 };
 
 // 프로바이더: 쿼리 클라이언트 제공, 데이터 상태 관리, 국제화 지원 등
-export function Provider({ children }: ProviderProps) {
+export function Provider({ children, initialLocale = "ko", initialHasAuth = false }: ProviderProps) {
   // 쿼리 클라이언트 생성
   const [queryClient] = useState(
     () =>
@@ -28,7 +30,7 @@ export function Provider({ children }: ProviderProps) {
   return (
     // QueryClient를 React Query Context로 주입 (useQuery, useMutation 등 사용 가능)
     <QueryClientProvider client={queryClient}>
-      <I18nProvider>
+      <I18nProvider initialLocale={initialLocale}>
         {children}
         <ReactQueryDevtools initialIsOpen={false} />
       </I18nProvider>

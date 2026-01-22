@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
 import type { QuerySelectType } from "@/types/queryType";
@@ -13,6 +13,8 @@ export default function FilterDropdown({
   onClick: (menu: QuerySelectType) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const toggleDropdown = () => {
     setIsOpen((prev) => !prev);
   };
@@ -21,8 +23,26 @@ export default function FilterDropdown({
     onClick(menu);
     setIsOpen(false);
   };
+
+  // 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    // 드롭다운이 열려있을 때만 이벤트 리스너 추가
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
   return (
-    <div className="flex flex-col w-full max-md:w-[89px] relative">
+    <div ref={dropdownRef} className="flex flex-col w-full max-md:w-[89px] relative">
       <button
         className={`w-full h-16 pret-2lg-medium text-black-400 flex items-center justify-between px-6 border rounded-2xl transition-all duration-300
             max-md:h-10 max-md:pret-14-medium max-md:px-0 max-md:justify-center max-md:gap-[6px] max-md:rounded-lg 
@@ -54,21 +74,21 @@ export default function FilterDropdown({
       </button>
       {isOpen && (
         <div
-          className={`absolute w-full max-h-[320px] overflow-y-scroll scrollbar-custom top-16 z-10 flex bg-gray-50 border border-gray-100 rounded-2xl shadow-[4px_4px_10px_0_rgba(224,224,224,0.25)] mt-2`}
+          className={`absolute w-full max-h-[320px] overflow-y-auto overflow-x-hidden scrollbar-custom top-16 z-10 flex bg-gray-50 border border-gray-100 rounded-2xl shadow-[4px_4px_10px_0_rgba(224,224,224,0.25)] mt-2
+            max-md:top-10 max-md:rounded-lg max-md:flex-col`}
         >
           {menuList.length >= 8 ? (
             // 두 컬럼으로 분할
             <>
               <ul
-                className="w-[50%] h-full pret-2lg-medium text-black-400 flex flex-col items-center
-                max-md:w-[89px] max-md:pret-14-medium max-md:px-[14px] max-md:rounded-lg"
+                className="w-[50%] h-full pret-2lg-medium text-black-400 flex flex-col items-center max-md:w-[89px] max-md:pret-14-medium max-md:px-[14px] max-md:rounded-lg"
               >
                 {menuList
                   .slice(1, Math.ceil(menuList.length / 2))
                   .map((menu) => (
                     <li
                       key={menu.value}
-                      className="w-full h-16 px-6 flex items-center max-md:h-9 max-md:px-0 hover:bg-primary-blue-50 hover:text-primary-blue-300 cursor-pointer"
+                      className="w-full h-16 px-6 flex items-center max-md:h-9 max-md:px-0 max-md:px-2 hover:bg-primary-blue-50 hover:text-primary-blue-300 cursor-pointer"
                       onClick={() => onClickMenu(menu)}
                     >
                       {menu.label}
@@ -76,13 +96,12 @@ export default function FilterDropdown({
                   ))}
               </ul>
               <ul
-                className="w-[50%] h-full pret-2lg-medium text-black-400 flex flex-col items-center
-                max-md:w-[89px] max-md:pret-14-medium max-md:px-[14px] max-md:rounded-lg"
+                className="w-[50%] h-full pret-2lg-medium text-black-400 flex flex-col items-center max-md:w-[89px] max-md:pret-14-medium max-md:px-[14px] max-md:rounded-lg"
               >
                 {menuList.slice(Math.ceil(menuList.length / 2)).map((menu) => (
                   <li
                     key={menu.value}
-                    className="w-full h-16 px-6 flex items-center max-md:h-9 max-md:px-0 hover:bg-primary-blue-50 hover:text-primary-blue-300 cursor-pointer"
+                    className="w-full h-16 px-6 flex items-center max-md:h-9 max-md:px-0 max-md:px-2 hover:bg-primary-blue-50 hover:text-primary-blue-300 cursor-pointer"
                     onClick={() => onClickMenu(menu)}
                   >
                     {menu.label}
@@ -93,13 +112,12 @@ export default function FilterDropdown({
           ) : (
             // 단일 컬럼
             <ul
-              className="w-full h-full pret-2lg-medium text-black-400 flex flex-col items-center
-              max-md:w-[89px] max-md:pret-14-medium max-md:px-[14px] max-md:rounded-lg"
+              className="w-full h-full pret-2lg-medium text-black-400 flex flex-col items-center max-md:w-[89px] max-md:pret-14-medium max-md:px-[14px] max-md:rounded-lg"
             >
               {menuList.slice(1).map((menu) => (
                 <li
                   key={menu.value}
-                  className="w-full h-16 px-6 flex items-center max-md:h-9 max-md:px-0 hover:bg-primary-blue-50 hover:text-primary-blue-300 cursor-pointer"
+                  className="w-full h-16 px-6 flex items-center max-md:h-9 max-md:px-0 max-md:px-2 hover:bg-primary-blue-50 hover:text-primary-blue-300 cursor-pointer"
                   onClick={() => onClickMenu(menu)}
                 >
                   {menu.label}

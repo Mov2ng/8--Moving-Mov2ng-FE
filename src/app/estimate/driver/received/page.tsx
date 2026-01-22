@@ -103,8 +103,6 @@ export default function ReceivedPage() {
       setIsSendModalOpen(false);
       setSelectedItem(null);
     } catch (error) {
-      console.error("견적 보내기 실패:", error);
-      
       // 에러 메시지 추출
       const parsedError = parseServerError(error);
       let errorMessage = parsedError?.message || "견적 보내기에 실패했습니다. 다시 시도해주세요.";
@@ -133,8 +131,6 @@ export default function ReceivedPage() {
       setIsRejectModalOpen(false);
       setSelectedItem(null);
     } catch (error) {
-      console.error("반려 실패:", error);
-      
       // 에러 메시지 추출
       const parsedError = parseServerError(error);
       let errorMessage = parsedError?.message || "반려 처리에 실패했습니다. 다시 시도해주세요.";

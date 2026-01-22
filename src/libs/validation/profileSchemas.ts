@@ -99,15 +99,32 @@ export const baseProfileUpdateSchema = z
  */
 export const driverProfileCreateSchema = baseProfileCreateSchema.extend({
   nickname: z.string().min(1, "닉네임을 입력해 주세요").max(50),
-  driverYears: z.number().min(0, "운전 경력은 0 이상이어야 합니다"),
+  driverYears: z.preprocess(
+    (val) => {
+      if (val === undefined || val === null || val === "") return "INVALID";
+      if (typeof val === "number") return isNaN(val) ? "INVALID" : val;
+      if (typeof val === "string") {
+        const num = Number(val.trim());
+        return isNaN(num) ? "INVALID" : num;
+      }
+      return "INVALID";
+    },
+    z.union([z.number(), z.literal("INVALID")])
+      .refine((val) => val !== "INVALID", {
+        message: "경력을 숫자로 입력해주세요",
+      })
+      .transform((val) => val as number)
+      .refine((val) => val >= 1, { message: "경력은 1 이상이어야 합니다" })
+      .refine((val) => val <= 99, { message: "경력을 다시 확인해주세요" })
+  ),
   driverIntro: z
     .string()
     .min(1, "기사 소개를 입력해 주세요")
-    .max(1000, "기사 소개는 최대 1000자 이하이어야 합니다"),
+    .max(50, "기사 소개는 최대 50자 이하이어야 합니다"),
   driverContent: z
     .string()
     .min(1, "기사 상세 내용을 입력해 주세요")
-    .max(1000, "기사 상세 내용은 최대 1000자 이하이어야 합니다"),
+    .max(200, "기사 상세 내용은 최대 200자 이하이어야 합니다"),
 });
 
 /**
@@ -127,7 +144,40 @@ export const userProfileCreateSchema = baseProfileCreateSchema;
 export const driverProfileSchema = baseProfileUpdateSchema
   .safeExtend({
     nickname: z.string().optional(),
-    driverYears: z.number().optional(),
+    driverYears: z.preprocess(
+      (val) => {
+        // valueAsNumber: true로 인해 빈 문자열이나 잘못된 입력이 NaN으로 변환됨
+        // 빈 값이나 null, undefined는 undefined로 변환
+        if (val === "" || val === null || val === undefined) {
+          return undefined;
+        }
+        const num = Number(val);
+        // NaN인 경우 (빈 값이 NaN으로 변환된 경우 포함) undefined로 변환
+        // 수정 모드에서는 optional이므로 undefined면 검증 통과
+        if (isNaN(num)) {
+          return undefined;
+        }
+        return num;
+      },
+      z
+        .any()
+        .refine(
+          (val) => val === undefined || (typeof val === "number" && !isNaN(val)),
+          {
+            message: "운전 경력은 숫자여야 합니다",
+          }
+        )
+        .refine(
+          (val) =>
+            val === undefined ||
+            (typeof val === "number" && Number.isInteger(val) && val >= 0),
+          {
+            message: "운전 경력은 0 이상의 정수여야 합니다",
+          }
+        )
+        .transform((val) => (val === undefined ? undefined : (val as number)))
+        .optional()
+    ),
     driverIntro: z.string().optional(),
     driverContent: z.string().optional(),
   })
@@ -151,6 +201,10 @@ export const driverProfileSchema = baseProfileUpdateSchema
       // driverYears가 submitData에 포함된 경우(변경된 경우)에만 검증
       // 키가 없으면 undefined → 변경되지 않은 필드로 간주하여 검증 통과
       if (data.driverYears !== undefined) {
+        // NaN 체크 추가
+        if (isNaN(data.driverYears)) {
+          return false;
+        }
         return (
           typeof data.driverYears === "number" &&
           Number.isInteger(data.driverYears) &&

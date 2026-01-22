@@ -22,19 +22,19 @@ export const ServiceCard = ({
       title: t("service_small_title"),
       subtitle: t("service_small_subtitle"),
       bgColor: "bg-primary-blue-100",
-      illustration: "assets/image/img-landing-1.svg",
+      illustration: "/assets/image/img-landing-1.svg",
     },
     home: {
       title: t("service_home_title"),
       subtitle: t("service_home_subtitle"),
       bgColor: "bg-gray-50",
-      illustration: "assets/image/img-landing-2.svg",
+      illustration: "/assets/image/img-landing-2.svg",
     },
     business: {
       title: t("service_business_title"),
       subtitle: t("service_business_subtitle"),
       bgColor: "bg-gray-50",
-      illustration: "assets/image/img-landing-3.svg",
+      illustration: "/assets/image/img-landing-3.svg",
     },
   };
 

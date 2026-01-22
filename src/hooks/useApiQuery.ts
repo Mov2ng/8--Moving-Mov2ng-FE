@@ -35,11 +35,17 @@ export function useApiQuery<TData, TError>({
   staleTime?: number;
   // Omit: UseQueryOptions에서 이미 타입 정의한 queryKey와 queryFn을 제외한 나머지 옵션들을 사용
 } & Omit<UseQueryOptions<TData, TError>, "queryKey" | "queryFn">) {
-  return useQuery({
+  const queryResult = useQuery({
     queryKey,
     queryFn,
     enabled,
     staleTime,
     ...options,
   });
+
+  // isLoading을 isPending으로도 제공 (하위 호환성을 위해 isLoading도 유지)
+  return {
+    ...queryResult,
+    isPending: queryResult.isLoading, // isLoading의 별칭
+  };
 }

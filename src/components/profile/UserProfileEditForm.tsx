@@ -20,6 +20,8 @@ import {
   useUploadToS3,
 } from "@/hooks/useFileService";
 import { useI18n } from "@/libs/i18n/I18nProvider";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/common/Toast";
 
 const DEFAULT_PROFILE_IMAGE = "/assets/image/upload-default.png";
 
@@ -52,6 +54,7 @@ export default function UserProfileEditForm({
 }: UserProfileEditFormProps) {
   const { t } = useI18n();
   const router = useRouter();
+  const { toastContent, showToast } = useToast();
 
   const {
     register,
@@ -192,12 +195,6 @@ export default function UserProfileEditForm({
           setUploadedFileKey(fileKey);
         } catch (error) {
           const parsedError = parseServerError(error);
-          console.error("파일 업로드 실패:", {
-            status: parsedError?.status,
-            message: parsedError?.message,
-            details: parsedError?.details,
-            fullError: error,
-          });
           setError("profileImage", {
             type: "upload",
             message:
@@ -257,8 +254,12 @@ export default function UserProfileEditForm({
         }
       }
 
-      // 비밀번호가 입력된 경우에만 비밀번호 필드 추가
-      if (data.currentPassword && data.newPassword && data.newPasswordConfirm) {
+      // 비밀번호가 입력된 경우에만 비밀번호 필드 추가 (빈 문자열 체크 포함)
+      const hasCurrentPassword = data.currentPassword && data.currentPassword.trim() !== "";
+      const hasNewPassword = data.newPassword && data.newPassword.trim() !== "";
+      const hasNewPasswordConfirm = data.newPasswordConfirm && data.newPasswordConfirm.trim() !== "";
+      
+      if (hasCurrentPassword && hasNewPassword && hasNewPasswordConfirm) {
         submitData.currentPassword = data.currentPassword;
         submitData.newPassword = data.newPassword;
         submitData.newPasswordConfirm = data.newPasswordConfirm;
@@ -273,13 +274,6 @@ export default function UserProfileEditForm({
           await deleteFileMutation.mutateAsync(data.profileImage);
           console.log("프로필 수정 실패로 인한 이미지 롤백 완료");
         } catch (rollbackError) {
-          const parsedRollbackError = parseServerError(rollbackError);
-          console.error("이미지 롤백 실패:", {
-            status: parsedRollbackError?.status,
-            message: parsedRollbackError?.message,
-            details: parsedRollbackError?.details,
-            fullError: rollbackError,
-          });
         }
         setUploadedFileKey(null);
         setSelectedFile(null);
@@ -294,19 +288,36 @@ export default function UserProfileEditForm({
       const parsed = parseServerError(error);
 
       if (!parsed) {
-        alert(t("profile_edit_error"));
+        showToast(t("profile_edit_error"));
         return;
       }
 
-      const { message } = parsed;
-      alert(message || t("profile_edit_error_unknown"));
+      const { status, message } = parsed;
+      
+      // 401: 현재 비밀번호 불일치
+      if (status === 401) {
+        setError("currentPassword", {
+          type: "server",
+          message: message || t("current_password_mismatch"),
+        });
+        return;
+      }
+      
+      // 429: Rate limit 초과
+      if (status === 429) {
+        showToast(message || t("password_change_rate_limit"));
+        return;
+      }
+
+      // 기타 에러
+      showToast(message || t("profile_edit_error_unknown"));
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       {/* 일반유저 프로필 수정: PC에서는 2단, 모바일/태블릿에서는 1단 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 justify-between">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 justify-between">
         {/* 왼쪽 열: 이름, 이메일, 전화번호, 비밀번호 */}
         <div className="flex flex-col gap-6">
           <FormField
@@ -443,6 +454,7 @@ export default function UserProfileEditForm({
           </div>
         </div>
       </div>
+      <Toast content={toastContent} />
     </form>
   );
 }

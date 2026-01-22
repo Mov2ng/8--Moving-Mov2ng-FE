@@ -65,7 +65,7 @@ export default function UserProfileRegisterForm() {
   const [uploadedFileKey, setUploadedFileKey] = useState<string | null>(null);
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
 
-  // 파일 input ref
+  // 같은 파일 재선택 시 onChange 발생 X
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 컴포넌트 언마운트 시 previewObjectUrl 정리
@@ -114,7 +114,6 @@ export default function UserProfileRegisterForm() {
   // Image 클릭 핸들러
   const handleImageClick = () => {
     // 등록 모드에서는 같은 파일도 재선택 가능하도록 input value 초기화
-    // (같은 파일 재선택 시 onChange가 발생하지 않는 HTML input 특성 해결)
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -156,12 +155,6 @@ export default function UserProfileRegisterForm() {
           setUploadedFileKey(fileKey);
         } catch (error) {
           const parsedError = parseServerError(error);
-          console.error("파일 업로드 실패:", {
-            status: parsedError?.status,
-            message: parsedError?.message,
-            details: parsedError?.details,
-            fullError: error,
-          });
           setError("profileImage", {
             type: "upload",
             message:
@@ -186,13 +179,6 @@ export default function UserProfileRegisterForm() {
           await deleteFileMutation.mutateAsync(data.profileImage);
           console.log("프로필 등록 실패로 인한 이미지 롤백 완료");
         } catch (rollbackError) {
-          const parsedRollbackError = parseServerError(rollbackError);
-          console.error("이미지 롤백 실패:", {
-            status: parsedRollbackError?.status,
-            message: parsedRollbackError?.message,
-            details: parsedRollbackError?.details,
-            fullError: rollbackError,
-          });
         }
         setUploadedFileKey(null);
         setSelectedFile(null);
@@ -206,21 +192,17 @@ export default function UserProfileRegisterForm() {
       // 서버 에러 파싱
       const parsed = parseServerError(error);
 
-      if (!parsed) {
-        alert(t("profile_register_error"));
-        return;
+      // 특정 에러(409 등)에 대한 추가 처리만 수행
+      if (parsed) {
+        const { code, status } = parsed;
+
+        // 프로필이 이미 존재하는 경우 특별 처리
+        if (status === 409 || code === "PROFILE_ALREADY_EXISTS") {
+          // useApiMutation이 이미 alert를 표시했으므로, 리디렉션만 수행
+          router.push("/");
+          return;
+        }
       }
-
-      const { code, status, message } = parsed;
-
-      // 프로필 이미 존재 에러
-      if (status === 409 || code === "PROFILE_ALREADY_EXISTS") {
-        alert(message || t("profile_register_already_exists"));
-        router.push("/");
-        return;
-      }
-
-      alert(message || t("profile_register_error_unknown"));
     }
   };
 

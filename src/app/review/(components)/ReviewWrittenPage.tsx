@@ -10,16 +10,20 @@ import { useState, useEffect, useMemo } from "react";
 import { ApiWrittenReview, ReviewWrittenItem } from "@/types/view/review";
 import { STALE_TIME } from "@/constants/query";
 import Image from "next/image";
-import { getServiceLabel } from "@/constants/profile.constants";
+import { getServiceLabel, DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
 import ReviewTabNav from "./ReviewTabNav";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/libs/i18n/I18nProvider";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/common/Toast";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 export default function ReviewWrittenPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
   const router = useRouter();
   const { t } = useI18n();
+  const { toastContent, showToast } = useToast();
 
   const adaptWritten = useMemo(
     () =>
@@ -53,14 +57,14 @@ export default function ReviewWrittenPage() {
           isDesignatedRequest: isDesignated,
           designatedLabel: t("designated_quote_full"),
           createdAt: item.createdAt
-            ? formatDateLabel(item.createdAt)
+            ? formatDateLabel(item.createdAt, t)
             : undefined,
           name:
             item.driver.user?.name ??
             item.driver.nickname ??
             t("driver_suffix"),
           profileImage:
-            item.driver.profileImage ?? "/assets/image/avatartion-1.png",
+            item.driver.profileImage ?? DEFAULT_AVATAR_IMAGE,
           movingDate,
           price,
           rating: item.rating ?? 0,
@@ -114,7 +118,7 @@ export default function ReviewWrittenPage() {
     const isForbidden = status === 403 || code === "FORBIDDEN";
 
     if (isForbidden) {
-      alert("일반 회원만 접근가능합니다.");
+      showToast("일반 회원만 접근가능합니다.");
       setTimeout(() => router.replace("/profile"), 0);
     }
   }, [error, router]);
@@ -129,11 +133,7 @@ export default function ReviewWrittenPage() {
 
       <main className="max-w-6xl mx-auto px-5 py-8 flex flex-col gap-6">
         {/* 카드 리스트 */}
-        {isLoading && (
-          <div className="text-center text-gray-400 pret-15-medium py-10">
-            {t("loading")}
-          </div>
-        )}
+        {isLoading && <LoadingSpinner />}
         {error && (
           <div className="text-center text-secondary-red-200 pret-15-medium py-10">
             {error.message}
@@ -186,6 +186,7 @@ export default function ReviewWrittenPage() {
           />
         )}
       </main>
+      <Toast content={toastContent} info={false} />
     </div>
   );
 }

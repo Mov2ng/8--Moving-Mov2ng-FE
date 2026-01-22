@@ -11,6 +11,8 @@ import { useI18n } from "@/libs/i18n/I18nProvider";
 import Image from "next/image";
 import Link from "next/link";
 import OAuth from "@/components/form/OAuth";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/common/Toast";
 
 /**
  * 회원가입 폼 컴포넌트
@@ -20,6 +22,7 @@ import OAuth from "@/components/form/OAuth";
  */
 export default function SignupForm() {
   const { t } = useI18n();
+  const { toastContent, showToast } = useToast();
 
   // react-hook-form 세팅 (zod 검증)
   const {
@@ -29,11 +32,14 @@ export default function SignupForm() {
     reset,
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
-    mode: "onChange", // 입력 중 실시간 검증
+    mode: "all",
   });
 
   // useSignup hook: 서버에 회원가입 요청 mutation
   const signupMutation = useSignup();
+  
+  // mutation의 실제 로딩 상태 사용 (isSubmitting보다 정확함)
+  const isSigningUp = signupMutation.isPending || isSubmitting;
 
   // form 제출 핸들러
   const onSubmit = async (values: SignupFormValues) => {
@@ -53,14 +59,17 @@ export default function SignupForm() {
       // 에러 파싱
       const parsed = parseServerError(error);
 
-      // 파싱 실패시 서버 에러
+      // 파싱 실패시 사용자에게 알림
       if (!parsed) {
-        alert(t("signup_error"));
+        showToast(t("signup_error"));
         return;
       }
 
-      // 에러 메시지 표시
-      alert(parsed.message || t("signup_error_unknown"));
+      // 사용자 액션이 필요한 에러 
+      if (parsed.status === 400) {
+        showToast(parsed.message || t("signup_error_unknown"));
+        return;
+      }
     }
   };
 
@@ -83,21 +92,21 @@ export default function SignupForm() {
           register={register("name")}
           placeholder={t("signup_name_placeholder")}
           error={errors.name}
-          touched={!!touchedFields.name}
+          touched={!!touchedFields.name || !!errors.name}
         />
         <FormField
           label={t("signup_email")}
           register={register("email")}
           placeholder={t("signup_email_placeholder")}
           error={errors.email}
-          touched={!!touchedFields.email}
+          touched={!!touchedFields.email || !!errors.email}
         />
         <FormField
           label={t("signup_phone")}
           register={register("phoneNum")}
           placeholder={t("signup_phone_placeholder")}
           error={errors.phoneNum}
-          touched={!!touchedFields.phoneNum}
+          touched={!!touchedFields.phoneNum || !!errors.phoneNum}
         />
         <FormField
           label={t("signup_password")}
@@ -105,7 +114,7 @@ export default function SignupForm() {
           register={register("password")}
           placeholder={t("signup_password_placeholder")}
           error={errors.password}
-          touched={!!touchedFields.password}
+          touched={!!touchedFields.password || !!errors.password}
         />
         <FormField
           label={t("signup_password_confirm")}
@@ -113,15 +122,16 @@ export default function SignupForm() {
           register={register("passwordConfirm")}
           placeholder={t("signup_password_confirm_placeholder")}
           error={errors.passwordConfirm}
-          touched={!!touchedFields.passwordConfirm}
+          touched={!!touchedFields.passwordConfirm || !!errors.passwordConfirm}
         />
         {/* TODO: 추후 Button 컴포넌트로 리팩토링 */}
         <button
           type="submit"
           className="mt-4 w-full h-12 rounded-xl bg-primary-blue-300 text-white pret-lg-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
-          disabled={isSubmitting || !isValid}
+          disabled={isSigningUp || !isValid}
+          tabIndex={isSigningUp || !isValid ? -1 : 0}
         >
-          {isSubmitting ? t("signup_submitting") : t("signup_submit")}
+          {isSigningUp ? t("signup_submitting") : t("signup_submit")}
         </button>
       </form>
       <div className="mt-6 mb-18">
@@ -132,6 +142,7 @@ export default function SignupForm() {
       </div>
       {/* NOTE 잠정 중단: 이메일 기반 회원가입, 로그인, 프로필 조회, 수정 로직 모두 변경해야 함 */}
       {/* <OAuth /> */}
+      <Toast content={toastContent} />
     </div>
   );
 }
