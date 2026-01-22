@@ -29,7 +29,7 @@ export default function DriverProfileSettingsContainer() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 mt-10">
+    <div className="max-w-[1400px] mx-auto space-y-8 mt-10 px-6">
       <div className="text-[32px] font-semibold">기본 정보 수정</div>
       <div className="text-xl text-black-200">기본 정보를 수정해주세요.</div>
       <hr className="border-line-100" />

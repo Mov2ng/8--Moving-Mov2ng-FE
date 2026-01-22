@@ -44,7 +44,7 @@ export default function ProfileContainer() {
     );
   }
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 px-6 pt-4">
       <h1 className="text-2xl max-md:text-lg font-bold text-black-400">
         {t("profile_my_page")}
       </h1>

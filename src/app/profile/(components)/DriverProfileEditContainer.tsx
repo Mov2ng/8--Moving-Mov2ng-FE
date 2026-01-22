@@ -50,7 +50,7 @@ export default function DriverProfileEditContainer() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 mt-10">
+    <div className="max-w-[1400px] mx-auto space-y-8 mt-10 px-6 mb-10">
       <div className="text-[32px] font-semibold">기사님 프로필 수정</div>
       <div className="text-xl text-black-200">프로필 정보를 수정해주세요.</div>
       <hr className="border-line-100" />

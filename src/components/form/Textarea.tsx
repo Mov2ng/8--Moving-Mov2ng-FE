@@ -41,7 +41,7 @@ export default function Textarea({
       placeholder={placeholder}
       rows={rows}
       className={`w-full px-4 py-3 rounded-xl transition-colors duration-200
-         text-black-400 placeholder:text-gray-500 resize-none focus:outline-none bg-background-200 border
+         text-black-400 placeholder:text-gray-500 resize-none focus:outline-none border
         ${getBorderColor()}`}
     />
   );

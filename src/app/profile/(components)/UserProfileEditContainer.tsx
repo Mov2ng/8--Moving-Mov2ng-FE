@@ -20,9 +20,10 @@ type UserProfileSubmitData = Partial<ProfileFormValues> &
  */
 export default function UserProfileEditContainer() {
   const { me, isLoading: isAuthLoading } = useAuth();
-  const { data: profileData, isLoading: isProfileLoading } = useGetProfile(
-    !!me && !isAuthLoading
-  );
+  const {
+    data: profileData,
+    isLoading: isProfileLoading,
+  } = useGetProfile(!!me && !isAuthLoading);
 
   const profile = profileData?.data;
   const isLoading = isAuthLoading || isProfileLoading;
@@ -55,7 +56,7 @@ export default function UserProfileEditContainer() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 mt-10">
+    <div className="max-w-[1400px] mx-auto space-y-8 mt-10 px-6 mb-10">
       <div className="text-[32px] font-semibold">프로필 수정</div>
       <div className="text-xl text-black-200">프로필 정보를 수정해주세요.</div>
       <hr className="border-line-100" />

@@ -9,6 +9,7 @@ import { ProfileFormValues } from "@/libs/validation/profileSchemas";
 /**
  * 프로필 등록 페이지 컨테이너
  * - 사용자 역할에 따라 DriverProfileForm 또는 UserProfileRegisterForm 렌더링
+ * - 로딩 처리는 RouteGuard에서 담당
  */
 export default function ProfileRegisterContainer() {
   const { me, isLoading } = useAuth();
@@ -18,18 +19,15 @@ export default function ProfileRegisterContainer() {
     await postProfileMutation.mutateAsync(data);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-blue-300 border-t-transparent" />
-      </div>
-    );
+  // me가 로드되지 않았으면 렌더링하지 않음 (깜빡임 방지)
+  if (isLoading || me === undefined) {
+    return null;
   }
 
   const isDriver = me?.role === "DRIVER";
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 mt-10">
+    <div className="max-w-[1400px] mx-auto space-y-8 mt-10 px-6">
       <div className="text-[32px] font-semibold">
         {isDriver ? "기사님 " : ""}프로필 등록
       </div>
