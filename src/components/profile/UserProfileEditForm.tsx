@@ -251,8 +251,12 @@ export default function UserProfileEditForm({
         }
       }
 
-      // 비밀번호가 입력된 경우에만 비밀번호 필드 추가
-      if (data.currentPassword && data.newPassword && data.newPasswordConfirm) {
+      // 비밀번호가 입력된 경우에만 비밀번호 필드 추가 (빈 문자열 체크 포함)
+      const hasCurrentPassword = data.currentPassword && data.currentPassword.trim() !== "";
+      const hasNewPassword = data.newPassword && data.newPassword.trim() !== "";
+      const hasNewPasswordConfirm = data.newPasswordConfirm && data.newPasswordConfirm.trim() !== "";
+      
+      if (hasCurrentPassword && hasNewPassword && hasNewPasswordConfirm) {
         submitData.currentPassword = data.currentPassword;
         submitData.newPassword = data.newPassword;
         submitData.newPasswordConfirm = data.newPasswordConfirm;
@@ -267,9 +271,6 @@ export default function UserProfileEditForm({
           await deleteFileMutation.mutateAsync(data.profileImage);
           console.log("프로필 수정 실패로 인한 이미지 롤백 완료");
         } catch (rollbackError) {
-          const parsedRollbackError = parseServerError(rollbackError);
-          // 롤백 실패는 조용히 처리 (이미 프로필 수정이 실패한 상태)
-          // console.error는 제거
         }
         setUploadedFileKey(null);
         setSelectedFile(null);
@@ -288,7 +289,27 @@ export default function UserProfileEditForm({
         return;
       }
 
-      const { message } = parsed;
+      const { status, message } = parsed;
+      
+      // 401: 현재 비밀번호 불일치
+      if (status === 401) {
+        setError("currentPassword", {
+          type: "server",
+          message: message || "현재 비밀번호가 일치하지 않습니다.",
+        });
+        return;
+      }
+      
+      // 429: Rate limit 초과
+      if (status === 429) {
+        alert(
+          message || 
+          "비밀번호 변경 요청이 너무 많습니다. 1시간 후 다시 시도해주세요."
+        );
+        return;
+      }
+
+      // 기타 에러
       alert(message || t("profile_edit_error_unknown"));
     }
   };
@@ -296,7 +317,7 @@ export default function UserProfileEditForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       {/* 일반유저 프로필 수정: PC에서는 2단, 모바일/태블릿에서는 1단 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 justify-between">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 justify-between">
         {/* 왼쪽 열: 이름, 이메일, 전화번호, 비밀번호 */}
         <div className="flex flex-col gap-6">
           <FormField
