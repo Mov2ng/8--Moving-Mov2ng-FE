@@ -216,6 +216,8 @@
   "driver_received_estimate_send_error": "Failed to send estimate. Please try again.",
   "driver_received_estimate_reject_error": "Failed to reject. Please try again.",
   "driver_received_estimate_already_processed": "This estimate request has already been processed.",
+  "driver_received_search": "Search",
+  "driver_received_filter": "Moving Type Filter",
   "driver_pending_tab_sent": "Sent estimates",
   "driver_pending_tab_rejected": "Rejected requests",
   "driver_pending_no_sent": "No sent estimates.",

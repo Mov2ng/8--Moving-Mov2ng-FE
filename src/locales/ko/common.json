@@ -215,6 +215,8 @@
   "driver_received_estimate_send_error": "견적 보내기에 실패했습니다. 다시 시도해주세요.",
   "driver_received_estimate_reject_error": "반려 처리에 실패했습니다. 다시 시도해주세요.",
   "driver_received_estimate_already_processed": "이미 처리된 견적 요청입니다.",
+  "driver_received_search": "조회하기",
+  "driver_received_filter": "이사 유형 필터",
   "driver_pending_tab_sent": "보낸 견적 조회",
   "driver_pending_tab_rejected": "반려 요청",
   "driver_pending_no_sent": "보낸 견적이 없습니다.",

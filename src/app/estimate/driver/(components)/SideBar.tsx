@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 
 export const Sidebar: React.FC<{
@@ -6,17 +6,35 @@ export const Sidebar: React.FC<{
   onMovingTypeFilterChange?: (filters: string[]) => void;
   isDesignatedFilter?: boolean | undefined;
   onIsDesignatedFilterChange?: (value: boolean | undefined) => void;
+  regionFilter?: boolean;
+  onRegionFilterChange?: (value: boolean) => void;
   items?: Array<{ movingType?: string | null; isDesignated?: boolean | null }>;
 }> = ({
   movingTypeFilter = [],
   onMovingTypeFilterChange,
   isDesignatedFilter,
   onIsDesignatedFilterChange,
+  regionFilter = false,
+  onRegionFilterChange,
   items = [],
 }) => {
   const { t } = useI18n();
+  // 이전 카운트 값을 유지하기 위한 ref
+  const prevCountsRef = useRef({
+    small: 0,
+    home: 0,
+    office: 0,
+    designated: 0,
+    region: 0,
+  });
+
   // 개수 계산
   const counts = useMemo(() => {
+    // items가 비어있으면 이전 값을 유지
+    if (!items || items.length === 0) {
+      return prevCountsRef.current;
+    }
+
     const smallCount = items.filter((item) => item.movingType === "SMALL").length;
     const homeCount = items.filter(
       (item) => item.movingType === "HOME" || item.movingType === "HOUSE"
@@ -25,13 +43,18 @@ export const Sidebar: React.FC<{
     const designatedCount = items.filter((item) => item.isDesignated === true).length;
     const regionCount = items.length; // 서비스 가능 지역은 전체로 가정
 
-    return {
+    const newCounts = {
       small: smallCount,
       home: homeCount,
       office: officeCount,
       designated: designatedCount,
       region: regionCount,
     };
+
+    // 이전 값 업데이트
+    prevCountsRef.current = newCounts;
+
+    return newCounts;
   }, [items]);
 
   const handleMovingTypeChange = (type: string, checked: boolean) => {
@@ -154,8 +177,8 @@ export const Sidebar: React.FC<{
             <input
               type="checkbox"
               id="region"
-              checked={false}
-              onChange={() => {}}
+              checked={regionFilter}
+              onChange={(e) => onRegionFilterChange?.(e.target.checked)}
               className="w-4 h-4 text-blue-500 rounded"
             />
             <label htmlFor="region" className="text-[14px] text-gray-700 flex-1">

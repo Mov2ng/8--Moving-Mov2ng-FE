@@ -19,9 +19,6 @@ export const RequestList: React.FC<{
 
   return (
     <div className="p-5">
-      <div className="mb-4 text-[14px] text-gray-700">
-        {t("driver_received_total")} {items.length}건
-      </div>
       <div className="space-y-4">
         {items.map((it) => {
           if (!it || !it.requestId) {

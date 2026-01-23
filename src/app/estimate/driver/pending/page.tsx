@@ -31,7 +31,7 @@ export default function PendingPage() {
   }, [userId, page, pageSize]);
 
   // 보낸 견적 조회 (지정 견적 요청 리스트 사용)
-  const { data: sentData, isLoading: sentLoading } =
+  const { data: sentData, isPending: sentPending } =
     useGetDriverDesignatedRequests(
       queryParams || { userId: "", page: 1, pageSize: 20 },
       !!queryParams && !!userId && !authLoading && isDriver && activeTab === "sent"
@@ -72,7 +72,7 @@ export default function PendingPage() {
 
   const displayItems =
     activeTab === "sent" ? sentItems : rejectedItems;
-  const isLoading = sentLoading;
+  const isPending = sentPending;
 
   if (authLoading) {
     return (
@@ -132,7 +132,7 @@ export default function PendingPage() {
         </div>
 
         {/* 카드 그리드 */}
-        {isLoading ? (
+        {isPending ? (
           <div className="text-center text-gray-400 pret-14-medium py-12">
             {t("loading")}
           </div>

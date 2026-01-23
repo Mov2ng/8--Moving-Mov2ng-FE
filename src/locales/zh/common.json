@@ -216,6 +216,8 @@
   "driver_received_estimate_send_error": "发送报价失败。请重试。",
   "driver_received_estimate_reject_error": "拒绝处理失败。请重试。",
   "driver_received_estimate_already_processed": "此报价请求已被处理。",
+  "driver_received_search": "查询",
+  "driver_received_filter": "搬家类型筛选",
   "driver_pending_tab_sent": "已发送报价",
   "driver_pending_tab_rejected": "已拒绝请求",
   "driver_pending_no_sent": "没有已发送的报价。",
