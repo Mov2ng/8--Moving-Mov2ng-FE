@@ -14,7 +14,10 @@ import { STALE_TIME } from "@/constants/query";
 import ReviewTabNav from "./ReviewTabNav";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/libs/i18n/I18nProvider";
-import { getServiceLabel } from "@/constants/profile.constants";
+import { getServiceLabel, DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/common/Toast";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 import type { ApiWritableReview, ReviewItem } from "@/types/view/review";
 
@@ -26,6 +29,7 @@ export default function ReviewWritablePage() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { t } = useI18n();
+  const { toastContent, showToast } = useToast();
 
   const adaptWritable = (item: ApiWritableReview): ReviewItem => {
     const rawType = item.request.moving_type ?? "";
@@ -48,7 +52,7 @@ export default function ReviewWritablePage() {
       name:
         item.driver.user?.name ?? item.driver.nickname ?? t("driver_suffix"),
       profileImage:
-        item.driver.profileImage ?? "/assets/image/avatartion-1.png",
+        item.driver.profileImage ?? DEFAULT_AVATAR_IMAGE,
       movingDate: formatDate(item.request.moving_data),
       price: item.price ?? 0,
       reviewEnabled: true,
@@ -97,14 +101,14 @@ export default function ReviewWritablePage() {
         body: payload,
       }),
     onSuccess: (res) => {
-      alert(res.message ?? t("review_create_success"));
+      showToast(res.message ?? t("review_create_success"));
       queryClient.invalidateQueries({ queryKey: ["reviews", "writable"] });
       queryClient.invalidateQueries({ queryKey: ["reviews", "written"] });
       setIsModalOpen(false);
       setSelectedReview(null);
     },
     onError: (err) => {
-      alert(err.message ?? t("review_create_fail"));
+      showToast(err.message ?? t("review_create_fail"));
     },
   });
 
@@ -127,7 +131,7 @@ export default function ReviewWritablePage() {
     const isForbidden = status === 403 || code === "FORBIDDEN";
 
     if (isForbidden) {
-      alert("일반 회원만 접근가능합니다.");
+      showToast("일반 회원만 접근가능합니다.");
       setTimeout(() => router.replace("/profile"), 0);
     }
   }, [error, router]);
@@ -142,11 +146,7 @@ export default function ReviewWritablePage() {
 
       <main className="max-w-6xl mx-auto px-5 py-8 flex flex-col gap-4">
         {/* 카드 리스트 */}
-        {isLoading && (
-          <div className="text-center text-gray-400 pret-15-medium py-10">
-            {t("loading")}
-          </div>
-        )}
+        {isLoading && <LoadingSpinner />}
         {error && (
           <div className="text-center text-secondary-red-200 pret-15-medium py-10">
             {error.message}
@@ -204,7 +204,7 @@ export default function ReviewWritablePage() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={({ rating, content, item }) => {
           if (!item?.driverId) {
-            alert(t("review_missing_driver"));
+            showToast(t("review_missing_driver"));
             return;
           }
           createReview({
@@ -215,6 +215,7 @@ export default function ReviewWritablePage() {
         }}
         isSubmitting={isCreating}
       />
+      <Toast content={toastContent} info={false} />
     </div>
   );
 }

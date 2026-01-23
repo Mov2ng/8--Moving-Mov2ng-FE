@@ -13,7 +13,7 @@ interface MoversResponse {
   nextCursor: number | null;
   hasNext: boolean;
 }
-
+// 기사님 목록 조회 훅
 export function useGetMovers(query?: {
   keyword?: string;
   region?: string;
@@ -50,6 +50,7 @@ export function useGetMovers(query?: {
   });
 }
 
+// 기사님 상세 정보 조회 훅
 export function useGetMoverFull(id: number, options?: { enabled?: boolean }) {
   return useApiQuery({
     queryKey: ["mover", id, "full"],
@@ -58,6 +59,7 @@ export function useGetMoverFull(id: number, options?: { enabled?: boolean }) {
   });
 }
 
+// 기사님 상세 정보 추가 조회 훅
 export function useGetMoverExtra(id: number, options?: { enabled?: boolean }) {
   return useApiQuery({
     queryKey: ["mover", id, "extra"],
@@ -66,6 +68,7 @@ export function useGetMoverExtra(id: number, options?: { enabled?: boolean }) {
   });
 }
 
+// 기사님 찜하기 훅
 export function usePostFavoriteMover(id: number) {
   return useApiMutation({
     mutationKey: ["favorite", id],
@@ -73,6 +76,7 @@ export function usePostFavoriteMover(id: number) {
   });
 }
 
+// 기사님 찜 취소 훅
 export function useDeleteFavoriteMover(id: number) {
   return useApiMutation({
     mutationKey: ["favorite", id],
@@ -80,9 +84,18 @@ export function useDeleteFavoriteMover(id: number) {
   });
 }
 
+// 기사님 지정 견적 요청 훅
 export function usePostRequestDriver(id: number) {
   return useApiMutation({
     mutationKey: ["request", id],
     mutationFn: () => moverService.postRequestDriver(id),
+  });
+}
+
+// 찜한 목록 조회 훅
+export function useGetFavoriteMovers() {
+  return useApiQuery({
+    queryKey: ["favorite", "movers"],
+    queryFn: () => moverService.getFavoriteMovers(),
   });
 }

@@ -10,7 +10,7 @@ import type {
   ApiFavoriteDriver,
   FavoriteDriverView,
 } from "@/types/view/favorite";
-import { getServiceLabel } from "@/constants/profile.constants";
+import { getServiceLabel, DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
 
 export default function FavoriteMoversPageClient() {
   const { t } = useI18n();
@@ -29,7 +29,7 @@ export default function FavoriteMoversPageClient() {
     return {
       id: item.id ?? 0,
       name: item.nickname ?? t("driver_suffix"),
-      profileImage: item.profileImage ?? "/assets/image/avatartion-1.png",
+      profileImage: item.profileImage ?? DEFAULT_AVATAR_IMAGE,
       serviceType,
       driverYears: item.careerYears ?? 0,
       rating: item.rating ?? 0,
@@ -96,6 +96,7 @@ export default function FavoriteMoversPageClient() {
             {favorites.map((fav) => (
               <FavoriteDriverCard
                 key={fav.id}
+                id={fav.id}
                 serviceType={fav.serviceType}
                 name={fav.name}
                 profileImage={fav.profileImage}

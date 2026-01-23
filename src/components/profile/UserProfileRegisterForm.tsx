@@ -17,6 +17,7 @@ import {
   useUploadToS3,
 } from "@/hooks/useFileService";
 import { usePostProfile } from "@/hooks/useProfile";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 const DEFAULT_PROFILE_IMAGE = "/assets/image/upload-default.png";
 
@@ -28,6 +29,7 @@ type UserProfileCreateValues = z.infer<ReturnType<typeof profileCreateSchema>>;
  * @returns
  */
 export default function UserProfileRegisterForm() {
+  const { t } = useI18n();
   const router = useRouter();
 
   // 프로필 등록 폼 상태 관리
@@ -63,7 +65,7 @@ export default function UserProfileRegisterForm() {
   const [uploadedFileKey, setUploadedFileKey] = useState<string | null>(null);
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
 
-  // 파일 input ref
+  // 같은 파일 재선택 시 onChange 발생 X
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 컴포넌트 언마운트 시 previewObjectUrl 정리
@@ -93,7 +95,7 @@ export default function UserProfileRegisterForm() {
       setValue("profileImage", "");
       setError("profileImage", {
         type: "required",
-        message: "프로필 이미지를 업로드해주세요.",
+        message: t("profile_image_upload_error"),
       });
       return;
     }
@@ -112,7 +114,6 @@ export default function UserProfileRegisterForm() {
   // Image 클릭 핸들러
   const handleImageClick = () => {
     // 등록 모드에서는 같은 파일도 재선택 가능하도록 input value 초기화
-    // (같은 파일 재선택 시 onChange가 발생하지 않는 HTML input 특성 해결)
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -125,7 +126,7 @@ export default function UserProfileRegisterForm() {
     if (!selectedFile && !uploadedFileKey) {
       setError("profileImage", {
         type: "required",
-        message: "프로필 이미지를 업로드해주세요.",
+        message: t("profile_image_upload_error"),
       });
       return;
     }
@@ -154,19 +155,13 @@ export default function UserProfileRegisterForm() {
           setUploadedFileKey(fileKey);
         } catch (error) {
           const parsedError = parseServerError(error);
-          console.error("파일 업로드 실패:", {
-            status: parsedError?.status,
-            message: parsedError?.message,
-            details: parsedError?.details,
-            fullError: error,
-          });
           setError("profileImage", {
             type: "upload",
             message:
               parsedError?.message ||
               (error instanceof Error
                 ? error.message
-                : "파일 업로드에 실패했습니다. 다시 시도해주세요."),
+                : t("profile_image_upload_fail")),
           });
           return;
         }
@@ -184,13 +179,6 @@ export default function UserProfileRegisterForm() {
           await deleteFileMutation.mutateAsync(data.profileImage);
           console.log("프로필 등록 실패로 인한 이미지 롤백 완료");
         } catch (rollbackError) {
-          const parsedRollbackError = parseServerError(rollbackError);
-          console.error("이미지 롤백 실패:", {
-            status: parsedRollbackError?.status,
-            message: parsedRollbackError?.message,
-            details: parsedRollbackError?.details,
-            fullError: rollbackError,
-          });
         }
         setUploadedFileKey(null);
         setSelectedFile(null);
@@ -204,21 +192,17 @@ export default function UserProfileRegisterForm() {
       // 서버 에러 파싱
       const parsed = parseServerError(error);
 
-      if (!parsed) {
-        alert("프로필 등록 중 오류가 발생했습니다.");
-        return;
+      // 특정 에러(409 등)에 대한 추가 처리만 수행
+      if (parsed) {
+        const { code, status } = parsed;
+
+        // 프로필이 이미 존재하는 경우 특별 처리
+        if (status === 409 || code === "PROFILE_ALREADY_EXISTS") {
+          // useApiMutation이 이미 alert를 표시했으므로, 리디렉션만 수행
+          router.push("/");
+          return;
+        }
       }
-
-      const { code, status, message } = parsed;
-
-      // 프로필 이미 존재 에러
-      if (status === 409 || code === "PROFILE_ALREADY_EXISTS") {
-        alert(message || "프로필이 이미 등록되어 있습니다.");
-        router.push("/");
-        return;
-      }
-
-      alert(message || "프로필 등록 중 알 수 없는 오류가 발생했습니다.");
     }
   };
 
@@ -231,12 +215,12 @@ export default function UserProfileRegisterForm() {
       {/* 일반회원 프로필 등록: 항상 1단 */}
       <>
         <FormField
-          label="프로필 이미지"
+          label={t("profile_image")}
           type="file"
           register={register("profileImage")}
           error={errors.profileImage}
           touched={!!touchedFields.profileImage}
-          placeholder="프로필 이미지"
+          placeholder={t("profile_image_placeholder")}
         >
           <div className="relative">
             <Image
@@ -265,29 +249,29 @@ export default function UserProfileRegisterForm() {
           </div>
         </FormField>
         <FormField
-          label="이용 서비스"
+          label={t("profile_service_label")}
           register={register("serviceCategories")}
           error={errors.serviceCategories}
-          placeholder="서비스"
+          placeholder={t("service")}
           touched={!!touchedFields.serviceCategories}
         >
           <ProfileChips
             chipList={serviceCategories}
             register={register("serviceCategories")}
-            content="이용 서비스는 중복 선택 가능하며, 언제든 수정 가능해요!"
+            content={t("profile_service_chip_info")}
           />
         </FormField>
         <FormField
-          label="내가 사는 지역"
+          label={t("profile_region_label")}
           register={register("region")}
           error={errors.region}
-          placeholder="지역"
+          placeholder={t("region")}
           touched={!!touchedFields.region}
         >
           <ProfileChips
             chipList={regions}
             register={register("region")}
-            content="내가 사는 지역은 중복 선택 가능하며, 언제든 수정 가능해요!"
+            content={t("profile_region_chip_info")}
           />
         </FormField>
         <div className="flex justify-center mt-6">
@@ -296,7 +280,7 @@ export default function UserProfileRegisterForm() {
             className="mt-4 w-full h-12 rounded-xl bg-primary-blue-300 text-white pret-lg-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
             disabled={isSubmitting || !isValid}
           >
-            {isSubmitting ? "프로필 등록 중..." : "시작하기"}
+            {isSubmitting ? t("profile_register_submitting") : t("profile_register_submit")}
           </button>
         </div>
       </>

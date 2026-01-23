@@ -6,30 +6,34 @@ import { useGetMyMoverDetail } from "@/hooks/useProfile";
 import { useGetViewPresignedUrl } from "@/hooks/useFileService";
 import ReviewSection from "../../../components/common/ReviewSection";
 import { useRouter } from "next/navigation";
+import { useI18n } from "@/libs/i18n/I18nProvider";
+import { DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 /**
  * 마이페이지 컨테이너
  * @returns
  */
 export default function ProfileContainer() {
-  const { me, isLoading: isAuthLoading } = useAuth();
+  const { t } = useI18n();
+  const { me, isLoading: isAuthPending } = useAuth();
   const router = useRouter();
 
   // /movers/me API를 사용하여 user_id로 driver 정보 조회
-  const { data: moverData, isLoading: isMoverLoading } = useGetMyMoverDetail(
-    !!me && !isAuthLoading
+  const { data: moverData, isLoading: isMoverPending } = useGetMyMoverDetail(
+    !!me && !isAuthPending
   );
 
   // me.profileImage(fileKey)로 presigned URL 조회
   const { data: profileImageUrl } = useGetViewPresignedUrl(me?.profileImage);
 
   const driver = moverData?.data;
-  const isLoading = isAuthLoading || isMoverLoading;
+  const isPending = isAuthPending || isMoverPending;
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-blue-300 border-t-transparent" />
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -37,19 +41,19 @@ export default function ProfileContainer() {
   if (!driver) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p>데이터를 불러올 수 없습니다.</p>
+        <p>{t("profile_cannot_load_data")}</p>
       </div>
     );
   }
   return (
-    <div className="flex flex-col gap-8">
-      <h1 className="text-2xl max-md:text-lg font-bold text-black-400">
-        마이페이지
+    <div className="flex flex-col gap-8 px-6 pt-4">
+      <h1 className="text-2xl max-md:text-xl font-bold text-black-400">
+        {t("profile_my_page")}
       </h1>
       <ProfileEditCard
         name={driver.nickname}
         description={driver.driverContent}
-        profileImage={profileImageUrl || "/assets/image/avatartion-3.png"}
+        profileImage={profileImageUrl || DEFAULT_AVATAR_IMAGE}
         avatarSize="md"
         avatarResponsive={true}
         rating={driver.rating}
@@ -58,6 +62,8 @@ export default function ProfileContainer() {
         confirmedCount={driver.confirmCount}
         regions={driver.regions}
         services={driver.serviceCategories}
+        profileEditLabel={t("profile_edit_button")}
+        basicInfoEditLabel={t("basic_info_edit_button")}
         onProfileEdit={() => router.push("/profile/driver/edit")}
         onBasicInfoEdit={() => router.push("/profile/driver/settings")}
       />

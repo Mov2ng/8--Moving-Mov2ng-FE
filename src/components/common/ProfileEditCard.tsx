@@ -3,6 +3,7 @@
 import MypageProfile from "@/components/common/MypageProfile";
 import EditButton from "@/components/common/EditButton";
 import ProfileAvatar from "@/components/common/ProfileAvatar";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 interface ProfileEditCardProps {
   name: string;
@@ -38,12 +39,15 @@ export default function ProfileEditCard({
   confirmedCount,
   services,
   regions,
-  profileEditLabel = "내 프로필 수정",
-  basicInfoEditLabel = "기본 정보 수정",
+  profileEditLabel,
+  basicInfoEditLabel,
   onProfileEdit,
   onBasicInfoEdit,
   secondaryDisabled = false,
 }: ProfileEditCardProps) {
+  const { t } = useI18n();
+  const defaultProfileEditLabel = profileEditLabel || t("profile_edit_button");
+  const defaultBasicInfoEditLabel = basicInfoEditLabel || t("basic_info_edit_button");
   return (
     <div className="bg-background-100 border border-gray-100 rounded-2xl p-6 lg:p-6 max-md:p-4 shadow-sm">
       {/* PC 레이아웃: 상단 정보 + 버튼 */}
@@ -59,7 +63,7 @@ export default function ProfileEditCard({
         <div className="flex gap-4">
           <EditButton
             variant="outline"
-            label={basicInfoEditLabel}
+            label={defaultBasicInfoEditLabel}
             iconSrc="/assets/icon/ic-writing-gray.svg"
             className="w-[280px] border-gray-200 text-gray-300 hover:bg-gray-100 hover:border-gray-300"
             onClick={onBasicInfoEdit}
@@ -67,7 +71,7 @@ export default function ProfileEditCard({
           />
           <EditButton
             variant="solid"
-            label={profileEditLabel}
+            label={defaultProfileEditLabel}
             iconSrc="/assets/icon/ic-writing.svg"
             className="w-[280px]"
             onClick={onProfileEdit}
@@ -126,14 +130,14 @@ export default function ProfileEditCard({
       <div className="lg:hidden flex flex-col sm:flex-row gap-2 sm:gap-4">
         <EditButton
           variant="solid"
-          label={profileEditLabel}
+          label={defaultProfileEditLabel}
           iconSrc="/assets/icon/ic-writing.svg"
           className="w-full sm:w-[296px]"
           onClick={onProfileEdit}
         />
         <EditButton
           variant="outline"
-          label={basicInfoEditLabel}
+          label={defaultBasicInfoEditLabel}
           iconSrc="/assets/icon/ic-writing-gray.svg"
           className="w-full sm:w-[296px] border-gray-200 text-gray-300 hover:bg-gray-100 hover:border-gray-300"
           onClick={onBasicInfoEdit}

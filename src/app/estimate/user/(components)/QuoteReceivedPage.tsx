@@ -11,14 +11,18 @@ import { useEffect, useState } from "react";
 import { STALE_TIME } from "@/constants/query";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/libs/i18n/I18nProvider";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/common/Toast";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 import type { ApiQuote, QuoteStatus } from "@/types/api/quotes";
 import type { QuoteCardView } from "@/types/view/quote";
-import { getServiceLabel } from "@/constants/profile.constants";
+import { getServiceLabel, DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
 
 const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   PENDING: "waiting",
-  ACCEPTED: "confirmed",
+  ACCEPTED: "waiting",
+  COMPLETED: "confirmed",
   REJECTED: "rejected",
 };
 
@@ -29,6 +33,7 @@ export default function QuoteReceivedPage() {
   const [isCompact, setIsCompact] = useState(false);
   const router = useRouter();
   const { t } = useI18n();
+  const { toastContent, showToast } = useToast();
   const adaptQuote = (item: ApiQuote): QuoteCardView => {
     const movingTypeMap: Record<string, string> = {
       SMALL: t("moving_type_small"),
@@ -42,7 +47,7 @@ export default function QuoteReceivedPage() {
     return {
       id: item.id,
       name: item.driver.nickname,
-      profileImage: "/assets/image/avatartion-1.png", // 임시 프로필 이미지
+      profileImage: DEFAULT_AVATAR_IMAGE, // 임시 프로필 이미지
       rating: item.driver.rating ?? 0,
       reviewCount: item.driver.reviewCount ?? 0,
       experience: item.driver.driver_years ?? 0,
@@ -52,8 +57,8 @@ export default function QuoteReceivedPage() {
       serviceType,
       isDesignatedRequest: item.isRequest ?? false,
       designatedLabel: t("designated_quote_full"),
-      movingDate: formatDateLabel(item.request.moving_data),
-      movingDateTimeLabel: formatDateTime(item.request.moving_data),
+      movingDate: formatDateLabel(item.request.moving_data, t),
+      movingDateTimeLabel: formatDateTime(item.request.moving_data, t),
       requestedAt: item.request.createdAt,
       departure: item.request.origin,
       arrival: item.request.destination,
@@ -78,7 +83,7 @@ export default function QuoteReceivedPage() {
     { label: t("filter_all"), value: "ALL" },
     { label: confirmedLabel, value: "CONFIRMED" },
   ];
-  const { data, isLoading, error } = useApiQuery<
+  const { data, isPending, error } = useApiQuery<
     {
       success: boolean;
       message: string;
@@ -90,7 +95,7 @@ export default function QuoteReceivedPage() {
     queryFn: async () => {
       return apiClient(ENDPOINT, {
         method: "GET",
-        query: { completedOnly: true },
+        query: { status: "COMPLETED" },
       });
     },
     staleTime: STALE_TIME.ESTIMATE,
@@ -119,7 +124,7 @@ export default function QuoteReceivedPage() {
     const isForbidden = status === 403 || code === "FORBIDDEN";
 
     if (isForbidden) {
-      alert(t("forbidden_user"));
+      showToast(t("forbidden_user"));
       setTimeout(() => router.replace("/estimate/driver/received"), 0);
     }
   }, [error, router, t]);
@@ -133,17 +138,13 @@ export default function QuoteReceivedPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-0 sm:px-4 md:px-5 py-8">
-        {isLoading && (
-          <div className="text-center text-gray-400 pret-14-medium">
-            {t("loading")}
-          </div>
-        )}
+        {isPending && <LoadingSpinner />}
         {error && (
           <div className="text-center text-secondary-red-200 pret-14-medium">
             {error.message}
           </div>
         )}
-        {!isLoading && !error && (
+        {!isPending && !error && (
           <section className="rounded-2xl bg-white border border-line-100 px-6 py-6 shadow-sm flex flex-col gap-6">
             {/* 견적 정보 */}
             {first && (
@@ -155,7 +156,7 @@ export default function QuoteReceivedPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-10">
                     <InfoRow
                       label={t("quote_request_date")}
-                      value={formatDateLabel(first.requestedAt ?? "")}
+                      value={formatDateLabel(first.requestedAt ?? "", t)}
                     />
                     <InfoRow label={t("service")} value={first.serviceType} />
                     <InfoRow
@@ -216,6 +217,7 @@ export default function QuoteReceivedPage() {
           </section>
         )}
       </main>
+      <Toast content={toastContent} info={false} />
     </div>
   );
 }
