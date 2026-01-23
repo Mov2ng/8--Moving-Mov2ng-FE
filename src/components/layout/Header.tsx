@@ -273,7 +273,7 @@ export default function Header() {
             text={t("login")}
             onClick={() => router.push("/login")}
             width="100px"
-            className="px-10 max-md:hidden"
+            className="max-md:hidden"
           />
           <button
             className="md:hidden"

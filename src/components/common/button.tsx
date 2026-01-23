@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import clsx from "clsx";
 
 interface ButtonProps {
   variant?: "solid" | "outline";
@@ -22,37 +23,23 @@ export default function Button({
   width = "auto",
   className,
 }: ButtonProps) {
-
-  // 색상 변수 선언
-  const gray = "#DEDEDE";
-  const blue = "#1B92FF";
-  const white = "#FFFFFF";
-
-  const baseStyle: React.CSSProperties = {
-    padding: "16px",
-    borderRadius: "16px",
-    fontSize: "20px",
-    fontWeight: "600",
-    width,
-    cursor: disabled ? "not-allowed" : "pointer",
-    transition: "0.2s ease",
-  };
-
-  const solidStyle: React.CSSProperties = {
-    backgroundColor: disabled ? gray : blue,
-    color: white,
-    border: "none",
-  };
-
-  const outlineStyle: React.CSSProperties = {
-    color: disabled ? gray : blue,
-    border: `2px solid ${disabled ? gray : blue}`,
-  };
-
-  const style = variant === "solid" ? solidStyle : outlineStyle;
+  const baseClasses = "px-6 py-3 rounded-2xl pret-lg-semibold transition duration-200 ease-in-out flex items-center justify-center";
+  
+  const variantClasses = variant === "solid" 
+    ? disabled 
+      ? "bg-gray-100 text-gray-50 border-none cursor-not-allowed"
+      : "bg-primary-blue-300 text-gray-50 border-none cursor-pointer"
+    : disabled
+      ? "text-gray-100 border-2 border-gray-100 cursor-not-allowed"
+      : "text-primary-blue-300 border-2 border-primary-blue-300 cursor-pointer";
 
   return (
-    <button style={{ ...baseStyle, ...style }} onClick={onClick} disabled={disabled} className={`${className}`}>
+    <button
+      style={{ width }}
+      onClick={onClick}
+      disabled={disabled}
+      className={clsx(baseClasses, variantClasses, className)}
+    >
       {text}
     </button>
   );
