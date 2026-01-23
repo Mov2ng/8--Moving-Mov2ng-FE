@@ -94,10 +94,9 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
   const pageSize = 10;
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [readNoticeIds, setReadNoticeIds] = useState<Set<string>>(new Set());
-  const [deletedNoticeIds, setDeletedNoticeIds] = useState<Set<string>>(new Set());
 
   // role에 따라 알림 조회 (USER면 유저 알림, DRIVER면 기사 알림)
-  const { data: noticesData, refetch } = useApiQuery({
+  const { data: noticesData, refetch: refetchNotices } = useApiQuery({
     queryKey: ["notices", role, me?.id, page, pageSize],
     queryFn: () => {
       if (role === "USER" && me?.id) {
@@ -115,16 +114,17 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
     mutationFn: (noticeId: number) => noticeService.readNotice(noticeId),
     successConfig: {
       invalidateQueries: [
-        ["notices", role, me?.id], // 현재 Notice 컴포넌트의 쿼리
+        ["notices", role, me?.id], // 현재 Notice 컴포넌트의 쿼리 (부분 매칭으로 page, pageSize 포함)
         ["notices", "header", me?.id], // Header의 알림 쿼리도 무효화
       ],
     },
-    onSuccess: (data, noticeId) => {
+    onSuccess: async (data, noticeId) => {
       // API 호출 성공 로그 (개발 환경에서만)
       if (process.env.NODE_ENV === "development") {
         console.log(`알림 ${noticeId} 읽음 처리 성공`, data);
       }
-      // invalidateQueries로 자동 refetch됨
+      // invalidateQueries로 자동 refetch되지만, 명시적으로 refetch하여 즉시 반영
+      await refetchNotices();
     },
     errorConfig: {
       errorMessagePrefix: "알림 읽음 처리",
@@ -132,29 +132,40 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
     },
   });
 
-  // 알림 삭제 mutation
-  const deleteNoticeMutation = useApiMutation({
-    mutationFn: (noticeId: number) => noticeService.deleteNotice(noticeId),
+  // 알림 전체 읽음 처리 mutation
+  const readAllNoticesMutation = useApiMutation({
+    mutationFn: (userId: string) => noticeService.readAllNotices(userId),
     successConfig: {
       invalidateQueries: [
-        ["notices", role, me?.id], // 현재 Notice 컴포넌트의 쿼리
+        ["notices", role, me?.id], // 현재 Notice 컴포넌트의 쿼리 (부분 매칭으로 page, pageSize 포함)
         ["notices", "header", me?.id], // Header의 알림 쿼리도 무효화
       ],
     },
-    onSuccess: () => {
-      // refetch는 invalidateQueries로 자동 처리되므로 제거
-      // 로컬 상태는 낙관적 업데이트용으로 유지
+    onSuccess: async () => {
+      // invalidateQueries로 자동 refetch되지만, 명시적으로 refetch하여 즉시 반영
+      await refetchNotices();
+      // 전체 읽음 처리 후 로컬 상태도 초기화 (서버에서 이미 읽음 처리되었으므로)
+      setReadNoticeIds(new Set());
+    },
+    errorConfig: {
+      errorMessagePrefix: "알림 전체 읽음 처리",
+      defaultErrorMessage: "알림 전체 읽음 처리에 실패했습니다.",
     },
   });
 
   // 알림 클릭 시 읽음 처리
-  const handleNoticeClick = (notice: Notice) => {
+  const handleNoticeClick = (e: React.MouseEvent, notice: Notice) => {
+    e.stopPropagation(); // 이벤트 전파 방지 (모달이 닫히지 않도록)
     const noticeId = parseInt(notice.noticeId, 10);
     if (!isNaN(noticeId) && !notice.isRead && !readNoticeIds.has(notice.noticeId)) {
       // 즉시 UI에 반영 (낙관적 업데이트)
       setReadNoticeIds((prev) => new Set(prev).add(notice.noticeId));
       // API 호출
       readNoticeMutation.mutate(noticeId, {
+        onSuccess: () => {
+          // 성공 시 로컬 상태는 유지 (서버에서 isRead: true로 반환되므로 필터링됨)
+          // refetchNotices는 onSuccess에서 자동 호출됨
+        },
         onError: (error) => {
           // API 실패 시 로컬 상태 롤백
           setReadNoticeIds((prev) => {
@@ -168,19 +179,28 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
     }
   };
 
-  // 알림 삭제 처리
-  const handleDeleteNotice = (
-    e: React.MouseEvent,
-    notice: Notice
-  ) => {
-    e.stopPropagation(); // 클릭 이벤트 전파 방지
-    e.preventDefault(); // 기본 동작 방지
-    const noticeId = parseInt(notice.noticeId, 10);
-    if (!isNaN(noticeId)) {
-      // 즉시 UI에서 제거 (낙관적 업데이트)
-      setDeletedNoticeIds((prev) => new Set(prev).add(notice.noticeId));
+  // 전체 읽음 처리
+  const handleReadAll = () => {
+    if (me?.id) {
+      // 즉시 UI에 반영 (낙관적 업데이트) - 모든 알림을 읽음 처리
+      const allNoticeIds = new Set(notices.map(notice => notice.noticeId));
+      setReadNoticeIds((prev) => {
+        const next = new Set(prev);
+        allNoticeIds.forEach(id => next.add(id));
+        return next;
+      });
       // API 호출
-      deleteNoticeMutation.mutate(noticeId);
+      readAllNoticesMutation.mutate(me.id, {
+        onError: (error) => {
+          // API 실패 시 로컬 상태 롤백
+          setReadNoticeIds((prev) => {
+            const next = new Set(prev);
+            allNoticeIds.forEach(id => next.delete(id));
+            return next;
+          });
+          console.error("알림 전체 읽음 처리 실패:", error);
+        },
+      });
     }
   };
 
@@ -188,14 +208,6 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      // 삭제 버튼 클릭은 무시
-      if (
-        target instanceof Element &&
-        (target.closest('button[aria-label="알림 삭제"]') ||
-          target.closest('img[alt="삭제"]'))
-      ) {
-        return;
-      }
       
       if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         onClose();
@@ -213,17 +225,36 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
 
   const notices = noticesData?.data?.items || [];
   
-  // 개발 환경에서 알림 데이터 로깅 (디버깅용)
+  // 서버 데이터가 변경될 때 읽음 처리된 알림의 로컬 상태 동기화
   useEffect(() => {
+    if (notices.length > 0) {
+      // 서버에서 이미 읽음 처리된 알림은 로컬 상태에서 제거
+      // (서버 데이터가 진실의 원천이므로)
+      setReadNoticeIds((prev) => {
+        const next = new Set(prev);
+        notices.forEach((notice) => {
+          if (notice.isRead) {
+            // 서버에서 읽음 처리된 알림은 로컬 상태에서 제거
+            next.delete(notice.noticeId);
+          }
+        });
+        return next;
+      });
+    }
+    // 개발 환경에서 알림 데이터 로깅 (디버깅용)
     if (process.env.NODE_ENV === "development" && notices.length > 0) {
       console.log("알림 데이터:", notices.map(n => ({ id: n.noticeId, isRead: n.isRead })));
     }
-  }, [notices]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noticesData]);
   
-  // 삭제된 알림 필터링
-  const visibleNotices = notices.filter(
-    (notice) => !deletedNoticeIds.has(notice.noticeId)
-  );
+  // 읽음 처리되지 않은 알림만 표시
+  // 서버 데이터의 isRead를 우선시하고, 낙관적 업데이트도 반영
+  const visibleNotices = notices.filter((notice) => {
+    // 서버에서 이미 읽음 처리되었거나, 로컬에서 읽음 처리한 경우 필터링
+    const isRead = notice.isRead || readNoticeIds.has(notice.noticeId);
+    return !isRead;
+  });
 
   if (!isOpen) return null;
 
@@ -235,18 +266,29 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
       {/* 헤더 */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-line-100">
         <h2 className="pret-2xl-semibold text-black-400">알림</h2>
-        <button
-          onClick={onClose}
-          className="cursor-pointer hover:opacity-70 transition-opacity"
-          aria-label="닫기"
-        >
-          <Image
-            src="/assets/icon/ic-cancel.svg"
-            alt="닫기"
-            width={24}
-            height={24}
-          />
-        </button>
+        <div className="flex items-center gap-3">
+          {visibleNotices.length > 0 && (
+            <button
+              onClick={handleReadAll}
+              className="pret-sm-medium text-primary-blue-300 hover:text-primary-blue-400 transition-colors"
+              disabled={readAllNoticesMutation.isPending}
+            >
+              전체 읽음
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="cursor-pointer hover:opacity-70 transition-opacity"
+            aria-label="닫기"
+          >
+            <Image
+              src="/assets/icon/ic-cancel.svg"
+              alt="닫기"
+              width={24}
+              height={24}
+            />
+          </button>
+        </div>
       </div>
 
       {/* 알림 목록 */}
@@ -258,44 +300,20 @@ export default function Notice({ isOpen, onClose }: NoticeProps) {
         ) : (
           <ul className="flex flex-col">
             {visibleNotices.map((notice: Notice, index: number) => {
-              // 서버 데이터를 우선시하되, 낙관적 업데이트도 반영
-              const isRead = notice.isRead || readNoticeIds.has(notice.noticeId);
               return (
                 <li
                   key={notice.noticeId}
                   className={`px-6 py-4 cursor-pointer hover:bg-primary-blue-50 transition-colors relative ${
                     index !== visibleNotices.length - 1 ? "border-b border-line-100" : ""
                   }`}
-                  onClick={() => handleNoticeClick(notice)}
+                  onClick={(e) => handleNoticeClick(e, notice)}
                 >
                   <div className="flex flex-col gap-2">
                     {/* 알림 내용 */}
                     <div className="flex items-start justify-between gap-2">
-                      <p
-                        className={`pret-lg-regular flex-1 ${
-                          isRead ? "text-gray-400" : "text-black-400"
-                        }`}
-                      >
+                      <p className="pret-lg-regular flex-1 text-black-400">
                         {highlightKeywords(notice.content)}
                       </p>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {isRead && (
-                          <span className="text-[12px] text-gray-400">읽음</span>
-                        )}
-                        <button
-                          onClick={(e) => handleDeleteNotice(e, notice)}
-                          className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                          aria-label="알림 삭제"
-                          title="알림 삭제"
-                        >
-                          <Image
-                            src="/assets/icon/ic-cancel.svg"
-                            alt="삭제"
-                            width={16}
-                            height={16}
-                          />
-                        </button>
-                      </div>
                     </div>
                     {/* 시간 */}
                     <p className="pret-14-medium text-gray-400">
