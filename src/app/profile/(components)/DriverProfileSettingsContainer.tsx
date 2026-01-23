@@ -2,6 +2,8 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import DriverBasicInfoForm from "@/components/profile/DriverBasicInfoForm";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 /**
  * DriverProfileSettingsContainer: 기사님 기본 정보 수정 페이지 컨테이너
@@ -9,13 +11,14 @@ import DriverBasicInfoForm from "@/components/profile/DriverBasicInfoForm";
  * @returns
  */
 export default function DriverProfileSettingsContainer() {
-  const { me, isLoading } = useAuth();
+  const { me, isLoading: isPending } = useAuth();
+  const { t } = useI18n();
   console.log("me: ", me);
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-blue-300 border-t-transparent" />
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -23,15 +26,15 @@ export default function DriverProfileSettingsContainer() {
   if (!me) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p>데이터를 불러올 수 없습니다.</p>
+        <p>{t("profile_cannot_load_data")}</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 mt-10">
-      <div className="text-[32px] font-semibold">기본 정보 수정</div>
-      <div className="text-xl text-black-200">기본 정보를 수정해주세요.</div>
+    <div className="max-w-[1400px] mx-auto space-y-8 my-10 px-6">
+      <div className="text-[32px] font-semibold">{t("basic_info_edit_title")}</div>
+      <div className="text-xl text-black-200">{t("basic_info_edit_desc")}</div>
       <hr className="border-line-100" />
       <DriverBasicInfoForm
         initialData={{

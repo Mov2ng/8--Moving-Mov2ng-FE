@@ -51,9 +51,7 @@ export default function RoleToggle({
 
         {/* 슬라이더 - 하나의 버튼이 좌우로 이동 */}
         <span
-          className="absolute top-1 left-1 my-auto h-10 w-[calc(50%)]
-                 rounded-full bg-primary-blue-300 shadow-md transition-transform duration-300
-                 peer-checked/driver:translate-x-[calc(100%-0.5rem)]"
+          className="absolute top-1 left-1 my-auto h-10 w-[calc(50%)] rounded-full bg-primary-blue-300 shadow-md transition-transform duration-300 peer-checked/driver:translate-x-[calc(100%-0.5rem)]"
         />
       </div>
 

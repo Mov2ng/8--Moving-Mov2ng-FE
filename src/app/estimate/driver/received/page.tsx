@@ -105,8 +105,6 @@ export default function ReceivedPage() {
       setIsSendModalOpen(false);
       setSelectedItem(null);
     } catch (error) {
-      console.error("견적 보내기 실패:", error);
-      
       // 에러 메시지 추출
       const parsedError = parseServerError(error);
       let errorMessage = parsedError?.message || t("driver_received_estimate_send_error");
@@ -135,8 +133,6 @@ export default function ReceivedPage() {
       setIsRejectModalOpen(false);
       setSelectedItem(null);
     } catch (error) {
-      console.error("반려 실패:", error);
-      
       // 에러 메시지 추출
       const parsedError = parseServerError(error);
       let errorMessage = parsedError?.message || t("driver_received_estimate_reject_error");

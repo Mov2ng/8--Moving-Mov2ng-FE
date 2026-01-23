@@ -54,7 +54,6 @@ export default function ReceivedDetailPage({
           setIsDesignated((res as DriverRequestDetail & { isDesignated?: boolean }).isDesignated ?? false);
         }
       } catch (e) {
-        console.error(e);
         setError("데이터 로드 실패");
       } finally {
         if (mounted) setLoading(false);
@@ -95,8 +94,6 @@ export default function ReceivedDetailPage({
       setIsSendModalOpen(false);
       router.push("/estimate/driver/received");
     } catch (error) {
-      console.error("견적 수락 실패:", error);
-      
       // 에러 메시지 추출
       const parsedError = parseServerError(error);
       let errorMessage = parsedError?.message || "견적 보내기에 실패했습니다. 다시 시도해주세요.";
@@ -122,8 +119,6 @@ export default function ReceivedDetailPage({
       setIsRejectModalOpen(false);
       router.push("/estimate/driver/received");
     } catch (error) {
-      console.error("견적 반려 실패:", error);
-      
       // 에러 메시지 추출
       const parsedError = parseServerError(error);
       let errorMessage = parsedError?.message || "반려 처리에 실패했습니다. 다시 시도해주세요.";

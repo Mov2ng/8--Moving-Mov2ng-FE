@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import React from "react";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 export type ServiceType = "small" | "home" | "business";
 
@@ -8,31 +11,33 @@ interface ServiceCardProps {
   className?: string;
 }
 
-const serviceData = {
-  small: {
-    title: "소형이사",
-    subtitle: "원룸, 투룸, 20평대 미만",
-    bgColor: "bg-primary-blue-100",
-    illustration: "assets/image/img-landing-1.svg",
-  },
-  home: {
-    title: "가정이사",
-    subtitle: "쓰리룸, 20평대 미만",
-    bgColor: "bg-gray-50",
-    illustration: "assets/image/img-landing-2.svg",
-  },
-  business: {
-    title: "기업, 사무실 이사",
-    subtitle: "사무실, 상업공간",
-    bgColor: "bg-gray-50",
-    illustration: "assets/image/img-landing-3.svg",
-  },
-};
-
-export const ServiceCard: React.FC<ServiceCardProps> = ({
+export const ServiceCard = ({
   type,
   className = "",
-}) => {
+}: ServiceCardProps) => {
+  const { t } = useI18n();
+
+  const serviceData = {
+    small: {
+      title: t("service_small_title"),
+      subtitle: t("service_small_subtitle"),
+      bgColor: "bg-primary-blue-100",
+      illustration: "/assets/image/img-landing-1.svg",
+    },
+    home: {
+      title: t("service_home_title"),
+      subtitle: t("service_home_subtitle"),
+      bgColor: "bg-gray-50",
+      illustration: "/assets/image/img-landing-2.svg",
+    },
+    business: {
+      title: t("service_business_title"),
+      subtitle: t("service_business_subtitle"),
+      bgColor: "bg-gray-50",
+      illustration: "/assets/image/img-landing-3.svg",
+    },
+  };
+
   const { title, subtitle, bgColor } = serviceData[type];
   const Illustration = serviceData[type].illustration;
 

@@ -6,21 +6,27 @@ import { apiClient } from "@/libs/apiClient";
 import QuoteDetailCard from "./QuoteDetailCard";
 import QuoteTabNav from "./QuoteTabNav";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import Button from "@/components/common/button";
 import { formatDate, formatDateTime } from "@/utils/date";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { STALE_TIME } from "@/constants/query";
 import { useI18n } from "@/libs/i18n/I18nProvider";
 import ConfirmQuoteModal from "./ConfirmQuoteModal";
+import { usePostFavoriteMover, useDeleteFavoriteMover } from "@/hooks/useMover";
+import { useToast } from "@/hooks/useToast";
+import Toast from "@/components/common/Toast";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 import type { QuoteDetailView } from "@/types/view/quote";
 import type { ApiQuoteDetail, QuoteStatus } from "@/types/api/quotes";
-import { getServiceLabel } from "@/constants/profile.constants";
+import { getServiceLabel, DEFAULT_AVATAR_IMAGE } from "@/constants/profile.constants";
 
 const statusMap: Record<QuoteStatus, "waiting" | "confirmed" | "rejected"> = {
   PENDING: "waiting",
-  ACCEPTED: "confirmed",
+  ACCEPTED: "waiting",
+  COMPLETED: "confirmed",
   REJECTED: "rejected",
 };
 
@@ -32,16 +38,15 @@ type QuotePendingDetailPageProps = {
 export default function QuotePendingDetailPage({
   estimateId,
 }: QuotePendingDetailPageProps) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useI18n();
-  const [favoriteOverride, setFavoriteOverride] = useState<boolean | undefined>(
-    undefined
-  );
+  const { toastContent, showToast } = useToast();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const id = estimateId;
   const invalidId = Number.isNaN(id);
 
-  const { data, isLoading, error } = useApiQuery<
+  const { data, isPending, error } = useApiQuery<
     { success: boolean; message: string; data: ApiQuoteDetail },
     Error
   >({
@@ -65,10 +70,15 @@ export default function QuotePendingDetailPage({
       setIsConfirmOpen(false);
       queryClient.invalidateQueries({ queryKey: ["quote", "pending", id] });
       queryClient.invalidateQueries({ queryKey: ["quote", "pending"] });
-      alert(t("quote_accept_success"));
+      queryClient.invalidateQueries({ queryKey: ["quotes", "pending"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes", "received"] });
+      showToast(t("quote_accept_success"));
+      setTimeout(() => {
+        router.push("/estimate/user/received");
+      }, 1500);
     },
     onError: (err) => {
-      alert(err.message ?? t("quote_accept_fail"));
+      showToast(err.message ?? t("quote_accept_fail"));
     },
   });
 
@@ -94,7 +104,7 @@ export default function QuotePendingDetailPage({
             designatedLabel: t("designated_quote_full"),
             description: item.driver?.driver_intro ?? "",
             name: item.driver.nickname ?? "-",
-            profileImage: "/assets/image/avatartion-1.png", // 임시 프로필 이미지
+            profileImage: DEFAULT_AVATAR_IMAGE, // 임시 프로필 이미지
             rating: item.driver.rating ?? 0,
             reviewCount: item.driver.reviewCount ?? 0,
             experience: item.driver.driver_years ?? 0,
@@ -114,38 +124,47 @@ export default function QuotePendingDetailPage({
       })()
     : null;
 
-  const isFavorite = favoriteOverride ?? detail?.isFavorite ?? false;
+  const driver = data?.data?.driver;
+
+  // driver.isFavorite 직접 확인 (백엔드에서 보내주는 데이터)
+  const driverIsFavorite = (driver as typeof driver & { isFavorite?: boolean })
+    ?.isFavorite;
+
+  // 찜 상태 관리
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // 기사님 정보 로딩 후 찜 상태 설정
+  useEffect(() => {
+    // API 응답에서 isFavorite 확인
+    if (driverIsFavorite !== undefined) {
+      setIsFavorite(driverIsFavorite);
+    }
+    // fallback: likes 배열 확인 (백엔드에서 isFavorite를 보내주지 않는 경우)
+    else if (driver?.likes && Array.isArray(driver.likes)) {
+      setIsFavorite(driver.likes.length > 0);
+    }
+  }, [driverIsFavorite, driver?.likes]);
 
   const shareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/estimate/user/pending/${id}` // 도메인 환경에서 테스트할 때는 도메인 주소를 사용
       : undefined;
 
-  const getCopyText = () => {
-    if (!shareUrl) return "";
-    return detail
-      ? `${t("moving_date")}: ${formatDateTime(detail.movingDateTime)}\n${t(
-          "quote_price_title"
-        )}: ${detail.price.toLocaleString()}원\n${shareUrl}`
-      : shareUrl;
-  };
-
   const handleCopyLink = () => {
-    const copyText = getCopyText();
-    if (!copyText) return;
+    if (!shareUrl) return;
 
     if (navigator.clipboard) {
       navigator.clipboard
-        .writeText(copyText)
+        .writeText(shareUrl)
         .then(() => {
-          alert(t("share_copy_success"));
+          showToast(t("share_copy_success"));
         })
         .catch(() => {
-          alert(t("share_copy_fail"));
+          showToast(t("share_copy_fail"));
         });
       return;
     }
-    alert(t("share_not_supported"));
+    showToast(t("share_not_supported"));
   };
 
   const handleShareKakao = () => {
@@ -163,13 +182,8 @@ export default function QuotePendingDetailPage({
         ? (window as typeof window & { Kakao?: KakaoSDK }).Kakao ?? null
         : null;
 
-    if (!kakaoAppKey) {
-      alert(t("kakao_app_key_missing"));
-      return;
-    }
-
-    if (!kakao) {
-      alert(t("share_kakao_not_ready"));
+    if (!kakaoAppKey || !kakao) {
+      showToast(t("internal_system_error"));
       return;
     }
 
@@ -201,42 +215,53 @@ export default function QuotePendingDetailPage({
   };
 
   const handleShareFacebook = () => {
-    const copyText = getCopyText();
-    if (copyText && navigator.clipboard) {
-      navigator.clipboard.writeText(copyText).catch(() => {
+    if (!shareUrl) return;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        showToast(t("share_facebook_link"));
+      }).catch(() => {
         // 복사 실패는 무시하고 공유 계속 진행
       });
     }
-    if (!shareUrl) return;
     const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
       shareUrl
     )}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const { mutate: toggleFavorite, isPending: isTogglingFavorite } =
-    useApiMutation<
-      { success: boolean; message?: string; data?: { isFavorite?: boolean } },
-      void,
-      Error
-    >({
-      mutationFn: async () => {
-        if (!detail?.driverId) throw new Error("driverId를 찾을 수 없습니다.");
-        const method = isFavorite ? "DELETE" : "POST";
-        return apiClient(`/movers/${detail.driverId}/favorite`, {
-          method,
-        });
-      },
-      onSuccess: (res) => {
-        setFavoriteOverride((prev) =>
-          res.data?.isFavorite !== undefined ? res.data.isFavorite : !prev
-        );
-        if (res.message) alert(res.message);
-      },
-      onError: (err) => {
-        alert(err.message ?? t("favorite_error"));
-      },
-    });
+  // 찜하기
+  const { mutate: postFavoriteMover, isPending: isPostFavoriteMoverPending } =
+    usePostFavoriteMover(detail?.driverId ?? 0);
+  // 찜 취소
+  const {
+    mutate: deleteFavoriteMover,
+    isPending: isDeleteFavoriteMoverPending,
+  } = useDeleteFavoriteMover(detail?.driverId ?? 0);
+
+  // 기사님 찜하기 핸들러
+  const handleToggleFavorite = () => {
+    if (!detail?.driverId) return;
+
+    // 이미 찜한 상태면 삭제, 아니면 추가
+    if (isFavorite) {
+      deleteFavoriteMover(detail.driverId, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(false); // 찜 취소
+        },
+      });
+    } else {
+      postFavoriteMover(detail.driverId, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["movers"] });
+          setIsFavorite(true); // 찜 추가
+        },
+      });
+    }
+  };
+
+  const isFavoritePending =
+    isPostFavoriteMoverPending || isDeleteFavoriteMoverPending;
 
   return (
     <div className="min-h-screen bg-white">
@@ -252,17 +277,13 @@ export default function QuotePendingDetailPage({
             {t("invalid_estimate")}
           </div>
         )}
-        {isLoading && (
-          <div className="text-center text-gray-400 pret-14-medium">
-            {t("loading")}
-          </div>
-        )}
+        {isPending && <LoadingSpinner />}
         {error && (
           <div className="text-center text-secondary-red-200 pret-14-medium">
             {error.message}
           </div>
         )}
-        {!isLoading && !error && detail && (
+        {!isPending && !error && detail && (
           <div className="flex flex-col lg:grid lg:grid-cols-[2fr_1fr] lg:gap-10">
             {/*  카드 + 정보 */}
             <div className="flex flex-col gap-6">
@@ -317,7 +338,7 @@ export default function QuotePendingDetailPage({
                   />
                   <InfoRow
                     label={t("moving_date")}
-                    value={formatDateTime(detail.movingDateTime)}
+                    value={formatDateTime(detail.movingDateTime, t)}
                   />
                   <InfoRow label={t("departure")} value={detail.origin} />
                   <InfoRow label={t("arrival")} value={detail.destination} />
@@ -329,14 +350,14 @@ export default function QuotePendingDetailPage({
             <aside className="hidden lg:flex flex-col gap-4 mt-6 lg:mt-0">
               <button
                 type="button"
-                onClick={() => toggleFavorite()}
-                disabled={isTogglingFavorite || !detail?.driverId}
+                onClick={handleToggleFavorite}
+                disabled={isFavoritePending || !detail?.driverId}
                 className="inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-2xl border border-line-200 bg-white text-black-400 hover:bg-background-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Image
                   src={
                     isFavorite
-                      ? "/assets/icon/ic-like-active.svg"
+                      ? "/assets/icon/ic-like-fill.svg"
                       : "/assets/icon/ic-like-default.svg"
                   }
                   alt="찜하기"
@@ -344,7 +365,11 @@ export default function QuotePendingDetailPage({
                   height={20}
                 />
                 <span className="pret-xl-semibold leading-8">
-                  {t("favorite_driver")}
+                  {isFavoritePending
+                    ? t("processing")
+                    : isFavorite
+                    ? t("favorite_completed")
+                    : t("favorite_driver")}
                 </span>
               </button>
               <Button
@@ -410,15 +435,21 @@ export default function QuotePendingDetailPage({
         <div className="mx-auto max-w-6xl flex items-center gap-3">
           <button
             type="button"
-            onClick={() => toggleFavorite()}
-            disabled={isTogglingFavorite || !detail?.driverId}
+            onClick={handleToggleFavorite}
+            disabled={isFavoritePending || !detail?.driverId}
             className="size-12 rounded-2xl border border-line-200 bg-white flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
-            aria-label={t("favorite_driver")}
+            aria-label={
+              isFavoritePending
+                ? t("processing")
+                : isFavorite
+                ? t("favorite_completed")
+                : t("favorite_driver")
+            }
           >
             <Image
               src={
                 isFavorite
-                  ? "/assets/icon/ic-like-active.svg"
+                  ? "/assets/icon/ic-like-fill.svg"
                   : "/assets/icon/ic-like-default.svg"
               }
               alt="찜하기"
@@ -442,6 +473,7 @@ export default function QuotePendingDetailPage({
         onConfirm={() => acceptQuote()}
         isSubmitting={isAccepting}
       />
+      <Toast content={toastContent} info={false} />
     </div>
   );
 }

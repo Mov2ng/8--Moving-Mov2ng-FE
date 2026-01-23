@@ -1,6 +1,11 @@
 import { API_URL } from "@/constants/api.constants";
-import { getToken, removeToken } from "@/libs/auth/tokenStorage";
+import {
+  getToken,
+  removeToken,
+  isTokenExpired,
+} from "@/libs/auth/tokenStorage";
 import { refreshAccessToken } from "@/libs/auth/tokenManager";
+import { handleAuthError } from "@/utils/authError";
 // 기본 헤더
 const defaultHeaders: Record<string, string> = {
   "Content-Type": "application/json",
@@ -39,7 +44,7 @@ export async function apiClient(
     query,
     headers,
     skipAutoRefresh = false,
-    timeout = 3000, // 기본 타임아웃 3초
+    timeout = 5000, // 기본 타임아웃 5초
   } = options;
 
   // 1. body가 FormData인지 확인 (FormData일 때는 Content-Type을 제거해야 함)
@@ -52,7 +57,18 @@ export async function apiClient(
   };
 
   // 2. 클라이언트 사이드에서 토큰 조회 (localStorage에서)
-  const accessToken = getToken();
+  let accessToken = getToken();
+
+  // 토큰이 있고 만료되었으면 미리 refresh(백엔드 unauthorized 받기 전 미리 token 확인)
+  if (accessToken && !skipAutoRefresh && isTokenExpired(accessToken)) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      accessToken = newToken;
+    } else {
+      // refresh 실패 시 토큰 삭제
+      accessToken = null;
+    }
+  }
 
   // 3. 액세스 토큰 있을 시 Auth 헤더 추가
   if (accessToken) {
@@ -133,6 +149,13 @@ export async function apiClient(
         if (endpoint === "/auth/me") {
           return { data: null };
         }
+        
+        // refresh 실패 시 인증 에러 처리 (리디렉션 및 메시지 포함)
+        handleAuthError(undefined, {
+          redirectTo: "/login",
+          showMessage: "세션이 만료되었습니다. 다시 로그인해주세요.",
+        });
+        
         // refresh 실패는 개발 환경에서만 로그 남기고 원래 에러를 throw
         if (process.env.NODE_ENV !== "production") {
           console.warn("[apiClient] 토큰 재발급 실패:", {
