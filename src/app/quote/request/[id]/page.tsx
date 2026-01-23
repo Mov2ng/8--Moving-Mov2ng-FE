@@ -97,15 +97,21 @@ export default function QuoteRequestEditPage() {
     return !isDateBeforeToday(dateValue);
   }, [dateValue]);
 
+  // 출발지와 도착지가 같은지 확인하는 함수
+  const isSameAddress = useMemo(() => {
+    if (!from || !to) return false;
+    return from.address === to.address && from.zonecode === to.zonecode;
+  }, [from, to]);
+
   // Step 3: Address validation
   const canNextAddress = useMemo(() => {
-    return !!movingType && !!savedDate && !!from && !!to;
-  }, [movingType, savedDate, from, to]);
+    return !!movingType && !!savedDate && !!from && !!to && !isSameAddress;
+  }, [movingType, savedDate, from, to, isSameAddress]);
 
   // Submit validation - 주소가 입력되면 제출 가능
   const canSubmit = useMemo(() => {
-    return !!movingType && !!savedDate && !!from && !!to;
-  }, [movingType, savedDate, from, to]);
+    return !!movingType && !!savedDate && !!from && !!to && !isSameAddress;
+  }, [movingType, savedDate, from, to, isSameAddress]);
 
   // Step 1: Handle moving type confirm
   const handleTypeConfirm = () => {
@@ -146,6 +152,10 @@ export default function QuoteRequestEditPage() {
   const handleSubmit = () => {
     if (!canSubmit || !movingType || !savedDate || !from || !to)
       return alert(t("quote_request_confirm_all_fields_required"));
+
+    if (isSameAddress) {
+      return alert("출발지와 도착지가 같을 수 없습니다.");
+    }
 
     // 주소를 store에 저장
     const addressToSave = {
@@ -266,6 +276,11 @@ export default function QuoteRequestEditPage() {
               value={dateValue}
               onChange={handleDateChange}
               onConfirm={movingType && isValidDate && dateValue && !dateError ? handleDateConfirm : undefined}
+              minDate={(() => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return today;
+              })()}
             />
             {dateError && (
               <div className="mt-4 text-center text-sm text-red-500">
@@ -309,7 +324,7 @@ export default function QuoteRequestEditPage() {
             </button>
           </div>
           <BubbleLeft>{t("quote_request_select_address")}</BubbleLeft>
-          <div className="self-end mr-8 w-[544px] rounded-[24px] bg-white p-[40px] shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
+          <div className="self-center md:self-end mr-0 md:mr-8 w-full max-w-[544px] rounded-[24px] bg-white p-4 md:p-[40px] shadow-[0_8px_20px_rgba(0,0,0,0.06)]">
             <div className="space-y-5">
               <div>
                 <div className="mb-2 text-[12px] font-semibold text-[#111]">{t("quote_request_origin_label")}</div>
@@ -356,6 +371,12 @@ export default function QuoteRequestEditPage() {
                 )}
               </div>
             </div>
+            {/* 출발지와 도착지가 같은 경우 에러 메시지 */}
+            {from && to && isSameAddress && (
+              <div className="mt-4 text-red-500 text-sm text-center">
+                출발지와 도착지가 같을 수 없습니다.
+              </div>
+            )}
             {/* 견적 확정하기 버튼 */}
             {canNextAddress && (
               <>

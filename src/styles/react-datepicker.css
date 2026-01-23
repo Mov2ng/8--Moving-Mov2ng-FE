@@ -45,6 +45,16 @@
   background: transparent;
 }
 
+.react-datepicker__day--disabled {
+  color: #d0d0d0;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.react-datepicker__day--disabled:hover {
+  background: transparent;
+}
+
 /* =======================
    SM (320px)
 ======================= */
@@ -63,10 +73,13 @@
 }
 
 .datepicker-sm .react-datepicker__day-name {
-  width: 1ch;
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: center; /* 월 화 수 목 금 토 일 */
+  font-size: 0;
+  text-align: center;
+}
+
+.datepicker-sm .react-datepicker__day-name::first-letter {
+  font-size: 13px;
+  color: #999;
 }
 
 .datepicker-sm .react-datepicker__month {
@@ -96,10 +109,13 @@
 }
 
 .datepicker-md .react-datepicker__day-name {
-  width: 1ch;
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: left;
+  font-size: 0;
+  text-align: center;
+}
+
+.datepicker-md .react-datepicker__day-name::first-letter {
+  font-size: 20px;
+  color: #999;
 }
 
 .datepicker-md .react-datepicker__month {
