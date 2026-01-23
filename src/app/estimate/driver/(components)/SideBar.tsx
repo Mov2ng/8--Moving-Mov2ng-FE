@@ -1,20 +1,40 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 export const Sidebar: React.FC<{
   movingTypeFilter?: string[];
   onMovingTypeFilterChange?: (filters: string[]) => void;
   isDesignatedFilter?: boolean | undefined;
   onIsDesignatedFilterChange?: (value: boolean | undefined) => void;
+  regionFilter?: boolean;
+  onRegionFilterChange?: (value: boolean) => void;
   items?: Array<{ movingType?: string | null; isDesignated?: boolean | null }>;
 }> = ({
   movingTypeFilter = [],
   onMovingTypeFilterChange,
   isDesignatedFilter,
   onIsDesignatedFilterChange,
+  regionFilter = false,
+  onRegionFilterChange,
   items = [],
 }) => {
+  const { t } = useI18n();
+  // 이전 카운트 값을 유지하기 위한 ref
+  const prevCountsRef = useRef({
+    small: 0,
+    home: 0,
+    office: 0,
+    designated: 0,
+    region: 0,
+  });
+
   // 개수 계산
   const counts = useMemo(() => {
+    // items가 비어있으면 이전 값을 유지
+    if (!items || items.length === 0) {
+      return prevCountsRef.current;
+    }
+
     const smallCount = items.filter((item) => item.movingType === "SMALL").length;
     const homeCount = items.filter(
       (item) => item.movingType === "HOME" || item.movingType === "HOUSE"
@@ -23,13 +43,18 @@ export const Sidebar: React.FC<{
     const designatedCount = items.filter((item) => item.isDesignated === true).length;
     const regionCount = items.length; // 서비스 가능 지역은 전체로 가정
 
-    return {
+    const newCounts = {
       small: smallCount,
       home: homeCount,
       office: officeCount,
       designated: designatedCount,
       region: regionCount,
     };
+
+    // 이전 값 업데이트
+    prevCountsRef.current = newCounts;
+
+    return newCounts;
   }, [items]);
 
   const handleMovingTypeChange = (type: string, checked: boolean) => {
@@ -71,7 +96,7 @@ export const Sidebar: React.FC<{
     <aside className="w-[240px] flex-shrink-0">
       <div className="bg-white rounded-lg shadow-sm p-5">
         <h3 className="text-[15px] font-semibold text-gray-900 mb-4">
-          이사 유형
+          {t("driver_received_moving_type")}
         </h3>
         <ul className="space-y-3">
           <li className="flex items-center gap-2">
@@ -83,7 +108,7 @@ export const Sidebar: React.FC<{
               className="w-4 h-4 text-blue-500 rounded"
             />
             <label htmlFor="all-moving" className="text-[14px] text-gray-700 flex-1">
-              전체선택
+              {t("driver_received_select_all")}
             </label>
           </li>
           <li className="flex items-center gap-2">
@@ -97,7 +122,7 @@ export const Sidebar: React.FC<{
               className="w-4 h-4 text-blue-500 rounded"
             />
             <label htmlFor="small" className="text-[14px] text-gray-700 flex-1">
-              소형이사 ({counts.small})
+              {t("moving_type_small")} ({counts.small})
             </label>
           </li>
           <li className="flex items-center gap-2">
@@ -111,7 +136,7 @@ export const Sidebar: React.FC<{
               className="w-4 h-4 text-blue-500 rounded"
             />
             <label htmlFor="home" className="text-[14px] text-gray-700 flex-1">
-              가정이사 ({counts.home})
+              {t("moving_type_home")} ({counts.home})
             </label>
           </li>
           <li className="flex items-center gap-2">
@@ -125,7 +150,7 @@ export const Sidebar: React.FC<{
               className="w-4 h-4 text-blue-500 rounded"
             />
             <label htmlFor="office" className="text-[14px] text-gray-700 flex-1">
-              사무실이사 ({counts.office})
+              {t("moving_type_office")} ({counts.office})
             </label>
           </li>
         </ul>
@@ -133,7 +158,7 @@ export const Sidebar: React.FC<{
         <div className="h-px bg-gray-200 my-5" />
 
         <h3 className="text-[15px] font-semibold text-gray-900 mb-4">
-          필터
+          {t("filter")}
         </h3>
         <ul className="space-y-3">
           <li className="flex items-center gap-2">
@@ -145,19 +170,19 @@ export const Sidebar: React.FC<{
               className="w-4 h-4 text-blue-500 rounded"
             />
             <label htmlFor="all-filter" className="text-[14px] text-gray-700 flex-1">
-              전체선택
+              {t("driver_received_select_all")}
             </label>
           </li>
           <li className="flex items-center gap-2">
             <input
               type="checkbox"
               id="region"
-              checked={false}
-              onChange={() => {}}
+              checked={regionFilter}
+              onChange={(e) => onRegionFilterChange?.(e.target.checked)}
               className="w-4 h-4 text-blue-500 rounded"
             />
             <label htmlFor="region" className="text-[14px] text-gray-700 flex-1">
-              서비스 가능 지역 ({counts.region})
+              {t("driver_received_service_available")} ({counts.region})
             </label>
           </li>
           <li className="flex items-center gap-2">
@@ -172,7 +197,7 @@ export const Sidebar: React.FC<{
               htmlFor="designated"
               className="text-[14px] text-gray-700 flex-1"
             >
-              지정 견적 요청 ({counts.designated})
+              {t("designated_quote_full")} ({counts.designated})
             </label>
           </li>
         </ul>

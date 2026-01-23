@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { MovingType } from "../store";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 type Option = {
   value: MovingType;
@@ -24,6 +25,8 @@ export default function MoveTypeSelect({
   onConfirm,
   confirmDisabled = false,
 }: Props) {
+  const { t } = useI18n();
+  
   return (
     <div
       className={[
@@ -83,7 +86,7 @@ export default function MoveTypeSelect({
             : "bg-[#1b92ff] text-white hover:bg-[#1673ff]",
         ].join(" ")}
       >
-        선택완료
+        {t("quote_request_complete_selection")}
       </button>
     </div>
   );

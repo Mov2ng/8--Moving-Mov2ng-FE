@@ -6,9 +6,11 @@ import { useAuth } from "@/hooks/useAuth";
 import PendingEstimateCard, {
   type PendingEstimateItem,
 } from "../(components)/PendingEstimateCard";
+import { useI18n } from "@/libs/i18n/I18nProvider";
 
 export default function PendingPage() {
   const { me, isLoading: authLoading, isDriver } = useAuth();
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<"sent" | "rejected">("sent");
   const [page] = useState(1);
   const [pageSize] = useState(20);
@@ -29,7 +31,7 @@ export default function PendingPage() {
   }, [userId, page, pageSize]);
 
   // 보낸 견적 조회 (지정 견적 요청 리스트 사용)
-  const { data: sentData, isLoading: sentLoading } =
+  const { data: sentData, isPending: sentPending } =
     useGetDriverDesignatedRequests(
       queryParams || { userId: "", page: 1, pageSize: 20 },
       !!queryParams && !!userId && !authLoading && isDriver && activeTab === "sent"
@@ -70,12 +72,12 @@ export default function PendingPage() {
 
   const displayItems =
     activeTab === "sent" ? sentItems : rejectedItems;
-  const isLoading = sentLoading;
+  const isPending = sentPending;
 
   if (authLoading) {
     return (
       <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-        <div>로딩 중...</div>
+        <div>{t("loading")}</div>
       </div>
     );
   }
@@ -83,7 +85,7 @@ export default function PendingPage() {
   if (!me) {
     return (
       <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-        <div>로그인이 필요합니다.</div>
+        <div>{t("login_required")}</div>
       </div>
     );
   }
@@ -91,7 +93,7 @@ export default function PendingPage() {
   if (!isDriver) {
     return (
       <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-        <div>기사님만 접근 가능한 페이지입니다.</div>
+        <div>{t("driver_received_forbidden")}</div>
       </div>
     );
   }
@@ -109,7 +111,7 @@ export default function PendingPage() {
                 : "text-gray-300 hover:text-black-300"
             }`}
           >
-            보낸 견적 조회
+            {t("driver_pending_tab_sent")}
             {activeTab === "sent" && (
               <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-black-400" />
             )}
@@ -122,7 +124,7 @@ export default function PendingPage() {
                 : "text-gray-300 hover:text-black-300"
             }`}
           >
-            반려 요청
+            {t("driver_pending_tab_rejected")}
             {activeTab === "rejected" && (
               <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-black-400" />
             )}
@@ -130,13 +132,13 @@ export default function PendingPage() {
         </div>
 
         {/* 카드 그리드 */}
-        {isLoading ? (
+        {isPending ? (
           <div className="text-center text-gray-400 pret-14-medium py-12">
-            로딩 중...
+            {t("loading")}
           </div>
         ) : displayItems.length === 0 ? (
           <div className="text-center text-gray-400 pret-14-medium py-12">
-            {activeTab === "sent" ? "보낸 견적이 없습니다." : "반려된 요청이 없습니다."}
+            {activeTab === "sent" ? t("driver_pending_no_sent") : t("driver_pending_no_rejected")}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -16,6 +16,7 @@ export type DatePickerProps = {
   value: Date | null;
   onChange: (date: Date) => void;
   onConfirm?: () => void;
+  minDate?: Date;
 };
 
 function formatMonthLabel(date: Date) {
@@ -29,6 +30,7 @@ export default function DatePicker({
   value,
   onChange,
   onConfirm,
+  minDate,
 }: DatePickerProps) {
   // ✅ react-datepicker는 설정에 따라 Date | null 또는 (Date | null)[] 로 올 수 있어서 안전 처리
   const handleChange = useCallback(
@@ -57,7 +59,7 @@ export default function DatePicker({
         locale="ko"
         selected={value}
         onChange={handleChange}
-        formatWeekDay={(name) => name.replace("요일", "").trim()}
+        minDate={minDate}
         renderCustomHeader={({
           date,
           decreaseMonth,

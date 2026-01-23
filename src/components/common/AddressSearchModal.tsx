@@ -39,7 +39,7 @@ export default function AddressSearchModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       {/* overlay */}
       <button
         type="button"
@@ -49,19 +49,19 @@ export default function AddressSearchModal({
       />
 
       {/* modal */}
-      <div className="relative w-[560px] rounded-2xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="text-[16px] font-semibold text-[#111]">{title}</div>
+      <div className="relative w-full max-w-[560px] rounded-2xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
+        <div className="flex items-center justify-between px-4 md:px-6 py-4">
+          <div className="text-[14px] md:text-[16px] font-semibold text-[#111]">{title}</div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-[13px] text-[#666] hover:bg-black/5"
+            className="rounded-lg px-2 md:px-3 py-2 text-[12px] md:text-[13px] text-[#666] hover:bg-black/5"
           >
             닫기
           </button>
         </div>
 
-        <div className="h-[520px] overflow-hidden rounded-b-2xl">
+        <div className="h-[400px] md:h-[520px] overflow-hidden rounded-b-2xl">
           <DaumPostcode
             onComplete={handleComplete}
             style={{ width: "100%", height: "100%" }}
