@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useGetMyMoverDetail, useGetProfile } from "@/hooks/useProfile";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { getToken } from "@/libs/auth/tokenStorage";
@@ -62,6 +62,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   const { me, isGuest, isDriver, isLoading: isPending, isFetching: isAuthFetching, status } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
   const hasRedirectedRef = useRef(false); // 리디렉션 중복 방지
   const { toastContent, showToast } = useToast();
@@ -78,6 +79,41 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
       hasRedirectedRef.current = false;
     }
   }, [pathname]);
+
+  // 페이지 이동 후 쿼리 파라미터를 확인하여 토스트 메시지를 표시합니다.
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const error = searchParams.get("error");
+    let message = "";
+
+    if (success) {
+      switch (success) {
+        case "signup":
+          message = t("signup_success");
+          break;
+        case "login":
+          message = t("login_completed");
+          break;
+        case "login-profile":
+          message = t("login_success"); // "프로필을 등록해주세요"
+          break;
+        case "logout":
+          message = t("logout_success");
+          break;
+      }
+    } else if (error) {
+      switch (error) {
+        case "logout":
+          message = t("logout_error");
+          break;
+      }
+    }
+
+    if (message) {
+      showToast(message);
+      router.replace(pathname, { scroll: false }); // 토스트 표시 후 URL에서 쿼리 파라미터 제거
+    }
+  }, [searchParams, pathname, router, showToast, t]);
 
   // 보호된 경로 접근 시도
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>

@@ -9,6 +9,7 @@ import {
 import { useRouter } from "next/navigation";
 import { handleAuthError } from "@/utils/authError";
 import { parseServerError } from "@/utils/parseServerError";
+import { useToast } from "./useToast";
 
 /**
  * 성공 시 처리 설정
@@ -67,6 +68,7 @@ export function useApiMutation<TData, TVariables, TError>({
   // 브라우저 메모리에 있는 캐시 접근을 위한 queryClient 생성
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { showToast } = useToast();
 
   // mutationFn을 래핑해 401 에러를 동기적으로 처리
   const wrappedMutationFn: MutationFunction<TData, TVariables> = async (
@@ -111,7 +113,7 @@ export function useApiMutation<TData, TVariables, TError>({
           successConfig.onSuccessMessage(successConfig.successMessage);
         } else {
           // fallback: alert (하위 호환성)
-          alert(successConfig.successMessage);
+          showToast(successConfig.successMessage);
         }
       }
       // 리디렉션
@@ -151,7 +153,7 @@ export function useApiMutation<TData, TVariables, TError>({
         errorConfig.onErrorMessage(errorMessage);
       } else {
         // fallback: alert (하위 호환성)
-        alert(errorMessage);
+        showToast(errorMessage);
       }
     }
     // 기존 onError도 호출 (있다면)
