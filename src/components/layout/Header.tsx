@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useMemo, useEffect } from "react";
@@ -26,20 +26,16 @@ type MenuItem = {
 
 export default function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  
-  // 서버/클라이언트 상태 일치를 위해 항상 useAuth 호출 (토큰 없으면 쿼리 비활성화)
-  const { me, isGuest, isPending, isFetching, status, isUser, isDriver } = useAuth();
-  
-  // 클라이언트에서 accessToken 확인 (서버에서 refreshToken 확인했지만 accessToken도 확인 필요)
-  const [hasAccessToken, setHasAccessToken] = useState<boolean | null>(null);
-  
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+
   useEffect(() => {
-    setHasAccessToken(getToken() !== null);
+    setIsMounted(true);
   }, []);
-  
-  // 인증 로딩 상태: accessToken 확인 중이거나, accessToken이 있는데 me 데이터 로딩 중
-  const isAuthLoading = hasAccessToken === null || (hasAccessToken && (isPending || isFetching || status === 'pending'));
+
+  const { me, isGuest, isUser, isDriver, isPending } = useAuth();
+  const isAuthLoading = isMounted && isPending && !me;
 
   const { t, locale, setLocale } = useI18n();
 
@@ -260,6 +256,28 @@ export default function Header() {
     );
   };
 
+  // 마운트 전: 서버/클라이언트 동일한 플레이스홀더 (hydration 오류 방지)
+  if (!isMounted) {
+    return (
+      <header className="border-b border-line-100 max-md:border-b-0">
+        <div className="max-w-[1400px] mx-auto px-[16px] md:px-[120px] h-[54px] md:h-[84px] flex justify-between items-center">
+          <Link href="/" aria-label="홈으로 이동">
+            <Image
+              src="/assets/image/logo.png"
+              alt="logo"
+              width={116}
+              height={44}
+              className="w-[88px] h-[34px] md:w-[116px] md:h-[44px]"
+              priority
+              fetchPriority="high"
+            />
+          </Link>
+          <p className="sr-only">로딩중...</p>
+        </div>
+      </header>
+    );
+  }
+
   if (isAuthLoading) {
     return (
       <header className="border-b border-line-100 max-md:border-b-0">
@@ -271,8 +289,8 @@ export default function Header() {
               width={116}
               height={44}
               className="w-[88px] h-[34px] md:w-[116px] md:h-[44px]"
-              priority // Next.js Image 최적화해 우선 로드
-              fetchPriority="high" // 브라우저에 높은 우선순위로 요청
+              priority
+              fetchPriority="high"
             />
           </Link>
           <p className="sr-only">로딩중...</p>
