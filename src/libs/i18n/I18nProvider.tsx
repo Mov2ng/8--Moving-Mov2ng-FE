@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react'; // createContext: 컨텍스트 생성, useContext: 컨텍스트 사용, useState: 상태 관리, useMemo: 메모이제이션
+import React, { createContext, useContext, useState, useMemo, useEffect, useLayoutEffect } from 'react'; 
 import ko from '../../locales/ko/common.json';
 import en from '../../locales/en/common.json';
 import zh from '../../locales/zh/common.json';
@@ -27,42 +27,44 @@ type I18nProviderProps = {
 };
 
 export function I18nProvider({ children, initialLocale = 'ko' }: I18nProviderProps) {
-  // 서버에서 전달받은 initialLocale을 사용하여 서버와 클라이언트가 동일한 값으로 시작
+  // hydration 에러 방지: 서버와 클라이언트 모두 동일한 initialLocale 사용
   const [locale, setLocale] = useState<Locale>(initialLocale);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // 클라이언트 마운트 후 localStorage 확인 및 동기화
-  useEffect(() => {
+  // 클라이언트 첫 렌더에서 localStorage 값 확인 및 적용 (페인트 전 실행)
+  useLayoutEffect(() => {
     try {
-      // localStorage에 저장된 언어가 있으면 우선 사용
-      const savedLocale = localStorage.getItem(LOCALE_STORAGE_KEY) as Locale;
-      if (savedLocale && ['ko', 'en', 'zh'].includes(savedLocale)) {
-        // localStorage 값이 서버에서 감지한 값과 다르면 localStorage 값으로 업데이트
-        if (savedLocale !== locale) {
-          setLocale(savedLocale);
-        }
-        return;
+      const saved = localStorage.getItem(LOCALE_STORAGE_KEY) as Locale | null;
+      if (saved && ['ko', 'en', 'zh'].includes(saved)) {
+        setLocale(saved);
+      } else {
+        // localStorage에 없으면 서버 초기값 저장
+        localStorage.setItem(LOCALE_STORAGE_KEY, initialLocale);
       }
-
-      // localStorage에 없으면 서버에서 감지한 값(initialLocale)을 localStorage에 저장
-      // (이미 서버에서 Accept-Language 헤더로 감지했으므로 동일한 값일 가능성이 높음)
-      localStorage.setItem(LOCALE_STORAGE_KEY, initialLocale);
     } catch {
-      // localStorage 접근 실패 시 기본값 유지
+      // localStorage 접근 실패 시 무시
     }
-  }, []); // 마운트 시 한 번만 실행
+    setIsHydrated(true);
+  }, [initialLocale]);
 
-  // locale 변경 시 localStorage에 저장 (쿠키 제거로 성능 최적화)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(LOCALE_STORAGE_KEY, locale);
-      } catch {
-        // localStorage 저장 실패 시 무시
-      }
-    }
+  // locale 변경 시 html lang 동기화
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    document.documentElement.lang = locale;
   }, [locale]);
 
-  // setLocale 래퍼: 쿠키와 localStorage 저장은 useEffect에서 처리
+  // locale 변경 시 localStorage 저장 (hydration 완료 후에만)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isHydrated) return;
+    
+    try {
+      localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+    } catch {
+      // localStorage 저장 실패 시 무시
+    }
+  }, [locale, isHydrated]);
+
+  // setLocale 래퍼
   const handleSetLocale = (newLocale: Locale) => {
     setLocale(newLocale);
   };
@@ -72,7 +74,11 @@ export function I18nProvider({ children, initialLocale = 'ko' }: I18nProviderPro
     setLocale: handleSetLocale,
     t: (key: keyof Message) => messageMap[locale][key] ?? String(key),}), [locale]);
 
-    return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>; // I18nContextValue 타입의 값을 저장하는 컨텍스트 생성
+    return (
+      <I18nContext.Provider value={value}>
+        {children}
+      </I18nContext.Provider>
+    );
 }
 
 export function useI18n() {

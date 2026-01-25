@@ -140,7 +140,6 @@ export default function Header() {
           <Button
             text={t("login")}
             onClick={() => router.push("/login")}
-            width="100px"
             className="max-md:hidden"
           />
           <button
@@ -272,6 +271,8 @@ export default function Header() {
               width={116}
               height={44}
               className="w-[88px] h-[34px] md:w-[116px] md:h-[44px]"
+              priority // Next.js Image 최적화해 우선 로드
+              fetchPriority="high" // 브라우저에 높은 우선순위로 요청
             />
           </Link>
           <p className="sr-only">로딩중...</p>
@@ -292,6 +293,8 @@ export default function Header() {
                 width={116}
                 height={44}
                 className="w-[88px] h-[34px] md:w-[116px] md:h-[44px]"
+                priority
+                fetchPriority="high"
               />
             </Link>
             <MenuNav menuItems={menuItemsForNav} />
